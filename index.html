@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Performance Dashboard | April 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .header .last-updated {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+        }
+
+        .metric-card.highlight {
+            background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+            border-color: #10b981;
+        }
+
+        .metric-card.warning {
+            background: linear-gradient(135deg, #7c2d12 0%, #c2410c 100%);
+            border-color: #f97316;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .metric-subtext {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #334155;
+        }
+
+        .chart-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f8fafc;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .table-card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #334155;
+            overflow-x: auto;
+        }
+
+        .table-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f8fafc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        td {
+            font-size: 14px;
+            color: #e2e8f0;
+        }
+
+        tr:hover {
+            background: #334155;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-on-track {
+            background: #065f46;
+            color: #34d399;
+        }
+
+        .status-behind {
+            background: #7c2d12;
+            color: #fdba74;
+        }
+
+        .status-inactive {
+            background: #374151;
+            color: #9ca3af;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-green { background: linear-gradient(90deg, #10b981, #34d399); }
+        .progress-yellow { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .progress-red { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sales Performance Dashboard</h1>
+        <div class="subtitle">Q2 2026 | April Performance</div>
+        <div class="last-updated">Last updated: May 22, 2026</div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Current Month Deals</div>
+            <div class="metric-value">134</div>
+            <div class="metric-subtext">April 2026</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Team Total ARR</div>
+            <div class="metric-value">$361.9K</div>
+            <div class="metric-subtext">Gross Revenue</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Net New ARR</div>
+            <div class="metric-value">$218.4K</div>
+            <div class="metric-subtext">+$220.9K incl. unassigned</div>
+        </div>
+        <div class="metric-card highlight">
+            <div class="metric-label">% to Goal</div>
+            <div class="metric-value">68.97%</div>
+            <div class="metric-subtext">Monthly Target</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Total Earnings</div>
+            <div class="metric-value">$42.6K</div>
+            <div class="metric-subtext">April Commissions</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Amazing+ Deals</div>
+            <div class="metric-value">64</div>
+            <div class="metric-subtext">This Month</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">YTD Net New ARR</div>
+            <div class="metric-value">$968.3K</div>
+            <div class="metric-subtext">Jan - Apr 2026</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">YTD Deals</div>
+            <div class="metric-value">817</div>
+            <div class="metric-subtext">Total Closed</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Monthly Net New ARR Trend</h3>
+            <div class="chart-container">
+                <canvas id="arrTrendChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>Rep Performance - Net New ARR (April)</h3>
+            <div class="chart-container">
+                <canvas id="repArrChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>Monthly Deal Count</h3>
+            <div class="chart-container">
+                <canvas id="dealCountChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>Rep Attainment % (April)</h3>
+            <div class="chart-container">
+                <canvas id="attainmentChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rep Scorecards Table -->
+    <div class="table-card">
+        <h3>Rep Scorecards - April 2026</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rep</th>
+                    <th>Role</th>
+                    <th>Deals</th>
+                    <th>Net New ARR</th>
+                    <th>% to Goal</th>
+                    <th>Progress</th>
+                    <th>Gross Revenue</th>
+                    <th>April Earnings</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Cameron Grissom</td>
+                    <td>AM</td>
+                    <td>54</td>
+                    <td>$55,323</td>
+                    <td>110.6%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-green" style="width: 100%"></div>
+                        </div>
+                    </td>
+                    <td>$85,412</td>
+                    <td>$5,549</td>
+                    <td><span class="status-badge status-on-track">On Track</span></td>
+                </tr>
+                <tr>
+                    <td>Kaitlyn Lack</td>
+                    <td>SM AM</td>
+                    <td>26</td>
+                    <td>$48,814</td>
+                    <td>97.6%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-green" style="width: 97.6%"></div>
+                        </div>
+                    </td>
+                    <td>$48,814</td>
+                    <td>$5,012</td>
+                    <td><span class="status-badge status-on-track">On Track</span></td>
+                </tr>
+                <tr>
+                    <td>Connor Krauseneck</td>
+                    <td>AE</td>
+                    <td>15</td>
+                    <td>$34,517</td>
+                    <td>82.8%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-yellow" style="width: 82.8%"></div>
+                        </div>
+                    </td>
+                    <td>$39,426</td>
+                    <td>$7,761</td>
+                    <td><span class="status-badge status-behind">Behind</span></td>
+                </tr>
+                <tr>
+                    <td>Caleb Gilbert</td>
+                    <td>AE</td>
+                    <td>6</td>
+                    <td>$25,713</td>
+                    <td>61.7%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-yellow" style="width: 61.7%"></div>
+                        </div>
+                    </td>
+                    <td>$34,429</td>
+                    <td>$7,057</td>
+                    <td><span class="status-badge status-behind">Behind</span></td>
+                </tr>
+                <tr>
+                    <td>Brian Carl</td>
+                    <td>AE</td>
+                    <td>13</td>
+                    <td>$25,598</td>
+                    <td>61.4%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-yellow" style="width: 61.4%"></div>
+                        </div>
+                    </td>
+                    <td>$46,179</td>
+                    <td>$7,048</td>
+                    <td><span class="status-badge status-behind">Behind</span></td>
+                </tr>
+                <tr>
+                    <td>Chase Bryant</td>
+                    <td>AE</td>
+                    <td>12</td>
+                    <td>$37,422</td>
+                    <td>0%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-red" style="width: 0%"></div>
+                        </div>
+                    </td>
+                    <td>$73,570</td>
+                    <td>$0</td>
+                    <td><span class="status-badge status-inactive">Inactive</span></td>
+                </tr>
+                <tr>
+                    <td>Elijah Diaz</td>
+                    <td>AM</td>
+                    <td>7</td>
+                    <td>$9,990</td>
+                    <td>20.0%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-red" style="width: 20%"></div>
+                        </div>
+                    </td>
+                    <td>$12,782</td>
+                    <td>$4,337</td>
+                    <td><span class="status-badge status-behind">Behind</span></td>
+                </tr>
+                <tr>
+                    <td>Connor O'Brien</td>
+                    <td>AE</td>
+                    <td>22</td>
+                    <td>$4,903</td>
+                    <td>11.8%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-red" style="width: 11.8%"></div>
+                        </div>
+                    </td>
+                    <td>$20,449</td>
+                    <td>$6,681</td>
+                    <td><span class="status-badge status-behind">Behind</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Monthly Breakdown Table -->
+    <div class="table-card" style="margin-top: 24px;">
+        <h3>Monthly Performance Breakdown - YTD 2026</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Deals</th>
+                    <th>Gross Revenue</th>
+                    <th>Net New ARR</th>
+                    <th>% to Goal</th>
+                    <th>Commission</th>
+                    <th>Total Earnings</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>January</td>
+                    <td>221</td>
+                    <td>$524,590</td>
+                    <td>$305,149</td>
+                    <td>96.4%</td>
+                    <td>$13,253</td>
+                    <td>$47,435</td>
+                </tr>
+                <tr>
+                    <td>February</td>
+                    <td>260</td>
+                    <td>$497,579</td>
+                    <td>$246,289</td>
+                    <td>77.8%</td>
+                    <td>$9,071</td>
+                    <td>$43,253</td>
+                </tr>
+                <tr>
+                    <td>March</td>
+                    <td>202</td>
+                    <td>$479,383</td>
+                    <td>$198,461</td>
+                    <td>62.7%</td>
+                    <td>$11,896</td>
+                    <td>$56,374</td>
+                </tr>
+                <tr style="background: #334155;">
+                    <td><strong>April</strong></td>
+                    <td><strong>134</strong></td>
+                    <td><strong>$361,935</strong></td>
+                    <td><strong>$218,390</strong></td>
+                    <td><strong>69.0%</strong></td>
+                    <td><strong>$9,263</strong></td>
+                    <td><strong>$43,445</strong></td>
+                </tr>
+                <tr style="background: #1e3a5f;">
+                    <td><strong>YTD Total</strong></td>
+                    <td><strong>817</strong></td>
+                    <td><strong>$1,863,488</strong></td>
+                    <td><strong>$968,289</strong></td>
+                    <td><strong>25.5%</strong></td>
+                    <td><strong>$43,483</strong></td>
+                    <td><strong>$463,962</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Chart.js defaults
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = '#334155';
+
+        // Monthly ARR Trend Chart
+        new Chart(document.getElementById('arrTrendChart'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                datasets: [{
+                    label: 'Net New ARR',
+                    data: [305149, 246289, 198461, 218390],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#10b981',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }, {
+                    label: 'Monthly Quota',
+                    data: [316667, 316667, 316667, 316667],
+                    borderColor: '#ef4444',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: value => '$' + (value / 1000) + 'K'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Rep ARR Chart
+        new Chart(document.getElementById('repArrChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Cameron G.', 'Kaitlyn L.', 'Chase B.', 'Connor K.', 'Caleb G.', 'Brian C.', 'Elijah D.', 'Connor O.'],
+                datasets: [{
+                    label: 'Net New ARR',
+                    data: [55323, 48814, 37422, 34517, 25713, 25598, 9990, 4903],
+                    backgroundColor: [
+                        '#10b981', '#10b981', '#64748b', '#f59e0b', '#f59e0b', '#f59e0b', '#ef4444', '#ef4444'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: value => '$' + (value / 1000) + 'K'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Deal Count Chart
+        new Chart(document.getElementById('dealCountChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                datasets: [{
+                    label: 'Deals Closed',
+                    data: [221, 260, 202, 134],
+                    backgroundColor: '#6366f1',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Attainment Chart
+        new Chart(document.getElementById('attainmentChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['On Track (>90%)', 'Close (60-90%)', 'Behind (<60%)'],
+                datasets: [{
+                    data: [2, 3, 3],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
