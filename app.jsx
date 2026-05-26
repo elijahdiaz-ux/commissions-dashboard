@@ -341,10 +341,21 @@ function ForecastViz() {
       {/* Projected dashed */}
       <path d={projPath} stroke="#6EE7B7" strokeWidth="2" fill="none" strokeDasharray="4 4" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 6px #6EE7B780)' }}/>
 
-      {/* Dots */}
+      {/* Dots with value labels */}
       {actual.map((v, i) => (
         <g key={i}>
-          <circle cx={xFor(i)} cy={yFor(v)} r="3.2" fill="#0E1220" stroke="#34D399" strokeWidth="1.8" />
+          <circle cx={xFor(i)} cy={yFor(v)} r="4" fill="#0E1220" stroke="#34D399" strokeWidth="2" />
+          <text
+            x={xFor(i)}
+            y={yFor(v) - 10}
+            fontSize="9"
+            fontWeight="600"
+            fill="#34D399"
+            textAnchor="middle"
+            fontFamily="JetBrains Mono"
+          >
+            ${(v / 1000).toFixed(1)}K
+          </text>
         </g>
       ))}
       {/* May ghost dot */}
