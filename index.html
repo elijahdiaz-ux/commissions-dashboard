@@ -7,51 +7,56 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1A5319; color: #e2e8f0; min-height: 100vh; padding: 24px; }
-        .header { text-align: center; margin-bottom: 24px; }
-        .header h1 { font-size: 28px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; }
-        .header .subtitle { color: #D6EFD8; font-size: 14px; }
-        .header .last-updated { color: #80AF81; font-size: 12px; margin-top: 4px; }
-        .filters-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; background: #508D4E; padding: 16px 20px; border-radius: 12px; border: 1px solid #80AF81; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8faf8 0%, #e8f5e9 100%); color: #1a1a1a; min-height: 100vh; padding: 32px; }
+        .header { text-align: center; margin-bottom: 32px; }
+        .header h1 { font-size: 32px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+        .header .subtitle { color: #22c55e; font-size: 15px; font-weight: 500; }
+        .header .last-updated { color: #6b7280; font-size: 12px; margin-top: 6px; }
+        .filters-bar { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; background: white; padding: 18px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e5e7eb; }
         .filter-group { display: flex; flex-direction: column; gap: 6px; }
-        .filter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6EFD8; font-weight: 600; }
-        .filter-select { background: #80AF81; border: 1px solid #80AF81; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer; }
-        .filter-select:hover { border-color: #D6EFD8; }
-        .filter-select:focus { outline: none; border-color: #D6EFD8; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-        .reset-btn { background: #80AF81; border: none; color: #f8fafc; padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-left: auto; transition: background 0.2s; }
-        .reset-btn:hover { background: #D6EFD8; }
+        .filter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; }
+        .filter-select { background: #f9fafb; border: 1px solid #e5e7eb; color: #1a1a1a; padding: 10px 14px; border-radius: 10px; font-size: 14px; min-width: 180px; cursor: pointer; transition: all 0.2s; }
+        .filter-select:hover { border-color: #22c55e; }
+        .filter-select:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15); }
+        .reset-btn { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; color: white; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; margin-left: auto; transition: all 0.2s; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); }
+        .reset-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
         .active-filters { display: flex; gap: 8px; align-items: center; margin-left: 16px; }
-        .filter-tag { background: #D6EFD8; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
-        .filter-tag .remove { cursor: pointer; opacity: 0.7; }
+        .filter-tag { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.25); }
+        .filter-tag .remove { cursor: pointer; opacity: 0.8; font-size: 14px; }
         .filter-tag .remove:hover { opacity: 1; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
-        .metric-card { background: linear-gradient(135deg, #508D4E 0%, #80AF81 100%); border-radius: 12px; padding: 20px; border: 1px solid #80AF81; transition: transform 0.2s, box-shadow 0.2s; }
-        .metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
-        .metric-card.highlight { background: linear-gradient(135deg, #065f46 0%, #047857 100%); border-color: #10b981; }
-        .metric-label { font-size: 12px; color: #D6EFD8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .metric-value { font-size: 28px; font-weight: 700; color: #f8fafc; }
-        .metric-subtext { font-size: 12px; color: #80AF81; margin-top: 4px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 32px; }
+        .metric-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb; transition: all 0.2s; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .metric-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .metric-card.highlight { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3); }
+        .metric-card.highlight .metric-label { color: rgba(255,255,255,0.85); }
+        .metric-card.highlight .metric-value { color: white; }
+        .metric-card.highlight .metric-subtext { color: rgba(255,255,255,0.7); }
+        .metric-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+        .metric-value { font-size: 32px; font-weight: 700; color: #1a1a1a; }
+        .metric-subtext { font-size: 12px; color: #9ca3af; margin-top: 6px; }
         .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px; }
-        .chart-card { background: #508D4E; border-radius: 12px; padding: 24px; border: 1px solid #80AF81; }
-        .chart-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }
+        .chart-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .chart-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #1a1a1a; }
         .chart-container { position: relative; height: 300px; }
-        .table-card { background: #508D4E; border-radius: 12px; padding: 24px; border: 1px solid #80AF81; overflow-x: auto; }
-        .table-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }
+        .table-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; overflow-x: auto; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .table-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #1a1a1a; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #80AF81; }
-        th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6EFD8; font-weight: 600; }
-        td { font-size: 14px; color: #e2e8f0; }
-        tr:hover { background: #80AF81; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-        .status-on-track { background: #065f46; color: #34d399; }
-        .status-behind { background: #7c2d12; color: #fdba74; }
-        .status-inactive { background: #374151; color: #9ca3af; }
-        .progress-bar { width: 100%; height: 8px; background: #80AF81; border-radius: 4px; overflow: hidden; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #f3f4f6; }
+        th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; background: #f9fafb; }
+        th:first-child { border-radius: 8px 0 0 8px; }
+        th:last-child { border-radius: 0 8px 8px 0; }
+        td { font-size: 14px; color: #374151; }
+        tr:hover { background: #f9fafb; }
+        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .status-on-track { background: #dcfce7; color: #16a34a; }
+        .status-behind { background: #fef3c7; color: #d97706; }
+        .status-inactive { background: #f3f4f6; color: #6b7280; }
+        .progress-bar { width: 100%; height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden; }
         .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
-        .progress-green { background: linear-gradient(90deg, #10b981, #34d399); }
+        .progress-green { background: linear-gradient(90deg, #22c55e, #4ade80); }
         .progress-yellow { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
         .progress-red { background: linear-gradient(90deg, #ef4444, #f87171); }
-        .no-data { text-align: center; padding: 40px; color: #80AF81; font-style: italic; }
+        .no-data { text-align: center; padding: 40px; color: #9ca3af; font-style: italic; }
         @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } .metrics-grid { grid-template-columns: repeat(2, 1fr); } .filters-bar { flex-direction: column; align-items: stretch; } .reset-btn { margin-left: 0; margin-top: 8px; } }
     </style>
 </head>
@@ -59,7 +64,7 @@
     <div class="header">
         <h1>Sales Performance Dashboard</h1>
         <div class="subtitle">Q2 2026 | April Performance</div>
-        <div class="last-updated">Last updated: May 26, 2026 at 10:18 AM</div>
+        <div class="last-updated">Last updated: May 26, 2026 at 10:19 AM</div>
     </div>
 
     <div class="filters-bar">
@@ -144,7 +149,7 @@
                     <td>$11,896</td>
                     <td>$56,374</td>
                 </tr>
-                <tr style="background: #80AF81;">
+                <tr style="background: linear-gradient(90deg, #dcfce7, #f0fdf4);">
                     <td><strong>Apr</strong></td>
                     <td><strong>134</strong></td>
                     <td><strong>$361,935</strong></td>
@@ -178,8 +183,8 @@
             { name: 'Kaitlyn Lack', role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6, gross: 48814, earnings: 5012, status: 'on-track' }
         ];
         let repArrChart, attainmentChart, dealsChart, earningsChart;
-        Chart.defaults.color = '#D6EFD8';
-        Chart.defaults.borderColor = '#80AF81';
+        Chart.defaults.color = '#6b7280';
+        Chart.defaults.borderColor = '#e5e7eb';
         document.addEventListener('DOMContentLoaded', function() { initCharts(); applyFilters(); });
         function getFilteredData() { const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; return repData.filter(rep => { const roleMatch = roleFilter === 'all' || rep.role === roleFilter; const repMatch = repFilter === 'all' || rep.name === repFilter; return roleMatch && repMatch; }); }
         function applyFilters() { const filtered = getFilteredData(); updateMetrics(filtered); updateTable(filtered); updateCharts(filtered); updateActiveFilters(); }
