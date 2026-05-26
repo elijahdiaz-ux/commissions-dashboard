@@ -746,7 +746,7 @@ function RepDrawer({ rep, onClose }) {
         </div>
 
         <div className="drawer-section">
-          <h4>April Deals ({rep.dealsList?.length || 0})</h4>
+          <h4>April Deals ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h4>
           <div className="deals-list">
             {rep.dealsList && rep.dealsList.length > 0 ? (
               <table className="deals-table">
@@ -905,9 +905,33 @@ function CompareView({ reps, onExit }) {
         </div>
 
         <div className="compare-section">
-          <h3>Trend</h3>
-          <div style={{ padding: '12px 0' }}>
-            <Sparkline data={rep.spark} width={220} height={50} color={rep.color} />
+          <h3>YTD Trend</h3>
+          <div className="trend-detail">
+            <Sparkline data={rep.spark} width={280} height={70} color={rep.color} />
+            <div className="trend-labels">
+              {months.map((m, i) => (
+                <div key={m} className="trend-point">
+                  <span className="trend-month">{m}</span>
+                  <span className="trend-val tab">{fmtMoney(rep.spark[i])}</span>
+                </div>
+              ))}
+            </div>
+            <div className="trend-summary">
+              <div className="trend-stat">
+                <span className="trend-stat-label">Peak</span>
+                <span className="trend-stat-value tab">{fmtMoney(Math.max(...rep.spark))}</span>
+              </div>
+              <div className="trend-stat">
+                <span className="trend-stat-label">Avg</span>
+                <span className="trend-stat-value tab">{fmtMoney(rep.spark.reduce((a,b) => a+b, 0) / 4)}</span>
+              </div>
+              <div className="trend-stat">
+                <span className="trend-stat-label">Growth</span>
+                <span className="trend-stat-value tab" style={{ color: rep.spark[3] > rep.spark[0] ? 'var(--accent-3)' : 'var(--rose)' }}>
+                  {rep.spark[0] > 0 ? ((rep.spark[3] - rep.spark[0]) / rep.spark[0] * 100).toFixed(0) : 0}%
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1171,7 +1195,7 @@ function RepDetailPanel({ rep }) {
 
       {/* April Deals */}
       <div className="detail-section">
-        <h3>April Deals ({rep.dealsList?.length || 0})</h3>
+        <h3>April Deals ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h3>
         <div className="deals-list">
           {rep.dealsList && rep.dealsList.length > 0 ? (
             <table className="deals-table">

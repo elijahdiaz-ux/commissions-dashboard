@@ -1566,6 +1566,60 @@
   .month-bar-wrap { height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
   .month-bar { height: 100%; border-radius: 4px; }
 
+  /* Trend Detail */
+  .trend-detail {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .trend-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--hairline);
+  }
+  .trend-point {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .trend-month {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+  .trend-val {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .trend-summary {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--hairline);
+  }
+  .trend-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .trend-stat-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+  }
+  .trend-stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
   @media (max-width: 1240px) {
     .top-row { grid-template-columns: 1fr; }
     .bars-row { grid-template-columns: repeat(2, 1fr); gap: 32px 16px; }
