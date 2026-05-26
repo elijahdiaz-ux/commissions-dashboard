@@ -171,14 +171,57 @@ const APR = MONTHLY[3];
 const YTD = {
   deals: 817, gross: 1863488, netNew: 968289, commission: 43483, earnings: 463962,
 };
-// May pacing: day 26 of 31; assume linear pacing from current run rate
+
+// ───────── RUN RATE PROJECTION ─────────
+// Calculate monthly run rate and project next month
+const calcRunRate = () => {
+  const commissions = MONTHLY.map(m => m.commission);
+  const netNewArr = MONTHLY.map(m => m.netNew);
+
+  // Average monthly commission (run rate)
+  const avgCommission = commissions.reduce((a, b) => a + b, 0) / commissions.length;
+
+  // Trend: compare recent months to earlier months
+  const recentAvg = (commissions[2] + commissions[3]) / 2; // Mar + Apr
+  const earlierAvg = (commissions[0] + commissions[1]) / 2; // Jan + Feb
+  const trendPct = ((recentAvg - earlierAvg) / earlierAvg) * 100;
+
+  // Weighted projection: 60% recent average + 40% overall average
+  const projectedCommission = Math.round(recentAvg * 0.6 + avgCommission * 0.4);
+
+  // Net New ARR projection using same method
+  const avgNetNew = netNewArr.reduce((a, b) => a + b, 0) / netNewArr.length;
+  const recentNetNew = (netNewArr[2] + netNewArr[3]) / 2;
+  const projectedNetNew = Math.round(recentNetNew * 0.6 + avgNetNew * 0.4);
+
+  // Confidence range: ±15%
+  const projLow = Math.round(projectedCommission * 0.85);
+  const projHigh = Math.round(projectedCommission * 1.15);
+
+  return {
+    avgCommission,
+    projectedCommission,
+    projLow,
+    projHigh,
+    projectedNetNew,
+    trendPct,
+    trendDirection: trendPct >= 0 ? 'up' : 'down',
+  };
+};
+
+const PROJECTION = calcRunRate();
+
+// May pacing config (for mid-month projections)
 const MAY = {
   dayOfMonth: 26,
   daysInMonth: 31,
-  earningsToDate: 38420,
-  projectedEarnings: 48200,
-  projectedAttainment: 74.2,
-  goal: 65000,
+  // If we had current month data, we'd calculate:
+  // projectedCommission = (currentCommission / dayOfMonth) * daysInMonth
+  projectedCommission: PROJECTION.projectedCommission,
+  projectedNetNew: PROJECTION.projectedNetNew,
+  projLow: PROJECTION.projLow,
+  projHigh: PROJECTION.projHigh,
+  trendPct: PROJECTION.trendPct,
 };
 
 // ───────── HELPERS ─────────
@@ -239,15 +282,17 @@ function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled =
 
 // ───────── ORBITAL / FORECAST VIZ ─────────
 function ForecastViz() {
-  // forecast trajectory: Jan→Apr actual, May projected (dashed) with confidence cone
+  // Use actual commission data from MONTHLY and run rate projection
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-  const actual = [47435, 43253, 56374, 43445];
-  const projLow = 41500, projMid = 48200, projHigh = 54900;
+  const actual = MONTHLY.map(m => m.commission); // [13253, 9071, 11896, 9263]
+  const projLow = MAY.projLow;
+  const projMid = MAY.projectedCommission;
+  const projHigh = MAY.projHigh;
   const W = 320, H = 220;
   const padX = 28, padTop = 30, padBot = 30;
   const allVals = [...actual, projLow, projHigh];
-  const maxV = Math.max(...allVals) * 1.05;
-  const minV = Math.min(...allVals) * 0.85;
+  const maxV = Math.max(...allVals) * 1.15;
+  const minV = Math.min(...allVals) * 0.75;
   const xFor = (i) => padX + (i * (W - padX * 2)) / (months.length - 1);
   const yFor = (v) => padTop + (H - padTop - padBot) * (1 - (v - minV) / (maxV - minV));
   const actualPath = actual.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)} ${yFor(v)}`).join(' ');
@@ -313,7 +358,7 @@ function ForecastViz() {
       {/* May value label */}
       <g transform={`translate(${xFor(4)} ${yFor(projMid) - 16})`}>
         <rect x="-30" y="-13" width="60" height="18" rx="5" fill="#1E2238" stroke="rgba(52, 211, 153,0.4)"/>
-        <text x="0" y="-1" fontSize="10.5" fontWeight="600" fill="#6EE7B7" textAnchor="middle" fontFamily="JetBrains Mono">$48.2K</text>
+        <text x="0" y="-1" fontSize="10.5" fontWeight="600" fill="#6EE7B7" textAnchor="middle" fontFamily="JetBrains Mono">${(projMid / 1000).toFixed(1)}K</text>
       </g>
     </svg>
   );
@@ -981,15 +1026,17 @@ function App() {
           {/* Forecast panel */}
           <section className="card forecast">
             <div className="forecast-head">
-              <div className="forecast-title">May <span className="accent">Pacing</span></div>
+              <div className="forecast-title">May <span className="accent">Projection</span></div>
             </div>
             <div className="orbit-viz">
               <ForecastViz/>
             </div>
             <div className="forecast-meta">
               <div className="forecast-meta-left">
-                <div className="forecast-label tab">Day {MAY.dayOfMonth} / {MAY.daysInMonth}</div>
-                <div className="forecast-sub">Tracking +11% vs April · 74% to team quota</div>
+                <div className="forecast-label tab">Run Rate: {fmtMoney(MAY.projectedCommission)}</div>
+                <div className="forecast-sub">
+                  {MAY.trendPct >= 0 ? '↑' : '↓'} {Math.abs(MAY.trendPct).toFixed(0)}% vs prior months · Range: {fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}
+                </div>
               </div>
               <div className="popover-wrap">
                 <div className="chip-select" onClick={(e) => { e.stopPropagation(); setForecastOpen(o => !o); setPeriodOpen(false); setViewOpen(false); }}>{forecastMonth} <Icon.ChevD/></div>
@@ -1006,13 +1053,13 @@ function App() {
               </div>
             </div>
             <div className="mini-chart">
-              <div className="mini-chart-label">Commissions payout · YTD</div>
+              <div className="mini-chart-label">Commission · YTD + Projection</div>
               <MiniBars data={[
-                { label: 'Jan', v: 47435, projected: false },
-                { label: 'Feb', v: 43253, projected: false },
-                { label: 'Mar', v: 56374, projected: false },
-                { label: 'Apr', v: 43445, projected: false },
-                { label: 'May', v: 48200, projected: true },
+                { label: 'Jan', v: MONTHLY[0].commission, projected: false },
+                { label: 'Feb', v: MONTHLY[1].commission, projected: false },
+                { label: 'Mar', v: MONTHLY[2].commission, projected: false },
+                { label: 'Apr', v: MONTHLY[3].commission, projected: false },
+                { label: 'May', v: MAY.projectedCommission, projected: true },
               ]}/>
               <button className="cta-pill" onClick={handleGenerateReport} disabled={reportLoading}>
                 {reportLoading ? 'Generating…' : 'Generate payout report'}
