@@ -59,7 +59,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 49.8,  gross: 48814, commission: 845,  basePay: 4167, earnings: 5012, status: 'behind', spark: [9219, 28682, 18680, 24924], color: '#6BD9A4',
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 99.4,  gross: 49690, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [9219, 28682, 18680, 24924], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690],
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
@@ -766,14 +766,24 @@ function App() {
     if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + b, 0);
     return rep.netNew;
   };
+  // Get basis for goal calculation (ARR Collected for Plan D, Net New for others)
+  const getRepBasis = (rep) => {
+    if (rep.plan === 'D' && rep.arrCollected) {
+      if (monthIndex !== undefined) return rep.arrCollected[monthIndex];
+      if (period === 'Q1 2026') return rep.arrCollected[0] + rep.arrCollected[1] + rep.arrCollected[2];
+      if (period === 'YTD 2026') return rep.arrCollected.reduce((a, b) => a + b, 0);
+      return rep.gross;
+    }
+    return getRepNetNew(rep);
+  };
   // Monthly quotas (approximate based on team totals)
   const monthlyQuota = { 'Jan 2026': 50000, 'Feb 2026': 50000, 'Mar 2026': 50000, 'Apr 2026': 50000 };
   const getRepGoal = (rep) => {
-    const netNew = getRepNetNew(rep);
+    const basis = getRepBasis(rep);
     const quota = monthlyQuota[period] || 50000;
-    if (period === 'Q1 2026') return (netNew / (quota * 3)) * 100;
-    if (period === 'YTD 2026') return (netNew / (quota * 4)) * 100;
-    return (netNew / quota) * 100;
+    if (period === 'Q1 2026') return (basis / (quota * 3)) * 100;
+    if (period === 'YTD 2026') return (basis / (quota * 4)) * 100;
+    return (basis / quota) * 100;
   };
 
   // Filter + sort leaderboard
