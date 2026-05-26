@@ -126,7 +126,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 99.4,  gross: 49690, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [9219, 28682, 18680, 24924], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690], monthlyDeals: [14, 35, 30, 26],
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 49690, goal: 99.4,  gross: 49690, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [14877, 44955, 54195, 49690], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690], monthlyDeals: [14, 35, 30, 26],
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
@@ -146,7 +146,7 @@ const REPS = [
       { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
     ]
   },
-  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 12],
+  { name: 'Chase Bryant',     role: 'AE',    deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0],
     dealsList: [
       { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
       { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
