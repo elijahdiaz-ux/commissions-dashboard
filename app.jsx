@@ -59,7 +59,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 49.8,  gross: 48814, commission: 845,  basePay: 4167, earnings: 5012, status: 'behind', spark: [22400, 31100, 38200, 24924], color: '#6BD9A4',
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 49.8,  gross: 48814, commission: 845,  basePay: 4167, earnings: 5012, status: 'behind', spark: [9219, 28682, 18680, 24924], color: '#6BD9A4',
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
