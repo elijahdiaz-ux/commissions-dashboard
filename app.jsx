@@ -827,66 +827,57 @@ function App() {
 
         {/* Top row: hero card + forecast */}
         <div className="top-row">
-          {/* Hero card with bars */}
+          {/* Key Metrics */}
           <section className="card">
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
                 <div className="card-sub">All reps · {period}</div>
               </div>
-              <div className="popover-wrap">
-                <div className="pill" onClick={(e) => { e.stopPropagation(); setViewOpen(o => !o); setPeriodOpen(false); setForecastOpen(false); }}>
-                  <span className="label">View:</span>
-                  <span className="value">{view}</span>
-                  <Icon.ChevD/>
-                </div>
-                {viewOpen && (
-                  <div className="popover">
-                    {viewOptions.map(v => (
-                      <div key={v} className={'popover-item' + (view === v ? ' active' : '')} onClick={() => { setView(v); setViewOpen(false); }}>
-                        <span>{v}</span>
-                        <span className="check">✓</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
             <div className="card-body">
-              <div className="bars-row">
-                {tiles.map((t, i) => <BarTile key={i} {...t}/>)}
+              <div className="metrics-grid">
+                <div className="metric-tile">
+                  <div className="metric-icon"><Icon.Target/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{activeData.deals}</div>
+                    <div className="metric-label">Deals Closed</div>
+                  </div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-icon"><Icon.Coin/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{fmtMoney(activeData.gross)}</div>
+                    <div className="metric-label">Gross Revenue</div>
+                  </div>
+                </div>
+                <div className="metric-tile highlight">
+                  <div className="metric-icon"><Icon.Spark/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{fmtMoney(activeData.netNew)}</div>
+                    <div className="metric-label">Net New ARR</div>
+                  </div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-icon"><Icon.Commission/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{fmtMoney(activeData.earnings)}</div>
+                    <div className="metric-label">Commissions Paid</div>
+                  </div>
+                </div>
               </div>
-              <div className="bar-divider"/>
-              <div className="submetrics">
-                <div className="submetric">
-                  <div className="sm-value tab">{avgAttain.toFixed(1)}%</div>
-                  <div className="sm-label">
-                    <span className="dot sm-dot-purple">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
-                    </span>
-                    Avg attainment to quota
-                  </div>
-                  <div className="more"><Icon.More/></div>
+              <div className="metrics-secondary">
+                <div className="metric-secondary-item">
+                  <span className="metric-secondary-value tab">{avgAttain.toFixed(1)}%</span>
+                  <span className="metric-secondary-label">Avg Attainment</span>
                 </div>
-                <div className="submetric">
-                  <div className="sm-value tab">{fmtMoney(avgDeal)}</div>
-                  <div className="sm-label">
-                    <span className="dot sm-dot-yellow">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                    </span>
-                    Avg deal size
-                  </div>
-                  <div className="more"><Icon.More/></div>
+                <div className="metric-secondary-item">
+                  <span className="metric-secondary-value tab">{fmtMoney(avgDeal)}</span>
+                  <span className="metric-secondary-label">Avg Deal Size</span>
                 </div>
-                <div className="submetric">
-                  <div className="sm-value tab">7 <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-3)' }}>/ 8 active</span></div>
-                  <div className="sm-label">
-                    <span className="dot sm-dot-green">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l4 4 10-10"/></svg>
-                    </span>
-                    Reps earning
-                  </div>
-                  <div className="more"><Icon.More/></div>
+                <div className="metric-secondary-item">
+                  <span className="metric-secondary-value tab">7/8</span>
+                  <span className="metric-secondary-label">Reps Earning</span>
                 </div>
               </div>
             </div>
