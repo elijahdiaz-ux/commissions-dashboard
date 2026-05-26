@@ -340,16 +340,16 @@ function RepDrawer({ rep, onClose }) {
               <span className="val tab">{fmtMoney(basePay, { full: true })}</span>
             </div>
             <div className="pay-strip">
-              <span className="key">Commission Earned</span>
+              <span className="key">Commission</span>
               <span className="val tab">{fmtMoney(commissionEarned, { full: true })}</span>
             </div>
-            <div className="pay-strip">
-              <span className="key">Spiff / Adjustments</span>
-              <span className="val tab" style={{ color: 'var(--text-3)' }}>$0</span>
-            </div>
             <div className="pay-strip total">
-              <span className="key">Total April payout</span>
+              <span className="key">Total Earnings</span>
               <span className="val tab">{fmtMoney(apr, { full: true })}</span>
+            </div>
+            <div className="pay-strip">
+              <span className="key">Spiff</span>
+              <span className="val tab" style={{ color: 'var(--text-3)' }}>$0</span>
             </div>
           </div>
         </div>
