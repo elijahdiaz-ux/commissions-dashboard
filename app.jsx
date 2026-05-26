@@ -360,7 +360,6 @@ function AttainBars({ pct }) {
 // ───────── DRAWER ─────────
 function RepDrawer({ rep, onClose }) {
   if (!rep) return null;
-  const dayPct = (MAY.dayOfMonth / MAY.daysInMonth) * 100;
   const monthlyEarn = [
     { label: 'Jan', v: rep.earnings * 1.05, projected: false },
     { label: 'Feb', v: rep.earnings * 0.92, projected: false },
@@ -386,33 +385,6 @@ function RepDrawer({ rep, onClose }) {
             </div>
           </div>
           <div className="drawer-close" onClick={onClose}><Icon.X/></div>
-        </div>
-
-        <div className="drawer-section">
-          <h4>May Quota Pacing · Day {MAY.dayOfMonth} of {MAY.daysInMonth}</h4>
-          <div className="quota-vis">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <div>
-                <div className="tab" style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                  {fmtMoney(rep.netNew * 0.78, { full: true })}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>of {fmtMoney(rep.netNew / (rep.goal / 100 || 1), { full: true })} quota</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="tab" style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent-3)' }}>{(rep.goal * 0.78).toFixed(1)}%</div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>{MAY.daysInMonth - MAY.dayOfMonth} days remaining</div>
-              </div>
-            </div>
-            <div className="quota-track">
-              <div className="quota-fill" style={{ width: Math.min(100, rep.goal * 0.78) + '%' }}/>
-              <div className="quota-marker" style={{ left: dayPct + '%' }}/>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10.5, color: 'var(--text-4)' }}>
-              <span>0%</span>
-              <span style={{ color: 'var(--text-2)' }}>Today {dayPct.toFixed(0)}%</span>
-              <span>100%</span>
-            </div>
-          </div>
         </div>
 
         <div className="drawer-section">
