@@ -34,7 +34,7 @@ const getStatusInfo = (status) => {
 // ───────── DATA ─────────
 // Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [11200, 18400, 32800, 55323], color: '#34D399',
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [89945, 56342, 20377, 55323], color: '#34D399',
     dealsList: [
       { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
       { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
@@ -94,7 +94,7 @@ const REPS = [
       { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
     ]
   },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 82.8,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [28200, 30100, 32400, 34517], color: '#F3C969',
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 27.6,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [1569, 17920, 21781, 34517], color: '#F3C969',
     dealsList: [
       { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
       { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
@@ -112,7 +112,7 @@ const REPS = [
       { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
     ]
   },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 61.7,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [9100, 14400, 21200, 25713], color: '#E26D8E',
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 20.6,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [32535, 30412, 66096, 25713], color: '#E26D8E',
     dealsList: [
       { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
       { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
@@ -121,7 +121,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 61.4,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [38100, 31200, 28400, 25598], color: '#F08F6A',
+  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 20.5,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [58472, 24416, 30117, 25598], color: '#F08F6A',
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -136,7 +136,7 @@ const REPS = [
       { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
     ]
   },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [14200, 11100, 8400, 9990],   color: '#6EE7B7',
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [44074, 35159, 16829, 9990],   color: '#6EE7B7',
     dealsList: [
       { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: 0 },
       { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: 1125 },
@@ -147,7 +147,7 @@ const REPS = [
       { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
     ]
   },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 11.8,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [22100, 18400, 12200, 4903],  color: '#7BD3EA',
+  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 3.9,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903],  color: '#7BD3EA',
     dealsList: [
       { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
       { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
@@ -776,14 +776,34 @@ function App() {
     }
     return getRepNetNew(rep);
   };
-  // Monthly quotas (approximate based on team totals)
-  const monthlyQuota = { 'Jan 2026': 50000, 'Feb 2026': 50000, 'Mar 2026': 50000, 'Apr 2026': 50000 };
+  // Quota logic: AMs have monthly quota $50K, AEs have quarterly quota $125K
   const getRepGoal = (rep) => {
     const basis = getRepBasis(rep);
-    const quota = monthlyQuota[period] || 50000;
-    if (period === 'Q1 2026') return (basis / (quota * 3)) * 100;
-    if (period === 'YTD 2026') return (basis / (quota * 4)) * 100;
-    return (basis / quota) * 100;
+    const isAE = rep.role === 'AE';
+
+    if (isAE) {
+      // AEs are measured quarterly - $125K quota per quarter
+      const quarterlyQuota = 125000;
+      if (period === 'Q1 2026') {
+        // Q1 had ramp quota (50%)
+        return (basis / (quarterlyQuota * 0.5)) * 100;
+      }
+      if (period === 'YTD 2026') {
+        // Q1 (ramp) + Q2 start
+        return (basis / (quarterlyQuota * 0.5 + quarterlyQuota)) * 100;
+      }
+      // For monthly view, show quarterly attainment (Apr is Q2)
+      if (monthIndex === 3) return (basis / quarterlyQuota) * 100;
+      // Q1 months use Q1 cumulative
+      const q1Total = rep.spark[0] + rep.spark[1] + rep.spark[2];
+      return (q1Total / (quarterlyQuota * 0.5)) * 100;
+    } else {
+      // AMs (including SM AM) have monthly quota $50K
+      const monthlyQuota = 50000;
+      if (period === 'Q1 2026') return (basis / (monthlyQuota * 3)) * 100;
+      if (period === 'YTD 2026') return (basis / (monthlyQuota * 4)) * 100;
+      return (basis / monthlyQuota) * 100;
+    }
   };
 
   // Filter + sort leaderboard
