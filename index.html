@@ -7,51 +7,51 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #18230F; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1A5319; color: #e2e8f0; min-height: 100vh; padding: 24px; }
         .header { text-align: center; margin-bottom: 24px; }
         .header h1 { font-size: 28px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; }
-        .header .subtitle { color: #a3b899; font-size: 14px; }
-        .header .last-updated { color: #7a8c6b; font-size: 12px; margin-top: 4px; }
-        .filters-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; background: #27391C; padding: 16px 20px; border-radius: 12px; border: 1px solid #255F38; }
+        .header .subtitle { color: #D6EFD8; font-size: 14px; }
+        .header .last-updated { color: #80AF81; font-size: 12px; margin-top: 4px; }
+        .filters-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; background: #508D4E; padding: 16px 20px; border-radius: 12px; border: 1px solid #80AF81; }
         .filter-group { display: flex; flex-direction: column; gap: 6px; }
-        .filter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #a3b899; font-weight: 600; }
-        .filter-select { background: #255F38; border: 1px solid #255F38; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer; }
-        .filter-select:hover { border-color: #1F7D53; }
-        .filter-select:focus { outline: none; border-color: #1F7D53; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-        .reset-btn { background: #255F38; border: none; color: #f8fafc; padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-left: auto; transition: background 0.2s; }
-        .reset-btn:hover { background: #1F7D53; }
+        .filter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6EFD8; font-weight: 600; }
+        .filter-select { background: #80AF81; border: 1px solid #80AF81; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer; }
+        .filter-select:hover { border-color: #D6EFD8; }
+        .filter-select:focus { outline: none; border-color: #D6EFD8; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        .reset-btn { background: #80AF81; border: none; color: #f8fafc; padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-left: auto; transition: background 0.2s; }
+        .reset-btn:hover { background: #D6EFD8; }
         .active-filters { display: flex; gap: 8px; align-items: center; margin-left: 16px; }
-        .filter-tag { background: #1F7D53; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+        .filter-tag { background: #D6EFD8; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
         .filter-tag .remove { cursor: pointer; opacity: 0.7; }
         .filter-tag .remove:hover { opacity: 1; }
         .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
-        .metric-card { background: linear-gradient(135deg, #27391C 0%, #255F38 100%); border-radius: 12px; padding: 20px; border: 1px solid #255F38; transition: transform 0.2s, box-shadow 0.2s; }
+        .metric-card { background: linear-gradient(135deg, #508D4E 0%, #80AF81 100%); border-radius: 12px; padding: 20px; border: 1px solid #80AF81; transition: transform 0.2s, box-shadow 0.2s; }
         .metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
         .metric-card.highlight { background: linear-gradient(135deg, #065f46 0%, #047857 100%); border-color: #10b981; }
-        .metric-label { font-size: 12px; color: #a3b899; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .metric-label { font-size: 12px; color: #D6EFD8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
         .metric-value { font-size: 28px; font-weight: 700; color: #f8fafc; }
-        .metric-subtext { font-size: 12px; color: #7a8c6b; margin-top: 4px; }
+        .metric-subtext { font-size: 12px; color: #80AF81; margin-top: 4px; }
         .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px; }
-        .chart-card { background: #27391C; border-radius: 12px; padding: 24px; border: 1px solid #255F38; }
+        .chart-card { background: #508D4E; border-radius: 12px; padding: 24px; border: 1px solid #80AF81; }
         .chart-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }
         .chart-container { position: relative; height: 300px; }
-        .table-card { background: #27391C; border-radius: 12px; padding: 24px; border: 1px solid #255F38; overflow-x: auto; }
+        .table-card { background: #508D4E; border-radius: 12px; padding: 24px; border: 1px solid #80AF81; overflow-x: auto; }
         .table-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #255F38; }
-        th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #a3b899; font-weight: 600; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #80AF81; }
+        th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #D6EFD8; font-weight: 600; }
         td { font-size: 14px; color: #e2e8f0; }
-        tr:hover { background: #255F38; }
+        tr:hover { background: #80AF81; }
         .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
         .status-on-track { background: #065f46; color: #34d399; }
         .status-behind { background: #7c2d12; color: #fdba74; }
         .status-inactive { background: #374151; color: #9ca3af; }
-        .progress-bar { width: 100%; height: 8px; background: #255F38; border-radius: 4px; overflow: hidden; }
+        .progress-bar { width: 100%; height: 8px; background: #80AF81; border-radius: 4px; overflow: hidden; }
         .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
         .progress-green { background: linear-gradient(90deg, #10b981, #34d399); }
         .progress-yellow { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
         .progress-red { background: linear-gradient(90deg, #ef4444, #f87171); }
-        .no-data { text-align: center; padding: 40px; color: #7a8c6b; font-style: italic; }
+        .no-data { text-align: center; padding: 40px; color: #80AF81; font-style: italic; }
         @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } .metrics-grid { grid-template-columns: repeat(2, 1fr); } .filters-bar { flex-direction: column; align-items: stretch; } .reset-btn { margin-left: 0; margin-top: 8px; } }
     </style>
 </head>
@@ -59,7 +59,7 @@
     <div class="header">
         <h1>Sales Performance Dashboard</h1>
         <div class="subtitle">Q2 2026 | April Performance</div>
-        <div class="last-updated">Last updated: May 26, 2026 at 10:16 AM</div>
+        <div class="last-updated">Last updated: May 26, 2026 at 10:18 AM</div>
     </div>
 
     <div class="filters-bar">
@@ -144,7 +144,7 @@
                     <td>$11,896</td>
                     <td>$56,374</td>
                 </tr>
-                <tr style="background: #255F38;">
+                <tr style="background: #80AF81;">
                     <td><strong>Apr</strong></td>
                     <td><strong>134</strong></td>
                     <td><strong>$361,935</strong></td>
@@ -178,8 +178,8 @@
             { name: 'Kaitlyn Lack', role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6, gross: 48814, earnings: 5012, status: 'on-track' }
         ];
         let repArrChart, attainmentChart, dealsChart, earningsChart;
-        Chart.defaults.color = '#a3b899';
-        Chart.defaults.borderColor = '#255F38';
+        Chart.defaults.color = '#D6EFD8';
+        Chart.defaults.borderColor = '#80AF81';
         document.addEventListener('DOMContentLoaded', function() { initCharts(); applyFilters(); });
         function getFilteredData() { const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; return repData.filter(rep => { const roleMatch = roleFilter === 'all' || rep.role === roleFilter; const repMatch = repFilter === 'all' || rep.name === repFilter; return roleMatch && repMatch; }); }
         function applyFilters() { const filtered = getFilteredData(); updateMetrics(filtered); updateTable(filtered); updateCharts(filtered); updateActiveFilters(); }
@@ -187,7 +187,7 @@
         function updateActiveFilters() { const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; const container = document.getElementById('activeFilters'); container.innerHTML = ''; if (roleFilter !== 'all') { container.innerHTML += `<span class="filter-tag">${roleFilter} <span class="remove" onclick="document.getElementById('roleFilter').value='all';applyFilters();">×</span></span>`; } if (repFilter !== 'all') { container.innerHTML += `<span class="filter-tag">${repFilter} <span class="remove" onclick="document.getElementById('repFilter').value='all';applyFilters();">×</span></span>`; } }
         function updateMetrics(data) { const totalDeals = data.reduce((sum, r) => sum + r.deals, 0); const totalGross = data.reduce((sum, r) => sum + r.gross, 0); const totalNetNew = data.reduce((sum, r) => sum + r.netNew, 0); const totalEarnings = data.reduce((sum, r) => sum + r.earnings, 0); const avgGoal = data.length > 0 ? data.reduce((sum, r) => sum + r.goal, 0) / data.length : 0; document.getElementById('metricDeals').textContent = totalDeals; document.getElementById('metricGross').textContent = '$' + (totalGross / 1000).toFixed(1) + 'K'; document.getElementById('metricNetNew').textContent = '$' + (totalNetNew / 1000).toFixed(1) + 'K'; document.getElementById('metricGoal').textContent = avgGoal.toFixed(1) + '%'; document.getElementById('metricEarnings').textContent = '$' + (totalEarnings / 1000).toFixed(1) + 'K'; document.getElementById('metricRepCount').textContent = data.length; }
         function updateTable(data) { const tbody = document.getElementById('repTableBody'); const noData = document.getElementById('noDataMessage'); if (data.length === 0) { tbody.innerHTML = ''; noData.style.display = 'block'; return; } noData.style.display = 'none'; const sorted = [...data].sort((a, b) => b.netNew - a.netNew); tbody.innerHTML = sorted.map(rep => { const progressClass = rep.goal >= 90 ? 'progress-green' : rep.goal >= 50 ? 'progress-yellow' : 'progress-red'; const statusClass = rep.status === 'on-track' ? 'status-on-track' : rep.status === 'inactive' ? 'status-inactive' : 'status-behind'; const statusText = rep.status === 'on-track' ? 'On Track' : rep.status === 'inactive' ? 'Inactive' : 'Behind'; return `<tr><td>${rep.name}</td><td>${rep.role}</td><td>${rep.deals}</td><td>${rep.netNew.toLocaleString()}</td><td>${rep.goal}%</td><td><div class="progress-bar"><div class="progress-fill ${progressClass}" style="width: ${Math.min(rep.goal, 100)}%"></div></div></td><td>${rep.gross.toLocaleString()}</td><td>${rep.earnings.toLocaleString()}</td><td><span class="status-badge ${statusClass}">${statusText}</span></td></tr>`; }).join(''); }
-        function initCharts() { repArrChart = new Chart(document.getElementById('repArrChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Net New ARR', data: [], backgroundColor: [], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } } } }); attainmentChart = new Chart(document.getElementById('attainmentChart'), { type: 'bar', data: { labels: [], datasets: [{ label: '% to Goal', data: [], backgroundColor: [], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 120, ticks: { callback: v => v + '%' } } } } }); dealsChart = new Chart(document.getElementById('dealsChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Deals', data: [], backgroundColor: '#1F7D53', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } }); earningsChart = new Chart(document.getElementById('earningsChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Earnings', data: [], backgroundColor: '#10b981', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } } } }); }
+        function initCharts() { repArrChart = new Chart(document.getElementById('repArrChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Net New ARR', data: [], backgroundColor: [], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } } } }); attainmentChart = new Chart(document.getElementById('attainmentChart'), { type: 'bar', data: { labels: [], datasets: [{ label: '% to Goal', data: [], backgroundColor: [], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 120, ticks: { callback: v => v + '%' } } } } }); dealsChart = new Chart(document.getElementById('dealsChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Deals', data: [], backgroundColor: '#D6EFD8', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } }); earningsChart = new Chart(document.getElementById('earningsChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Earnings', data: [], backgroundColor: '#10b981', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } } } }); }
         function updateCharts(data) { const sorted = [...data].sort((a, b) => b.netNew - a.netNew); const labels = sorted.map(r => r.name.split(' ')[0] + ' ' + r.name.split(' ')[1][0] + '.'); const arrColors = sorted.map(r => r.goal >= 90 ? '#10b981' : r.goal >= 50 ? '#f59e0b' : '#ef4444'); repArrChart.data.labels = labels; repArrChart.data.datasets[0].data = sorted.map(r => r.netNew); repArrChart.data.datasets[0].backgroundColor = arrColors; repArrChart.update(); attainmentChart.data.labels = labels; attainmentChart.data.datasets[0].data = sorted.map(r => r.goal); attainmentChart.data.datasets[0].backgroundColor = arrColors; attainmentChart.update(); dealsChart.data.labels = labels; dealsChart.data.datasets[0].data = sorted.map(r => r.deals); dealsChart.update(); earningsChart.data.labels = labels; earningsChart.data.datasets[0].data = sorted.map(r => r.earnings); earningsChart.update(); }
     </script>
 </body>
