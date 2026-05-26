@@ -318,6 +318,8 @@ const Icon = {
   Target: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>,
   Spark: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/></svg>,
   Info: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>,
+  Compare: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><path d="M10 12h4"/></svg>,
+  ArrowLeft: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>,
 };
 
 // ───────── SPARKLINE ─────────
@@ -820,10 +822,131 @@ function Sidebar({ activeTab, setActiveTab }) {
   );
 }
 
+// ───────── COMPARE VIEW ─────────
+function CompareView({ reps, onExit }) {
+  const rep1 = reps[0];
+  const rep2 = reps[1];
+  const plan1 = PLANS[rep1.plan] || PLANS.Inactive;
+  const plan2 = PLANS[rep2.plan] || PLANS.Inactive;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+
+  const getYTD = (rep) => {
+    const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
+    const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
+    const ytdAvg = ytdNetNew / 4;
+    return { ytdNetNew, ytdDeals, ytdAvg };
+  };
+
+  const ytd1 = getYTD(rep1);
+  const ytd2 = getYTD(rep2);
+
+  const maxSpark = Math.max(...rep1.spark, ...rep2.spark);
+
+  const ComparePanel = ({ rep, plan, ytd, isLeft }) => {
+    const otherYtd = isLeft ? ytd2 : ytd1;
+    const otherRep = isLeft ? rep2 : rep1;
+    return (
+      <div className={'compare-panel ' + (isLeft ? 'left' : 'right')}>
+        <div className="compare-header">
+          <div className="avatar" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)`, width: 56, height: 56, fontSize: 18 }}>
+            {initials(rep.name)}
+          </div>
+          <div>
+            <h2>{rep.name}</h2>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <span className="role-chip">{rep.role}</span>
+              <span className="plan-chip">{plan.name.split('—')[0].trim()}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="compare-metrics">
+          <div className={'compare-metric' + (ytd.ytdNetNew > otherYtd.ytdNetNew ? ' winning' : '')}>
+            <div className="metric-value tab">{fmtMoney(ytd.ytdNetNew, { full: true })}</div>
+            <div className="metric-label">YTD Net New ARR</div>
+          </div>
+          <div className={'compare-metric' + (ytd.ytdDeals > otherYtd.ytdDeals ? ' winning' : '')}>
+            <div className="metric-value tab">{ytd.ytdDeals}</div>
+            <div className="metric-label">YTD Deals</div>
+          </div>
+          <div className={'compare-metric' + (ytd.ytdAvg > otherYtd.ytdAvg ? ' winning' : '')}>
+            <div className="metric-value tab">{fmtMoney(ytd.ytdAvg)}</div>
+            <div className="metric-label">Monthly Avg</div>
+          </div>
+          <div className={'compare-metric' + (rep.netNew > otherRep.netNew ? ' winning' : '')}>
+            <div className="metric-value tab">{fmtMoney(rep.netNew)}</div>
+            <div className="metric-label">April Net New</div>
+          </div>
+        </div>
+
+        <div className="compare-section">
+          <h3>Compensation</h3>
+          <div className="compare-plan-info">
+            <div className="plan-row"><span>Plan</span><span>{plan.name}</span></div>
+            <div className="plan-row"><span>Quota</span><span className="tab">{fmtMoney(plan.quota)} / {plan.type === 'Monthly' ? 'mo' : 'qtr'}</span></div>
+            <div className="plan-row"><span>Base Pay</span><span className="tab">{fmtMoney(rep.basePay)} / mo</span></div>
+            <div className="plan-row"><span>April Comm.</span><span className="tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(rep.commission)}</span></div>
+          </div>
+        </div>
+
+        <div className="compare-section">
+          <h3>Monthly Performance</h3>
+          <div className="compare-monthly">
+            {months.map((m, i) => (
+              <div key={m} className={'compare-month-row' + (rep.spark[i] > otherRep.spark[i] ? ' winning' : '')}>
+                <span className="month-label">{m}</span>
+                <div className="month-bar-wrap">
+                  <div className="month-bar" style={{ width: (rep.spark[i] / maxSpark * 100) + '%', background: rep.color }} />
+                </div>
+                <span className="month-value tab">{fmtMoney(rep.spark[i])}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="compare-section">
+          <h3>Trend</h3>
+          <div style={{ padding: '12px 0' }}>
+            <Sparkline data={rep.spark} width={220} height={50} color={rep.color} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <main className="main">
+      <div className="topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button className="back-btn" onClick={onExit}>
+            <Icon.ArrowLeft />
+          </button>
+          <div>
+            <h1 className="page-title">Rep Comparison</h1>
+            <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+              {rep1.name} vs {rep2.name}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="compare-layout">
+        <ComparePanel rep={rep1} plan={plan1} ytd={ytd1} isLeft={true} />
+        <div className="compare-divider">
+          <div className="vs-badge">VS</div>
+        </div>
+        <ComparePanel rep={rep2} plan={plan2} ytd={ytd2} isLeft={false} />
+      </div>
+    </main>
+  );
+}
+
 // ───────── REPS VIEW ─────────
 function RepsView({ onSelectRep }) {
   const [selectedRep, setSelectedRep] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareReps, setCompareReps] = useState([]);
 
   const filteredReps = REPS.filter(r =>
     r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -831,7 +954,21 @@ function RepsView({ onSelectRep }) {
   );
 
   const handleSelectRep = (rep) => {
-    setSelectedRep(rep);
+    if (compareMode) {
+      if (compareReps.find(r => r.name === rep.name)) {
+        setCompareReps(compareReps.filter(r => r.name !== rep.name));
+      } else if (compareReps.length < 2) {
+        setCompareReps([...compareReps, rep]);
+      }
+    } else {
+      setSelectedRep(rep);
+    }
+  };
+
+  const toggleCompareMode = () => {
+    setCompareMode(!compareMode);
+    setCompareReps([]);
+    if (!compareMode) setSelectedRep(null);
   };
 
   // Calculate YTD totals for a rep
@@ -841,16 +978,25 @@ function RepsView({ onSelectRep }) {
     return { ytdNetNew, ytdDeals };
   };
 
+  // Show compare view when 2 reps selected
+  if (compareReps.length === 2) {
+    return <CompareView reps={compareReps} onExit={() => { setCompareMode(false); setCompareReps([]); }} />;
+  }
+
   return (
     <main className="main">
       <div className="topbar">
         <div>
           <h1 className="page-title">Sales Reps</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {REPS.length} reps · {REPS.filter(r => r.plan !== 'Inactive').length} active
+            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${REPS.length} reps · ${REPS.filter(r => r.plan !== 'Inactive').length} active`}
           </div>
         </div>
         <div className="topbar-actions">
+          <button className={'compare-btn' + (compareMode ? ' active' : '')} onClick={toggleCompareMode}>
+            <Icon.Compare />
+            {compareMode ? 'Cancel' : 'Compare'}
+          </button>
           <div className="search">
             <Icon.Search/>
             <input
@@ -869,11 +1015,12 @@ function RepsView({ onSelectRep }) {
             const plan = PLANS[rep.plan] || PLANS.Inactive;
             const ytd = getYTD(rep);
             const isSelected = selectedRep?.name === rep.name;
+            const isComparing = compareReps.find(r => r.name === rep.name);
 
             return (
               <div
                 key={rep.name}
-                className={'rep-card' + (isSelected ? ' selected' : '') + (rep.plan === 'Inactive' ? ' inactive' : '')}
+                className={'rep-card' + (isSelected ? ' selected' : '') + (isComparing ? ' comparing' : '') + (compareMode ? ' compare-mode' : '') + (rep.plan === 'Inactive' ? ' inactive' : '')}
                 onClick={() => handleSelectRep(rep)}
               >
                 <div className="rep-card-header">

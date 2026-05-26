@@ -166,15 +166,15 @@ def read_dashboard_data(excel_path):
 def generate_html(data):
     """Generate the dashboard HTML with the extracted data."""
 
-    # Format rep data for JavaScript
+    # Format rep data for JavaScript (escape apostrophes)
     rep_js = ',\n            '.join([
-        f"{{ name: '{r['name']}', role: '{r['role']}', deals: {r['deals']}, netNew: {r['netNew']:.0f}, goal: {r['goal']}, gross: {r['gross']:.0f}, earnings: {r['earnings']:.0f}, status: '{r['status']}' }}"
+        f"{{ name: '{r['name'].replace(chr(39), chr(92)+chr(39))}', role: '{r['role']}', deals: {r['deals']}, netNew: {r['netNew']:.0f}, goal: {r['goal']}, gross: {r['gross']:.0f}, earnings: {r['earnings']:.0f}, status: '{r['status']}' }}"
         for r in data['reps']
     ])
 
     # Generate monthly rows
     monthly_rows = '\n'.join([
-        f"""                <tr{' style="background: #334155;"' if m['month'] == data['current_month'][:3] else ''}>
+        f"""                <tr{' style="background: linear-gradient(90deg, #dcfce7, #f0fdf4);"' if m['month'] == data['current_month'][:3] else ''}>
                     <td>{'<strong>' if m['month'] == data['current_month'][:3] else ''}{m['month']}{'</strong>' if m['month'] == data['current_month'][:3] else ''}</td>
                     <td>{'<strong>' if m['month'] == data['current_month'][:3] else ''}{m['deals']}{'</strong>' if m['month'] == data['current_month'][:3] else ''}</td>
                     <td>{'<strong>' if m['month'] == data['current_month'][:3] else ''}${m['gross_revenue']:,.0f}{'</strong>' if m['month'] == data['current_month'][:3] else ''}</td>
@@ -202,51 +202,56 @@ def generate_html(data):
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }}
-        .header {{ text-align: center; margin-bottom: 24px; }}
-        .header h1 {{ font-size: 28px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; }}
-        .header .subtitle {{ color: #94a3b8; font-size: 14px; }}
-        .header .last-updated {{ color: #64748b; font-size: 12px; margin-top: 4px; }}
-        .filters-bar {{ display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; background: #1e293b; padding: 16px 20px; border-radius: 12px; border: 1px solid #334155; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8faf8 0%, #e8f5e9 100%); color: #1a1a1a; min-height: 100vh; padding: 32px; }}
+        .header {{ text-align: center; margin-bottom: 32px; }}
+        .header h1 {{ font-size: 32px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }}
+        .header .subtitle {{ color: #22c55e; font-size: 15px; font-weight: 500; }}
+        .header .last-updated {{ color: #6b7280; font-size: 12px; margin-top: 6px; }}
+        .filters-bar {{ display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; background: white; padding: 18px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e5e7eb; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 6px; }}
-        .filter-label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; }}
-        .filter-select {{ background: #334155; border: 1px solid #475569; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer; }}
-        .filter-select:hover {{ border-color: #6366f1; }}
-        .filter-select:focus {{ outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }}
-        .reset-btn {{ background: #475569; border: none; color: #f8fafc; padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-left: auto; transition: background 0.2s; }}
-        .reset-btn:hover {{ background: #6366f1; }}
+        .filter-label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; }}
+        .filter-select {{ background: #f9fafb; border: 1px solid #e5e7eb; color: #1a1a1a; padding: 10px 14px; border-radius: 10px; font-size: 14px; min-width: 180px; cursor: pointer; transition: all 0.2s; }}
+        .filter-select:hover {{ border-color: #22c55e; }}
+        .filter-select:focus {{ outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15); }}
+        .reset-btn {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; color: white; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; margin-left: auto; transition: all 0.2s; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); }}
+        .reset-btn:hover {{ transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }}
         .active-filters {{ display: flex; gap: 8px; align-items: center; margin-left: 16px; }}
-        .filter-tag {{ background: #6366f1; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px; }}
-        .filter-tag .remove {{ cursor: pointer; opacity: 0.7; }}
+        .filter-tag {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.25); }}
+        .filter-tag .remove {{ cursor: pointer; opacity: 0.8; font-size: 14px; }}
         .filter-tag .remove:hover {{ opacity: 1; }}
-        .metrics-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }}
-        .metric-card {{ background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 12px; padding: 20px; border: 1px solid #334155; transition: transform 0.2s, box-shadow 0.2s; }}
-        .metric-card:hover {{ transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }}
-        .metric-card.highlight {{ background: linear-gradient(135deg, #065f46 0%, #047857 100%); border-color: #10b981; }}
-        .metric-label {{ font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }}
-        .metric-value {{ font-size: 28px; font-weight: 700; color: #f8fafc; }}
-        .metric-subtext {{ font-size: 12px; color: #64748b; margin-top: 4px; }}
+        .metrics-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 32px; }}
+        .metric-card {{ background: white; border-radius: 16px; padding: 24px; border: 1px solid #e5e7eb; transition: all 0.2s; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }}
+        .metric-card:hover {{ transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }}
+        .metric-card.highlight {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3); }}
+        .metric-card.highlight .metric-label {{ color: rgba(255,255,255,0.85); }}
+        .metric-card.highlight .metric-value {{ color: white; }}
+        .metric-card.highlight .metric-subtext {{ color: rgba(255,255,255,0.7); }}
+        .metric-label {{ font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }}
+        .metric-value {{ font-size: 32px; font-weight: 700; color: #1a1a1a; }}
+        .metric-subtext {{ font-size: 12px; color: #9ca3af; margin-top: 6px; }}
         .charts-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px; }}
-        .chart-card {{ background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; }}
-        .chart-card h3 {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }}
+        .chart-card {{ background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }}
+        .chart-card h3 {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #1a1a1a; }}
         .chart-container {{ position: relative; height: 300px; }}
-        .table-card {{ background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; overflow-x: auto; }}
-        .table-card h3 {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }}
+        .table-card {{ background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; overflow-x: auto; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }}
+        .table-card h3 {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #1a1a1a; }}
         table {{ width: 100%; border-collapse: collapse; }}
-        th, td {{ padding: 12px 16px; text-align: left; border-bottom: 1px solid #334155; }}
-        th {{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; }}
-        td {{ font-size: 14px; color: #e2e8f0; }}
-        tr:hover {{ background: #334155; }}
-        .status-badge {{ display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }}
-        .status-on-track {{ background: #065f46; color: #34d399; }}
-        .status-behind {{ background: #7c2d12; color: #fdba74; }}
-        .status-inactive {{ background: #374151; color: #9ca3af; }}
-        .progress-bar {{ width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }}
+        th, td {{ padding: 14px 16px; text-align: left; border-bottom: 1px solid #f3f4f6; }}
+        th {{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; background: #f9fafb; }}
+        th:first-child {{ border-radius: 8px 0 0 8px; }}
+        th:last-child {{ border-radius: 0 8px 8px 0; }}
+        td {{ font-size: 14px; color: #374151; }}
+        tr:hover {{ background: #f9fafb; }}
+        .status-badge {{ display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; }}
+        .status-on-track {{ background: #dcfce7; color: #16a34a; }}
+        .status-behind {{ background: #fef3c7; color: #d97706; }}
+        .status-inactive {{ background: #f3f4f6; color: #6b7280; }}
+        .progress-bar {{ width: 100%; height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden; }}
         .progress-fill {{ height: 100%; border-radius: 4px; transition: width 0.3s ease; }}
-        .progress-green {{ background: linear-gradient(90deg, #10b981, #34d399); }}
+        .progress-green {{ background: linear-gradient(90deg, #22c55e, #4ade80); }}
         .progress-yellow {{ background: linear-gradient(90deg, #f59e0b, #fbbf24); }}
         .progress-red {{ background: linear-gradient(90deg, #ef4444, #f87171); }}
-        .no-data {{ text-align: center; padding: 40px; color: #64748b; font-style: italic; }}
+        .no-data {{ text-align: center; padding: 40px; color: #9ca3af; font-style: italic; }}
         @media (max-width: 768px) {{ .charts-grid {{ grid-template-columns: 1fr; }} .metrics-grid {{ grid-template-columns: repeat(2, 1fr); }} .filters-bar {{ flex-direction: column; align-items: stretch; }} .reset-btn {{ margin-left: 0; margin-top: 8px; }} }}
     </style>
 </head>
@@ -304,14 +309,14 @@ def generate_html(data):
             <thead><tr><th>Month</th><th>Deals</th><th>Gross Revenue</th><th>Net New ARR</th><th>% to Goal</th><th>Commission</th><th>Total Earnings</th></tr></thead>
             <tbody>
 {monthly_rows}
-                <tr style="background: #1e3a5f;">
-                    <td><strong>YTD Total</strong></td>
-                    <td><strong>{data['ytd']['deals']}</strong></td>
-                    <td><strong>${data['ytd']['gross_revenue']:,.0f}</strong></td>
-                    <td><strong>${data['ytd']['net_new_arr']:,.0f}</strong></td>
-                    <td><strong>—</strong></td>
-                    <td><strong>${data['ytd']['commission']:,.0f}</strong></td>
-                    <td><strong>${data['ytd']['total_earnings']:,.0f}</strong></td>
+                <tr style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white;">
+                    <td style="color: white; border-radius: 8px 0 0 8px;"><strong>YTD Total</strong></td>
+                    <td style="color: white;"><strong>{data['ytd']['deals']}</strong></td>
+                    <td style="color: white;"><strong>${data['ytd']['gross_revenue']:,.0f}</strong></td>
+                    <td style="color: white;"><strong>${data['ytd']['net_new_arr']:,.0f}</strong></td>
+                    <td style="color: white;"><strong>—</strong></td>
+                    <td style="color: white;"><strong>${data['ytd']['commission']:,.0f}</strong></td>
+                    <td style="color: white; border-radius: 0 8px 8px 0;"><strong>${data['ytd']['total_earnings']:,.0f}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -322,8 +327,8 @@ def generate_html(data):
             {rep_js}
         ];
         let repArrChart, attainmentChart, dealsChart, earningsChart;
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.borderColor = '#334155';
+        Chart.defaults.color = '#6b7280';
+        Chart.defaults.borderColor = '#e5e7eb';
         document.addEventListener('DOMContentLoaded', function() {{ initCharts(); applyFilters(); }});
         function getFilteredData() {{ const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; return repData.filter(rep => {{ const roleMatch = roleFilter === 'all' || rep.role === roleFilter; const repMatch = repFilter === 'all' || rep.name === repFilter; return roleMatch && repMatch; }}); }}
         function applyFilters() {{ const filtered = getFilteredData(); updateMetrics(filtered); updateTable(filtered); updateCharts(filtered); updateActiveFilters(); }}
@@ -331,7 +336,7 @@ def generate_html(data):
         function updateActiveFilters() {{ const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; const container = document.getElementById('activeFilters'); container.innerHTML = ''; if (roleFilter !== 'all') {{ container.innerHTML += `<span class="filter-tag">${{roleFilter}} <span class="remove" onclick="document.getElementById('roleFilter').value='all';applyFilters();">×</span></span>`; }} if (repFilter !== 'all') {{ container.innerHTML += `<span class="filter-tag">${{repFilter}} <span class="remove" onclick="document.getElementById('repFilter').value='all';applyFilters();">×</span></span>`; }} }}
         function updateMetrics(data) {{ const totalDeals = data.reduce((sum, r) => sum + r.deals, 0); const totalGross = data.reduce((sum, r) => sum + r.gross, 0); const totalNetNew = data.reduce((sum, r) => sum + r.netNew, 0); const totalEarnings = data.reduce((sum, r) => sum + r.earnings, 0); const avgGoal = data.length > 0 ? data.reduce((sum, r) => sum + r.goal, 0) / data.length : 0; document.getElementById('metricDeals').textContent = totalDeals; document.getElementById('metricGross').textContent = '$' + (totalGross / 1000).toFixed(1) + 'K'; document.getElementById('metricNetNew').textContent = '$' + (totalNetNew / 1000).toFixed(1) + 'K'; document.getElementById('metricGoal').textContent = avgGoal.toFixed(1) + '%'; document.getElementById('metricEarnings').textContent = '$' + (totalEarnings / 1000).toFixed(1) + 'K'; document.getElementById('metricRepCount').textContent = data.length; }}
         function updateTable(data) {{ const tbody = document.getElementById('repTableBody'); const noData = document.getElementById('noDataMessage'); if (data.length === 0) {{ tbody.innerHTML = ''; noData.style.display = 'block'; return; }} noData.style.display = 'none'; const sorted = [...data].sort((a, b) => b.netNew - a.netNew); tbody.innerHTML = sorted.map(rep => {{ const progressClass = rep.goal >= 90 ? 'progress-green' : rep.goal >= 50 ? 'progress-yellow' : 'progress-red'; const statusClass = rep.status === 'on-track' ? 'status-on-track' : rep.status === 'inactive' ? 'status-inactive' : 'status-behind'; const statusText = rep.status === 'on-track' ? 'On Track' : rep.status === 'inactive' ? 'Inactive' : 'Behind'; return `<tr><td>${{rep.name}}</td><td>${{rep.role}}</td><td>${{rep.deals}}</td><td>${{rep.netNew.toLocaleString()}}</td><td>${{rep.goal}}%</td><td><div class="progress-bar"><div class="progress-fill ${{progressClass}}" style="width: ${{Math.min(rep.goal, 100)}}%"></div></div></td><td>${{rep.gross.toLocaleString()}}</td><td>${{rep.earnings.toLocaleString()}}</td><td><span class="status-badge ${{statusClass}}">${{statusText}}</span></td></tr>`; }}).join(''); }}
-        function initCharts() {{ repArrChart = new Chart(document.getElementById('repArrChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: 'Net New ARR', data: [], backgroundColor: [], borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true, ticks: {{ callback: v => '$' + (v / 1000) + 'K' }} }} }} }} }}); attainmentChart = new Chart(document.getElementById('attainmentChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: '% to Goal', data: [], backgroundColor: [], borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true, max: 120, ticks: {{ callback: v => v + '%' }} }} }} }} }}); dealsChart = new Chart(document.getElementById('dealsChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: 'Deals', data: [], backgroundColor: '#6366f1', borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true }} }} }} }}); earningsChart = new Chart(document.getElementById('earningsChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: 'Earnings', data: [], backgroundColor: '#10b981', borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true, ticks: {{ callback: v => '$' + (v / 1000) + 'K' }} }} }} }} }}); }}
+        function initCharts() {{ repArrChart = new Chart(document.getElementById('repArrChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: 'Net New ARR', data: [], backgroundColor: [], borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true, ticks: {{ callback: v => '$' + (v / 1000) + 'K' }} }} }} }} }}); attainmentChart = new Chart(document.getElementById('attainmentChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: '% to Goal', data: [], backgroundColor: [], borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true, max: 120, ticks: {{ callback: v => v + '%' }} }} }} }} }}); dealsChart = new Chart(document.getElementById('dealsChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: 'Deals', data: [], backgroundColor: '#D6EFD8', borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true }} }} }} }}); earningsChart = new Chart(document.getElementById('earningsChart'), {{ type: 'bar', data: {{ labels: [], datasets: [{{ label: 'Earnings', data: [], backgroundColor: '#10b981', borderRadius: 6 }}] }}, options: {{ responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ beginAtZero: true, ticks: {{ callback: v => '$' + (v / 1000) + 'K' }} }} }} }} }}); }}
         function updateCharts(data) {{ const sorted = [...data].sort((a, b) => b.netNew - a.netNew); const labels = sorted.map(r => r.name.split(' ')[0] + ' ' + r.name.split(' ')[1][0] + '.'); const arrColors = sorted.map(r => r.goal >= 90 ? '#10b981' : r.goal >= 50 ? '#f59e0b' : '#ef4444'); repArrChart.data.labels = labels; repArrChart.data.datasets[0].data = sorted.map(r => r.netNew); repArrChart.data.datasets[0].backgroundColor = arrColors; repArrChart.update(); attainmentChart.data.labels = labels; attainmentChart.data.datasets[0].data = sorted.map(r => r.goal); attainmentChart.data.datasets[0].backgroundColor = arrColors; attainmentChart.update(); dealsChart.data.labels = labels; dealsChart.data.datasets[0].data = sorted.map(r => r.deals); dealsChart.update(); earningsChart.data.labels = labels; earningsChart.data.datasets[0].data = sorted.map(r => r.earnings); earningsChart.update(); }}
     </script>
 </body>
