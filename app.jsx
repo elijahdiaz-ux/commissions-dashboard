@@ -3,14 +3,130 @@ const { useState, useMemo, useEffect } = React;
 // ───────── DATA ─────────
 // Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [11200, 18400, 32800, 55323], color: '#34D399' },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6,  gross: 48814, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [22400, 31100, 38200, 48814], color: '#6BD9A4' },
-  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C' },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 82.8,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [28200, 30100, 32400, 34517], color: '#F3C969' },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 61.7,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [9100, 14400, 21200, 25713], color: '#E26D8E' },
-  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 61.4,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [38100, 31200, 28400, 25598], color: '#F08F6A' },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [14200, 11100, 8400, 9990],   color: '#6EE7B7' },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 11.8,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [22100, 18400, 12200, 4903],  color: '#7BD3EA' },
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [11200, 18400, 32800, 55323], color: '#34D399',
+    dealsList: [
+      { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
+      { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
+      { customer: 'Amplify Church', product: 'First Look', arr: 2154, netNew: 833 },
+      { customer: 'Amplify Church', product: 'Amazing Music', arr: 1500, netNew: 1500 },
+      { customer: 'Austin Avenue Methodist', product: 'Amazing+', arr: 2173, netNew: 1820 },
+      { customer: 'Brentwood United Methodist', product: 'Amazing Music', arr: 1500, netNew: 1500 },
+      { customer: 'Compass Church', product: '252', arr: 1007, netNew: 511 },
+      { customer: 'Destination Community Church', product: '252', arr: 1199, netNew: 496 },
+      { customer: 'Destination Community Church', product: 'First Look', arr: 1052, netNew: 388 },
+      { customer: 'Elevate City Church', product: '252', arr: 2372, netNew: 1338 },
+      { customer: 'Elevate City Church', product: 'First Look', arr: 1583, netNew: 1178 },
+      { customer: 'Grace Church', product: '252', arr: 3577, netNew: 2818 },
+      { customer: 'Higher Vision Church', product: 'First Look', arr: 2610, netNew: 2610 },
+      { customer: 'Higher Vision Church', product: '252', arr: 3577, netNew: 3577 },
+      { customer: 'Lakeview Church', product: 'First Look', arr: 1955, netNew: 1545 },
+      { customer: 'Lakeview Church', product: '252', arr: 2774, netNew: 1189 },
+      { customer: 'Lionheart Childrens Academy', product: '252', arr: 3438, netNew: 3031 },
+      { customer: 'Local Church SAV', product: 'Amazing+', arr: 4952, netNew: 3420 },
+      { customer: 'Oakwood Christian Church', product: 'Amazing+', arr: 4952, netNew: 2993 },
+      { customer: 'Palm Harbor United Methodist', product: '252', arr: 3073, netNew: 2050 },
+      { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
+    ]
+  },
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6,  gross: 48814, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [22400, 31100, 38200, 48814], color: '#6BD9A4',
+    dealsList: [
+      { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
+      { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
+      { customer: 'Belong Church Atlanta', product: 'Amazing+', arr: 4627, netNew: 826 },
+      { customer: 'Calvary Vision Church', product: '252', arr: 557, netNew: 557 },
+      { customer: 'Capital Christian Church', product: '252', arr: 2070, netNew: 1063 },
+      { customer: 'Elm City Vineyard Church', product: 'Amazing+', arr: 3025, netNew: 1738 },
+      { customer: 'Faith Center', product: 'Amazing+', arr: 3459, netNew: 3459 },
+      { customer: 'FCC Crescent', product: '252', arr: 1199, netNew: 1199 },
+      { customer: 'First Baptist Church', product: '252', arr: 1199, netNew: 1199 },
+      { customer: 'Houston Church', product: 'Amazing+', arr: 4138, netNew: 1141 },
+      { customer: 'Keymar Evangelical Wesley', product: 'Amazing+', arr: 2251, netNew: 681 },
+      { customer: 'Midway Locust Grove UMC', product: '252', arr: 2070, netNew: 496 },
+      { customer: 'Renovation Church', product: 'Amazing+', arr: 4941, netNew: 6187 },
+      { customer: 'The Freedom Church', product: '252', arr: 557, netNew: 557 },
+      { customer: 'TTUMC', product: '252', arr: 1199, netNew: 1199 },
+      { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
+    ]
+  },
+  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C',
+    dealsList: [
+      { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
+      { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
+      { customer: 'Central Wesleyan Church', product: '252', arr: 3445, netNew: 1231 },
+      { customer: 'Central Wesleyan Church', product: 'First Look', arr: 2543, netNew: 1023 },
+      { customer: 'Central Wesleyan Church', product: 'High School', arr: 2441, netNew: 2625 },
+      { customer: 'Christ Fellowship', product: 'First Look', arr: 2100, netNew: 1690 },
+      { customer: 'Christ Fellowship', product: '252', arr: 3500, netNew: 2333 },
+      { customer: 'Church360', product: 'First Look', arr: 3177, netNew: 2670 },
+      { customer: 'First Baptist Church Orlando', product: 'Amazing+', arr: 16849, netNew: 13887 },
+      { customer: 'Parkview Christian Church', product: 'Amazing+', arr: 3950, netNew: 1258 },
+      { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
+    ]
+  },
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 82.8,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [28200, 30100, 32400, 34517], color: '#F3C969',
+    dealsList: [
+      { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
+      { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
+      { customer: 'Horizons Community Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
+      { customer: 'Kalamazoo Community Church', product: 'Amazing+', arr: 3600, netNew: 3600 },
+      { customer: 'La Jolla United Methodist', product: 'Amazing+', arr: 4562, netNew: 4562 },
+      { customer: 'Limitless Church', product: 'Amazing+', arr: 366, netNew: 1100 },
+      { customer: 'Malibu Pacific Church', product: 'Amazing+', arr: 3312, netNew: 1512 },
+      { customer: 'Multiply Church', product: 'Amazing+', arr: 1751, netNew: 1751 },
+      { customer: 'Redemption Church', product: 'Amazing+', arr: 647, netNew: 647 },
+      { customer: 'Rexdale Alliance Church', product: 'Amazing+', arr: 2365, netNew: 2365 },
+      { customer: 'Society Church', product: 'Amazing+', arr: 2788, netNew: 2788 },
+      { customer: 'Together Church', product: 'Amazing+', arr: 3785, netNew: 3835 },
+      { customer: 'Voices of Faith East', product: 'Amazing+', arr: 1901, netNew: 1901 },
+      { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
+    ]
+  },
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 61.7,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [9100, 14400, 21200, 25713], color: '#E26D8E',
+    dealsList: [
+      { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
+      { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
+      { customer: 'Cornerstone Church', product: 'Amazing+', arr: 14999, netNew: 14999 },
+      { customer: 'Godalming Minster', product: 'Amazing+', arr: 959, netNew: 459 },
+      { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
+    ]
+  },
+  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 61.4,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [38100, 31200, 28400, 25598], color: '#F08F6A',
+    dealsList: [
+      { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
+      { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
+      { customer: 'Freshwater Community Church', product: 'Amazing+', arr: 4055, netNew: 2489 },
+      { customer: 'Grace UMC', product: 'Amazing+', arr: 800, netNew: 2401 },
+      { customer: 'Jesus Crew', product: 'Amazing+', arr: 475, netNew: 475 },
+      { customer: 'Lifepoint Church', product: 'Amazing+', arr: 7400, netNew: 7400 },
+      { customer: 'Nashville Life Church', product: 'Amazing Music', arr: 799, netNew: 799 },
+      { customer: 'OneLife Church', product: 'Amazing+', arr: 4138, netNew: 1512 },
+      { customer: 'SonRise Church', product: 'Amazing+', arr: 647, netNew: 647 },
+      { customer: 'The Orchard Community Church', product: 'Amazing+', arr: 4380, netNew: 417 },
+      { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
+    ]
+  },
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [14200, 11100, 8400, 9990],   color: '#6EE7B7',
+    dealsList: [
+      { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: 0 },
+      { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: 1125 },
+      { customer: 'Discovery Church', product: 'First Look', arr: 201, netNew: 0 },
+      { customer: 'Discovery Church', product: '252', arr: 227, netNew: 0 },
+      { customer: 'Encompass Church', product: 'Amazing Music', arr: 1350, netNew: 1350 },
+      { customer: 'Journey Church', product: 'Amazing+', arr: 2922, netNew: 3659 },
+      { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
+    ]
+  },
+  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 11.8,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [22100, 18400, 12200, 4903],  color: '#7BD3EA',
+    dealsList: [
+      { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
+      { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
+      { customer: 'Innisfail Alliance Church', product: 'Amazing+', arr: 488, netNew: 488 },
+      { customer: 'New Life Foursquare', product: '252', arr: 1839, netNew: 1214 },
+      { customer: 'Port Orange Christian Church', product: 'First Look', arr: 557, netNew: 557 },
+      { customer: 'St. Mark Baptist Church', product: 'Amazing+', arr: 916, netNew: 499 },
+      { customer: 'Westminster Chapel', product: 'Manual Charge', arr: 778, netNew: 778 },
+    ]
+  },
 ];
 
 const MONTHLY = [
@@ -351,6 +467,36 @@ function RepDrawer({ rep, onClose }) {
               <span className="key">Spiff</span>
               <span className="val tab" style={{ color: 'var(--text-3)' }}>$0</span>
             </div>
+          </div>
+        </div>
+
+        <div className="drawer-section">
+          <h4>April Deals ({rep.dealsList?.length || 0})</h4>
+          <div className="deals-list">
+            {rep.dealsList && rep.dealsList.length > 0 ? (
+              <table className="deals-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th style={{ textAlign: 'right' }}>ARR</th>
+                    <th style={{ textAlign: 'right' }}>Net New</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rep.dealsList.map((deal, idx) => (
+                    <tr key={idx}>
+                      <td>{deal.customer}</td>
+                      <td><span className="product-chip">{deal.product}</span></td>
+                      <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(deal.arr, { full: true })}</td>
+                      <td style={{ textAlign: 'right', color: deal.netNew > 0 ? 'var(--accent-3)' : 'var(--text-3)' }} className="tab">{fmtMoney(deal.netNew, { full: true })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div style={{ color: 'var(--text-3)', fontStyle: 'italic', padding: '12px 0' }}>No deals this month</div>
+            )}
           </div>
         </div>
       </aside>
