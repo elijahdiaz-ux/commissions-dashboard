@@ -716,6 +716,74 @@
   .pay-strip.total .key { color: var(--text); font-weight: 600; }
   .pay-strip.total .val { font-size: 18px; color: var(--accent-3); }
 
+  /* PACING CARD */
+  .pacing-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .pacing-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .pacing-metric { text-align: center; }
+  .pacing-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .pacing-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .pacing-bar-container { margin-bottom: 14px; }
+  .pacing-bar-track {
+    height: 12px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pacing-bar-expected {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    border-right: 2px dashed var(--text-3);
+  }
+  .pacing-bar-actual {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 6px;
+    box-shadow: 0 0 10px rgba(107, 217, 164, 0.4);
+  }
+  .pacing-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--text-4);
+  }
+  .pacing-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid;
+    font-size: 12px;
+  }
+  .dot-risk { background: var(--yellow); box-shadow: 0 0 8px rgba(243,201,105,0.6); }
+
   /* DEALS TABLE */
   .deals-list { max-height: 300px; overflow-y: auto; }
   .deals-table { width: 100%; border-collapse: collapse; font-size: 12px; }

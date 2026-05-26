@@ -1,5 +1,36 @@
 const { useState, useMemo, useEffect } = React;
 
+// ───────── PACING CONFIG ─────────
+// For live tracking, update these values to current date
+const CURRENT_MONTH = {
+  name: 'April',
+  year: 2026,
+  dayOfMonth: 30,  // Current day (30 = end of month for April)
+  daysInMonth: 30, // Total days in April
+};
+
+// Calculate expected pacing percentage
+const EXPECTED_PACING = (CURRENT_MONTH.dayOfMonth / CURRENT_MONTH.daysInMonth) * 100;
+
+// Get rep status based on pacing logic
+const getRepStatus = (goalPct) => {
+  if (goalPct === 0) return 'inactive';
+  if (goalPct >= EXPECTED_PACING) return 'on-track';
+  if (goalPct >= EXPECTED_PACING * 0.9) return 'at-risk'; // Within 10% of expected
+  return 'behind';
+};
+
+// Get status display info
+const getStatusInfo = (status) => {
+  switch(status) {
+    case 'on-track': return { label: 'On Track', dotClass: 'dot-on', color: 'var(--green)' };
+    case 'at-risk': return { label: 'At Risk', dotClass: 'dot-risk', color: 'var(--yellow)' };
+    case 'behind': return { label: 'Behind', dotClass: 'dot-behind', color: 'var(--rose)' };
+    case 'inactive': return { label: 'Inactive', dotClass: 'dot-inactive', color: 'var(--text-4)' };
+    default: return { label: 'Unknown', dotClass: '', color: 'var(--text-3)' };
+  }
+};
+
 // ───────── DATA ─────────
 // Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
 const REPS = [
@@ -381,10 +412,53 @@ function RepDrawer({ rep, onClose }) {
             <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>{rep.name}</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
               <span className="role-chip" style={{ marginRight: 8 }}>{rep.role}</span>
-              {rep.status === 'on-track' ? 'On track' : rep.status === 'inactive' ? 'Inactive' : 'Behind quota'}
+              {getStatusInfo(getRepStatus(rep.goal)).label}
             </div>
           </div>
           <div className="drawer-close" onClick={onClose}><Icon.X/></div>
+        </div>
+
+        <div className="drawer-section">
+          <h4>{CURRENT_MONTH.name} Pacing · Day {CURRENT_MONTH.dayOfMonth} of {CURRENT_MONTH.daysInMonth}</h4>
+          <div className="pacing-card">
+            <div className="pacing-row">
+              <div className="pacing-metric">
+                <div className="pacing-label">Expected Pacing</div>
+                <div className="pacing-value tab">{EXPECTED_PACING.toFixed(0)}%</div>
+              </div>
+              <div className="pacing-metric">
+                <div className="pacing-label">Actual Attainment</div>
+                <div className="pacing-value tab" style={{ color: rep.goal >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}>{rep.goal.toFixed(1)}%</div>
+              </div>
+              <div className="pacing-metric">
+                <div className="pacing-label">Variance</div>
+                <div className="pacing-value tab" style={{ color: rep.goal >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}>
+                  {rep.goal >= EXPECTED_PACING ? '+' : ''}{(rep.goal - EXPECTED_PACING).toFixed(1)}%
+                </div>
+              </div>
+            </div>
+            <div className="pacing-bar-container">
+              <div className="pacing-bar-track">
+                <div className="pacing-bar-expected" style={{ width: Math.min(100, EXPECTED_PACING) + '%' }}/>
+                <div className="pacing-bar-actual" style={{ width: Math.min(100, rep.goal) + '%', background: rep.goal >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}/>
+              </div>
+              <div className="pacing-bar-labels">
+                <span>0%</span>
+                <span>Expected: {EXPECTED_PACING.toFixed(0)}%</span>
+                <span>100%</span>
+              </div>
+            </div>
+            <div className="pacing-status" style={{ background: getStatusInfo(getRepStatus(rep.goal)).color + '20', borderColor: getStatusInfo(getRepStatus(rep.goal)).color }}>
+              <span className={'dot ' + getStatusInfo(getRepStatus(rep.goal)).dotClass} style={{ width: 10, height: 10 }}/>
+              <span style={{ color: getStatusInfo(getRepStatus(rep.goal)).color, fontWeight: 600 }}>{getStatusInfo(getRepStatus(rep.goal)).label}</span>
+              <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
+                {getRepStatus(rep.goal) === 'on-track' && '— Meeting or exceeding expected pace'}
+                {getRepStatus(rep.goal) === 'at-risk' && '— Within 10% of expected pace'}
+                {getRepStatus(rep.goal) === 'behind' && '— More than 10% below expected pace'}
+                {getRepStatus(rep.goal) === 'inactive' && '— No quota assigned this month'}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="drawer-section">
@@ -812,8 +886,8 @@ function App() {
                   </td>
                   <td>
                     <span className="status-pill">
-                      <span className={'dot ' + (rep.status === 'on-track' ? 'dot-on' : rep.status === 'inactive' ? 'dot-inactive' : 'dot-behind')}/>
-                      {rep.status === 'on-track' ? 'On track' : rep.status === 'inactive' ? 'Inactive' : 'Behind'}
+                      <span className={'dot ' + getStatusInfo(getRepStatus(rep.goal)).dotClass}/>
+                      {getStatusInfo(getRepStatus(rep.goal)).label}
                     </span>
                   </td>
                   <td className="row-actions"><Icon.More/></td>
