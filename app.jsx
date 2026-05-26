@@ -882,26 +882,41 @@ function App() {
               </div>
 
               {/* Net New ARR by Rep Bar Chart */}
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--hairline)' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '12px', fontWeight: 500 }}>Net New ARR by Rep</div>
-                {[...REPS].sort((a, b) => b.netNew - a.netNew).map((rep) => {
-                  const maxNetNew = Math.max(...REPS.map(r => r.netNew));
-                  const pct = (rep.netNew / maxNetNew) * 100;
-                  return (
-                    <div key={rep.name} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                      <div style={{ width: '70px', fontSize: '12px', color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {rep.name.split(' ')[0]}
-                      </div>
-                      <div style={{ flex: 1, height: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ width: pct + '%', height: '100%', background: rep.color, borderRadius: '4px', transition: 'width 0.3s ease' }} />
-                      </div>
-                      <div className="tab" style={{ width: '55px', textAlign: 'right', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
-                        {fmtMoney(rep.netNew)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                // Map period to spark array index (0=Jan, 1=Feb, 2=Mar, 3=Apr)
+                const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3 }[period];
+                const getRepNetNew = (rep) => {
+                  if (monthIndex !== undefined) return rep.spark[monthIndex];
+                  if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
+                  if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + b, 0);
+                  return rep.netNew;
+                };
+                const sortedReps = [...REPS].sort((a, b) => getRepNetNew(b) - getRepNetNew(a));
+                const maxNetNew = Math.max(...sortedReps.map(r => getRepNetNew(r)));
+
+                return (
+                  <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--hairline)' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '12px', fontWeight: 500 }}>Net New ARR by Rep</div>
+                    {sortedReps.map((rep) => {
+                      const repNetNew = getRepNetNew(rep);
+                      const pct = (repNetNew / maxNetNew) * 100;
+                      return (
+                        <div key={rep.name} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <div style={{ width: '70px', fontSize: '12px', color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {rep.name.split(' ')[0]}
+                          </div>
+                          <div style={{ flex: 1, height: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: pct + '%', height: '100%', background: rep.color, borderRadius: '4px', transition: 'width 0.3s ease' }} />
+                          </div>
+                          <div className="tab" style={{ width: '55px', textAlign: 'right', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
+                            {fmtMoney(repNetNew)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </section>
 
