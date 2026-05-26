@@ -33,8 +33,75 @@ const getStatusInfo = (status) => {
 
 // ───────── DATA ─────────
 // Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
+// ───────── PLAN DETAILS ─────────
+const PLANS = {
+  A: {
+    name: 'Plan A — AE Standard',
+    type: 'Quarterly',
+    quota: 125000,
+    annualQuota: 500000,
+    baseRate: 0.08,
+    tiers: [
+      { min: 0, max: 100, rate: 0.08, label: 'Base (0-100%)' },
+      { min: 100, max: 125, rate: 0.12, label: 'Accelerator (100-125%)' },
+      { min: 125, max: 150, rate: 0.16, label: 'Super (125-150%)' },
+      { min: 150, max: 999, rate: 0.20, label: 'Mega (150%+)' },
+    ],
+    description: '8% base rate on Net New ARR with accelerators at quota milestones',
+  },
+  B: {
+    name: 'Plan B — AE with Dead Zone',
+    type: 'Quarterly',
+    quota: 125000,
+    annualQuota: 500000,
+    deadZone: 42367,
+    baseRate: 0.06,
+    tiers: [
+      { min: 0, max: 42367, rate: 0, label: 'Dead Zone (0%)' },
+      { min: 42367, max: 125000, rate: 0.06, label: 'Base (6%)' },
+      { min: 125000, max: 187500, rate: 0.12, label: 'Accelerator (100-125%)' },
+      { min: 187500, max: 999999, rate: 0.16, label: 'Super (125%+)' },
+    ],
+    description: 'No commission until $42K dead zone cleared, then 6% base rate',
+  },
+  C: {
+    name: 'Plan C — AM Monthly',
+    type: 'Monthly',
+    quota: 50000,
+    annualQuota: 600000,
+    baseRate: 0.017,
+    kickerRate: 0.10,
+    tiers: [
+      { min: 0, max: 50000, rate: 0.017, label: 'Base (1.7%)' },
+      { min: 50000, max: 999999, rate: 0.10, label: 'Kicker (10% over quota)' },
+    ],
+    description: '1.7% on Net New ARR up to quota, 10% kicker on overages',
+  },
+  D: {
+    name: 'Plan D — SME ARR Collected',
+    type: 'Monthly',
+    quota: 50000,
+    annualQuota: 600000,
+    baseRate: 0.017,
+    basis: 'ARR Collected',
+    tiers: [
+      { min: 0, max: 999999, rate: 0.017, label: 'Flat (1.7%)' },
+    ],
+    description: '1.7% flat rate on total ARR Collected (no tiers, no kicker)',
+  },
+  Inactive: {
+    name: 'Inactive',
+    type: 'N/A',
+    quota: 0,
+    annualQuota: 0,
+    baseRate: 0,
+    tiers: [],
+    description: 'No active commission plan',
+  },
+};
+
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [89945, 56342, 20377, 55323], color: '#34D399',
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [89945, 56342, 20377, 55323], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54],
     dealsList: [
       { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
       { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
@@ -59,7 +126,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 99.4,  gross: 49690, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [9219, 28682, 18680, 24924], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690],
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 24924, goal: 99.4,  gross: 49690, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [9219, 28682, 18680, 24924], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690], monthlyDeals: [14, 35, 30, 26],
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
@@ -79,7 +146,7 @@ const REPS = [
       { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
     ]
   },
-  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C',
+  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 12],
     dealsList: [
       { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
       { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
@@ -94,7 +161,7 @@ const REPS = [
       { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
     ]
   },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 27.6,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [1569, 17920, 21781, 34517], color: '#F3C969',
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 27.6,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [1569, 17920, 21781, 34517], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15],
     dealsList: [
       { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
       { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
@@ -112,7 +179,7 @@ const REPS = [
       { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
     ]
   },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 20.6,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [32535, 30412, 66096, 25713], color: '#E26D8E',
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 20.6,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [32535, 30412, 66096, 25713], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6],
     dealsList: [
       { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
       { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
@@ -121,7 +188,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 20.5,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [58472, 24416, 30117, 25598], color: '#F08F6A',
+  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 20.5,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [58472, 24416, 30117, 25598], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13],
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -136,7 +203,7 @@ const REPS = [
       { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
     ]
   },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [44074, 35159, 16829, 9990],   color: '#6EE7B7',
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [44074, 35159, 16829, 9990],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7],
     dealsList: [
       { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: 0 },
       { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: 1125 },
@@ -147,7 +214,7 @@ const REPS = [
       { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
     ]
   },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 3.9,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903],  color: '#7BD3EA',
+  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 3.9,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22],
     dealsList: [
       { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
       { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
@@ -711,8 +778,7 @@ function RepDrawer({ rep, onClose }) {
 }
 
 // ───────── SIDEBAR ─────────
-function Sidebar() {
-  const [active, setActive] = useState('Dashboard');
+function Sidebar({ activeTab, setActiveTab }) {
   const items = [
     ['Dashboard', Icon.Dashboard],
     ['Reps', Icon.Reps],
@@ -731,7 +797,7 @@ function Sidebar() {
 
       <nav className="nav">
         {items.map(([label, IconComp]) => (
-          <div key={label} className={'nav-item' + (active === label ? ' active' : '')} onClick={() => setActive(label)}>
+          <div key={label} className={'nav-item' + (activeTab === label ? ' active' : '')} onClick={() => setActiveTab(label)}>
             <IconComp/>
             <span>{label}</span>
           </div>
@@ -754,8 +820,245 @@ function Sidebar() {
   );
 }
 
+// ───────── REPS VIEW ─────────
+function RepsView({ onSelectRep }) {
+  const [selectedRep, setSelectedRep] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredReps = REPS.filter(r =>
+    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSelectRep = (rep) => {
+    setSelectedRep(rep);
+  };
+
+  // Calculate YTD totals for a rep
+  const getYTD = (rep) => {
+    const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
+    const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
+    return { ytdNetNew, ytdDeals };
+  };
+
+  return (
+    <main className="main">
+      <div className="topbar">
+        <div>
+          <h1 className="page-title">Sales Reps</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+            {REPS.length} reps · {REPS.filter(r => r.plan !== 'Inactive').length} active
+          </div>
+        </div>
+        <div className="topbar-actions">
+          <div className="search">
+            <Icon.Search/>
+            <input
+              placeholder="Search reps..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="reps-layout">
+        {/* Rep List */}
+        <div className="reps-list">
+          {filteredReps.map(rep => {
+            const plan = PLANS[rep.plan] || PLANS.Inactive;
+            const ytd = getYTD(rep);
+            const isSelected = selectedRep?.name === rep.name;
+
+            return (
+              <div
+                key={rep.name}
+                className={'rep-card' + (isSelected ? ' selected' : '') + (rep.plan === 'Inactive' ? ' inactive' : '')}
+                onClick={() => handleSelectRep(rep)}
+              >
+                <div className="rep-card-header">
+                  <div className="avatar" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)`, width: 48, height: 48 }}>
+                    {initials(rep.name)}
+                  </div>
+                  <div className="rep-card-info">
+                    <div className="rep-card-name">{rep.name}</div>
+                    <div className="rep-card-role">
+                      <span className="role-chip">{rep.role}</span>
+                      <span className="plan-chip">{plan.name.split('—')[0].trim()}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rep-card-stats">
+                  <div className="rep-card-stat">
+                    <span className="stat-value tab">{fmtMoney(rep.netNew)}</span>
+                    <span className="stat-label">Apr Net New</span>
+                  </div>
+                  <div className="rep-card-stat">
+                    <span className="stat-value tab">{ytd.ytdDeals}</span>
+                    <span className="stat-label">YTD Deals</span>
+                  </div>
+                  <div className="rep-card-stat">
+                    <span className="stat-value tab" style={{ color: rep.commission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
+                      {fmtMoney(rep.commission)}
+                    </span>
+                    <span className="stat-label">Apr Commission</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Rep Detail Panel */}
+        <div className="rep-detail">
+          {selectedRep ? (
+            <RepDetailPanel rep={selectedRep} />
+          ) : (
+            <div className="rep-detail-empty">
+              <Icon.Reps />
+              <p>Select a rep to view details</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// ───────── REP DETAIL PANEL ─────────
+function RepDetailPanel({ rep }) {
+  const plan = PLANS[rep.plan] || PLANS.Inactive;
+  const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
+  const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+
+  return (
+    <div className="rep-detail-content">
+      {/* Header */}
+      <div className="rep-detail-header">
+        <div className="avatar" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)`, width: 56, height: 56, fontSize: 18 }}>
+          {initials(rep.name)}
+        </div>
+        <div>
+          <h2>{rep.name}</h2>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <span className="role-chip">{rep.role}</span>
+            <span className="plan-chip">{plan.name}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Comp Plan Details */}
+      <div className="detail-section">
+        <h3>Compensation Plan</h3>
+        <div className="plan-details-card">
+          <div className="plan-info-row">
+            <span className="plan-info-label">Plan Type</span>
+            <span className="plan-info-value">{plan.type}</span>
+          </div>
+          <div className="plan-info-row">
+            <span className="plan-info-label">Quota</span>
+            <span className="plan-info-value tab">{fmtMoney(plan.quota, { full: true })} / {plan.type === 'Monthly' ? 'month' : 'quarter'}</span>
+          </div>
+          <div className="plan-info-row">
+            <span className="plan-info-label">Annual Quota</span>
+            <span className="plan-info-value tab">{fmtMoney(plan.annualQuota, { full: true })}</span>
+          </div>
+          <div className="plan-info-row">
+            <span className="plan-info-label">Base Pay</span>
+            <span className="plan-info-value tab">{fmtMoney(rep.basePay, { full: true })} / month</span>
+          </div>
+          <div className="plan-tiers">
+            <span className="plan-info-label">Commission Tiers</span>
+            <div className="tier-list">
+              {plan.tiers.map((tier, i) => (
+                <div key={i} className="tier-row">
+                  <span className="tier-label">{tier.label}</span>
+                  <span className="tier-rate tab">{(tier.rate * 100).toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="plan-description">{plan.description}</p>
+        </div>
+      </div>
+
+      {/* YTD Performance */}
+      <div className="detail-section">
+        <h3>YTD Performance</h3>
+        <div className="ytd-grid">
+          <div className="ytd-card">
+            <div className="ytd-value tab">{fmtMoney(ytdNetNew, { full: true })}</div>
+            <div className="ytd-label">Total Net New ARR</div>
+          </div>
+          <div className="ytd-card">
+            <div className="ytd-value tab">{ytdDeals}</div>
+            <div className="ytd-label">Total Deals</div>
+          </div>
+          <div className="ytd-card">
+            <div className="ytd-value tab">{fmtMoney(ytdNetNew / 4, { full: true })}</div>
+            <div className="ytd-label">Monthly Avg</div>
+          </div>
+          <div className="ytd-card accent">
+            <div className="ytd-value tab">{fmtMoney(rep.earnings * 4, { full: true })}</div>
+            <div className="ytd-label">Est. YTD Earnings</div>
+          </div>
+        </div>
+
+        {/* Monthly Breakdown */}
+        <div className="monthly-breakdown">
+          <div className="monthly-header">
+            <span>Month</span>
+            <span>Net New ARR</span>
+            <span>Deals</span>
+          </div>
+          {months.map((m, i) => (
+            <div key={m} className="monthly-row">
+              <span className="month-label">{m}</span>
+              <span className="month-value tab">{fmtMoney(rep.spark[i], { full: true })}</span>
+              <span className="month-deals tab">{rep.monthlyDeals ? rep.monthlyDeals[i] : '—'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* April Deals */}
+      <div className="detail-section">
+        <h3>April Deals ({rep.dealsList?.length || 0})</h3>
+        <div className="deals-list">
+          {rep.dealsList && rep.dealsList.length > 0 ? (
+            <table className="deals-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Product</th>
+                  <th style={{ textAlign: 'right' }}>ARR</th>
+                  <th style={{ textAlign: 'right' }}>Net New</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rep.dealsList.map((deal, idx) => (
+                  <tr key={idx}>
+                    <td>{deal.customer}</td>
+                    <td><span className="product-chip">{deal.product}</span></td>
+                    <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(deal.arr, { full: true })}</td>
+                    <td style={{ textAlign: 'right', color: deal.netNew > 0 ? 'var(--accent-3)' : 'var(--text-3)' }} className="tab">{fmtMoney(deal.netNew, { full: true })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ color: 'var(--text-3)', fontStyle: 'italic', padding: '12px 0' }}>No deals this month</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ───────── MAIN APP ─────────
 function App() {
+  const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
   const [period, setPeriod] = useState('Apr 2026');
   const [periodOpen, setPeriodOpen] = useState(false);
@@ -899,8 +1202,11 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar/>
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
+      {activeTab === 'Reps' ? (
+        <RepsView onSelectRep={setActiveRep} />
+      ) : (
       <main className="main">
         {/* Topbar */}
         <div className="topbar">
@@ -1184,6 +1490,7 @@ function App() {
           </table>
         </section>
       </main>
+      )}
 
       <RepDrawer rep={activeRep} onClose={() => setActiveRep(null)}/>
 

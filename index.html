@@ -1166,6 +1166,277 @@
   .lb-table th.sortable:hover { color: var(--text-2); }
   .lb-table th .sort-ind { margin-left: 4px; color: var(--accent-3); font-size: 9px; vertical-align: middle; }
 
+  /* REPS VIEW */
+  .reps-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    flex: 1;
+    min-height: 0;
+  }
+  .reps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    max-height: calc(100vh - 160px);
+    padding-right: 8px;
+  }
+  .rep-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .rep-card:hover {
+    background: var(--card-2);
+    border-color: var(--border);
+  }
+  .rep-card.selected {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.3);
+  }
+  .rep-card.inactive {
+    opacity: 0.6;
+  }
+  .rep-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .rep-card-info { flex: 1; min-width: 0; }
+  .rep-card-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .rep-card-role {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .plan-chip {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-3);
+    font-weight: 500;
+  }
+  .rep-card-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .rep-card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rep-card-stat .stat-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .rep-card-stat .stat-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Rep Detail Panel */
+  .rep-detail {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 160px);
+  }
+  .rep-detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: var(--text-3);
+    gap: 12px;
+  }
+  .rep-detail-empty svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.4;
+  }
+  .rep-detail-content {
+    padding: 28px;
+  }
+  .rep-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .rep-detail-header h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .detail-section {
+    margin-bottom: 28px;
+  }
+  .detail-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+
+  /* Plan Details Card */
+  .plan-details-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .plan-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .plan-info-row:last-of-type { border-bottom: none; }
+  .plan-info-label {
+    font-size: 13px;
+    color: var(--text-3);
+  }
+  .plan-info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .plan-tiers {
+    padding: 14px 0;
+    border-top: 1px solid var(--hairline);
+    margin-top: 10px;
+  }
+  .tier-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tier-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+  }
+  .tier-label {
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .tier-rate {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-3);
+  }
+  .plan-description {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--hairline);
+    line-height: 1.5;
+  }
+
+  /* YTD Grid */
+  .ytd-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .ytd-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .ytd-card.accent {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.2);
+  }
+  .ytd-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .ytd-card.accent .ytd-value {
+    color: var(--accent-3);
+  }
+  .ytd-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Monthly Breakdown */
+  .monthly-breakdown {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .monthly-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    gap: 16px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.02);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .monthly-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    gap: 16px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--hairline);
+    align-items: center;
+  }
+  .month-label {
+    font-size: 13px;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .month-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .month-deals {
+    font-size: 14px;
+    color: var(--text-2);
+    text-align: right;
+  }
+
   @media (max-width: 1240px) {
     .top-row { grid-template-columns: 1fr; }
     .bars-row { grid-template-columns: repeat(2, 1fr); gap: 32px 16px; }
