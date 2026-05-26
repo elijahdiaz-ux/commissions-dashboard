@@ -716,77 +716,78 @@
   .pay-strip.total .key { color: var(--text); font-weight: 600; }
   .pay-strip.total .val { font-size: 18px; color: var(--accent-3); }
 
-  /* REP BAR CHART */
-  .rep-bar-chart {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  /* KEY METRICS GRID */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
   }
-  .rep-bar-row {
+  .metric-tile {
     display: flex;
     align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    padding: 6px 8px;
-    margin: -6px -8px;
-    border-radius: 10px;
+    gap: 14px;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
     transition: all 0.15s;
   }
-  .rep-bar-row:hover {
+  .metric-tile:hover {
     background: rgba(255,255,255,0.04);
+    border-color: var(--border-soft);
   }
-  .rep-bar-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100px;
-    flex-shrink: 0;
+  .metric-tile.highlight {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.25);
   }
-  .avatar-sm {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    max-width: 28px;
-    max-height: 28px;
-    border-radius: 50%;
+  .metric-tile.highlight .metric-icon {
+    background: rgba(52, 211, 153, 0.2);
+    color: var(--accent-3);
+  }
+  .metric-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
     display: grid;
     place-items: center;
-    font-size: 10px;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  .rep-bar-name {
-    font-size: 13px;
-    font-weight: 500;
     color: var(--text-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex-shrink: 0;
   }
-  .rep-bar-track {
-    flex: 1;
-    height: 24px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 6px;
-    overflow: hidden;
-    position: relative;
+  .metric-icon svg { width: 20px; height: 20px; }
+  .metric-content { min-width: 0; }
+  .metric-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
   }
-  .rep-bar-fill {
-    height: 100%;
-    border-radius: 6px;
-    transition: width 0.4s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  .metric-label {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 4px;
   }
-  .rep-bar-value {
-    width: 70px;
-    text-align: right;
-    font-size: 14px;
+  .metrics-secondary {
+    display: flex;
+    gap: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+  }
+  .metric-secondary-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .metric-secondary-value {
+    font-size: 18px;
     font-weight: 600;
     color: var(--text);
-    flex-shrink: 0;
+  }
+  .metric-secondary-label {
+    font-size: 12px;
+    color: var(--text-3);
   }
 
   /* YTD CHART */

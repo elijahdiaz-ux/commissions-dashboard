@@ -827,32 +827,59 @@ function App() {
 
         {/* Top row: hero card + forecast */}
         <div className="top-row">
-          {/* Net New ARR by Rep */}
+          {/* Team Performance */}
           <section className="card">
             <div className="card-head">
               <div>
-                <div className="card-title">Net New ARR by Rep</div>
-                <div className="card-sub">April 2026 · {fmtMoney(activeData.netNew, { full: true })} total</div>
+                <div className="card-title">Team Performance</div>
+                <div className="card-sub">All reps · {period}</div>
               </div>
             </div>
-            <div className="card-body" style={{ padding: '16px 20px' }}>
-              {[...REPS].sort((a, b) => b.netNew - a.netNew).map((rep, i) => {
-                const maxNetNew = Math.max(...REPS.map(r => r.netNew));
-                const pct = (rep.netNew / maxNetNew) * 100;
-                return (
-                  <div key={rep.name} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', cursor: 'pointer' }} onClick={() => setActiveRep(rep)}>
-                    <div style={{ width: '90px', fontSize: '13px', fontWeight: 500, color: '#A5C7B5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {rep.name.split(' ')[0]}
-                    </div>
-                    <div style={{ flex: 1, height: '20px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: pct + '%', height: '100%', background: rep.color, borderRadius: '4px' }}/>
-                    </div>
-                    <div style={{ width: '60px', textAlign: 'right', fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                      {fmtMoney(rep.netNew)}
-                    </div>
+            <div className="card-body">
+              <div className="metrics-grid">
+                <div className="metric-tile">
+                  <div className="metric-icon"><Icon.Target/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{activeData.deals}</div>
+                    <div className="metric-label">Deals Closed</div>
                   </div>
-                );
-              })}
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-icon"><Icon.Coin/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{fmtMoney(activeData.gross)}</div>
+                    <div className="metric-label">Gross Revenue</div>
+                  </div>
+                </div>
+                <div className="metric-tile highlight">
+                  <div className="metric-icon"><Icon.Spark/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{fmtMoney(activeData.netNew)}</div>
+                    <div className="metric-label">Net New ARR</div>
+                  </div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-icon"><Icon.Commission/></div>
+                  <div className="metric-content">
+                    <div className="metric-value tab">{fmtMoney(activeData.earnings)}</div>
+                    <div className="metric-label">Commissions Paid</div>
+                  </div>
+                </div>
+              </div>
+              <div className="metrics-secondary">
+                <div className="metric-secondary-item">
+                  <span className="metric-secondary-value tab">{avgAttain.toFixed(1)}%</span>
+                  <span className="metric-secondary-label">Avg Attainment</span>
+                </div>
+                <div className="metric-secondary-item">
+                  <span className="metric-secondary-value tab">{fmtMoney(avgDeal)}</span>
+                  <span className="metric-secondary-label">Avg Deal Size</span>
+                </div>
+                <div className="metric-secondary-item">
+                  <span className="metric-secondary-value tab">7/8</span>
+                  <span className="metric-secondary-label">Reps Earning</span>
+                </div>
+              </div>
             </div>
           </section>
 
