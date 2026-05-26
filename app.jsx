@@ -758,15 +758,43 @@ function App() {
     { value: fmtMoney(activeData.commission), label: 'Commissions', pct: (activeData.commission / peakComm) * 100, color: 'normal' },
   ];
 
+  // Helper to get rep data for selected period
+  const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3 }[period];
+  const getRepNetNew = (rep) => {
+    if (monthIndex !== undefined) return rep.spark[monthIndex];
+    if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
+    if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + b, 0);
+    return rep.netNew;
+  };
+  // Monthly quotas (approximate based on team totals)
+  const monthlyQuota = { 'Jan 2026': 50000, 'Feb 2026': 50000, 'Mar 2026': 50000, 'Apr 2026': 50000 };
+  const getRepGoal = (rep) => {
+    const netNew = getRepNetNew(rep);
+    const quota = monthlyQuota[period] || 50000;
+    if (period === 'Q1 2026') return (netNew / (quota * 3)) * 100;
+    if (period === 'YTD 2026') return (netNew / (quota * 4)) * 100;
+    return (netNew / quota) * 100;
+  };
+
   // Filter + sort leaderboard
   const ranked = useMemo(() => {
     let list = REPS.filter(r => !query || r.name.toLowerCase().includes(query.toLowerCase()) || r.role.toLowerCase().includes(query.toLowerCase()));
     list = [...list].sort((a, b) => {
-      const av = a[sortKey], bv = b[sortKey];
+      let av, bv;
+      if (sortKey === 'netNew') {
+        av = getRepNetNew(a);
+        bv = getRepNetNew(b);
+      } else if (sortKey === 'goal') {
+        av = getRepGoal(a);
+        bv = getRepGoal(b);
+      } else {
+        av = a[sortKey];
+        bv = b[sortKey];
+      }
       return sortDir === 'desc' ? bv - av : av - bv;
     });
     return list;
-  }, [query, sortKey, sortDir]);
+  }, [query, sortKey, sortDir, period]);
 
   const handleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -774,8 +802,8 @@ function App() {
   };
   const sortInd = (key) => sortKey === key ? <span className="sort-ind">{sortDir === 'desc' ? '▼' : '▲'}</span> : null;
 
-  const avgAttain = REPS.reduce((s, r) => s + r.goal, 0) / REPS.length;
-  const avgDeal = APR.netNew / APR.deals;
+  const avgAttain = REPS.reduce((s, r) => s + getRepGoal(r), 0) / REPS.length;
+  const avgDeal = activeData.netNew / activeData.deals;
 
   const periodOptions = ['Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
   const viewOptions = ['By metric', 'By rep', 'By role'];
@@ -1018,7 +1046,7 @@ function App() {
                 <th className="sortable" onClick={() => handleSort('netNew')}>Net new ARR{sortInd('netNew')}</th>
                 <th className="sortable" onClick={() => handleSort('deals')}>Deals{sortInd('deals')}</th>
                 <th>4-mo trend</th>
-                <th className="sortable" onClick={() => handleSort('earnings')}>Apr earnings{sortInd('earnings')}</th>
+                <th className="sortable" onClick={() => handleSort('commission')}>Commission{sortInd('commission')}</th>
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -1038,22 +1066,22 @@ function App() {
                   <td><span className="role-chip">{rep.role}</span></td>
                   <td className="attain-col">
                     <div className="attain-cell">
-                      <AttainBars pct={rep.goal}/>
-                      <div className="attain-val tab">{rep.goal.toFixed(1)}%</div>
+                      <AttainBars pct={getRepGoal(rep)}/>
+                      <div className="attain-val tab">{getRepGoal(rep).toFixed(1)}%</div>
                     </div>
                   </td>
-                  <td className="row-money tab money-col">{fmtMoney(rep.netNew, { full: true })}</td>
+                  <td className="row-money tab money-col">{fmtMoney(getRepNetNew(rep), { full: true })}</td>
                   <td className="tab">{rep.deals}</td>
                   <td className="spark-cell">
                     <Sparkline data={rep.spark} color={rep.color} width={110} height={32}/>
                   </td>
-                  <td className="row-money tab money-col" style={{ color: rep.earnings > 0 ? 'var(--text)' : 'var(--text-3)' }}>
-                    {fmtMoney(rep.earnings, { full: true })}
+                  <td className="row-money tab money-col" style={{ color: rep.commission > 0 ? 'var(--text)' : 'var(--text-3)' }}>
+                    {fmtMoney(rep.commission, { full: true })}
                   </td>
                   <td>
                     <span className="status-pill">
-                      <span className={'dot ' + getStatusInfo(getRepStatus(rep.goal)).dotClass}/>
-                      {getStatusInfo(getRepStatus(rep.goal)).label}
+                      <span className={'dot ' + getStatusInfo(getRepStatus(getRepGoal(rep))).dotClass}/>
+                      {getStatusInfo(getRepStatus(getRepGoal(rep))).label}
                     </span>
                   </td>
                   <td className="row-actions"><Icon.More/></td>
