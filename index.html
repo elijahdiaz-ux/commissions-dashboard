@@ -6,343 +6,70 @@
     <title>Sales Performance Dashboard | April 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            color: #f8fafc;
-            margin-bottom: 8px;
-        }
-
-        .header .subtitle {
-            color: #94a3b8;
-            font-size: 14px;
-        }
-
-        .header .last-updated {
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        /* Filters */
-        .filters-bar {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            align-items: center;
-            background: #1e293b;
-            padding: 16px 20px;
-            border-radius: 12px;
-            border: 1px solid #334155;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .filter-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        .filter-select {
-            background: #334155;
-            border: 1px solid #475569;
-            color: #f8fafc;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            min-width: 180px;
-            cursor: pointer;
-        }
-
-        .filter-select:hover {
-            border-color: #6366f1;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .reset-btn {
-            background: #475569;
-            border: none;
-            color: #f8fafc;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-left: auto;
-            transition: background 0.2s;
-        }
-
-        .reset-btn:hover {
-            background: #6366f1;
-        }
-
-        .active-filters {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-left: 16px;
-        }
-
-        .filter-tag {
-            background: #6366f1;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .filter-tag .remove {
-            cursor: pointer;
-            opacity: 0.7;
-        }
-
-        .filter-tag .remove:hover {
-            opacity: 1;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .metric-card {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #334155;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-
-        .metric-card.highlight {
-            background: linear-gradient(135deg, #065f46 0%, #047857 100%);
-            border-color: #10b981;
-        }
-
-        .metric-card.warning {
-            background: linear-gradient(135deg, #7c2d12 0%, #c2410c 100%);
-            border-color: #f97316;
-        }
-
-        .metric-label {
-            font-size: 12px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .metric-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #f8fafc;
-        }
-
-        .metric-subtext {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-
-        .chart-card {
-            background: #1e293b;
-            border-radius: 12px;
-            padding: 24px;
-            border: 1px solid #334155;
-        }
-
-        .chart-card h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #f8fafc;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        .table-card {
-            background: #1e293b;
-            border-radius: 12px;
-            padding: 24px;
-            border: 1px solid #334155;
-            overflow-x: auto;
-        }
-
-        .table-card h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #f8fafc;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #334155;
-        }
-
-        th {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        td {
-            font-size: 14px;
-            color: #e2e8f0;
-        }
-
-        tr:hover {
-            background: #334155;
-        }
-
-        tr.hidden {
-            display: none;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-on-track {
-            background: #065f46;
-            color: #34d399;
-        }
-
-        .status-behind {
-            background: #7c2d12;
-            color: #fdba74;
-        }
-
-        .status-inactive {
-            background: #374151;
-            color: #9ca3af;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #334155;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { font-size: 28px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; }
+        .header .subtitle { color: #94a3b8; font-size: 14px; }
+        .header .last-updated { color: #64748b; font-size: 12px; margin-top: 4px; }
+        .filters-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; background: #1e293b; padding: 16px 20px; border-radius: 12px; border: 1px solid #334155; }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; }
+        .filter-select { background: #334155; border: 1px solid #475569; color: #f8fafc; padding: 10px 14px; border-radius: 8px; font-size: 14px; min-width: 180px; cursor: pointer; }
+        .filter-select:hover { border-color: #6366f1; }
+        .filter-select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        .reset-btn { background: #475569; border: none; color: #f8fafc; padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-left: auto; transition: background 0.2s; }
+        .reset-btn:hover { background: #6366f1; }
+        .active-filters { display: flex; gap: 8px; align-items: center; margin-left: 16px; }
+        .filter-tag { background: #6366f1; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+        .filter-tag .remove { cursor: pointer; opacity: 0.7; }
+        .filter-tag .remove:hover { opacity: 1; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .metric-card { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 12px; padding: 20px; border: 1px solid #334155; transition: transform 0.2s, box-shadow 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+        .metric-card.highlight { background: linear-gradient(135deg, #065f46 0%, #047857 100%); border-color: #10b981; }
+        .metric-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .metric-value { font-size: 28px; font-weight: 700; color: #f8fafc; }
+        .metric-subtext { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .chart-card { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; }
+        .chart-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }
+        .chart-container { position: relative; height: 300px; }
+        .table-card { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; overflow-x: auto; }
+        .table-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #f8fafc; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #334155; }
+        th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; }
+        td { font-size: 14px; color: #e2e8f0; }
+        tr:hover { background: #334155; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .status-on-track { background: #065f46; color: #34d399; }
+        .status-behind { background: #7c2d12; color: #fdba74; }
+        .status-inactive { background: #374151; color: #9ca3af; }
+        .progress-bar { width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
         .progress-green { background: linear-gradient(90deg, #10b981, #34d399); }
         .progress-yellow { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
         .progress-red { background: linear-gradient(90deg, #ef4444, #f87171); }
-
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #64748b;
-            font-style: italic;
-        }
-
-        @media (max-width: 768px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .filters-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .reset-btn {
-                margin-left: 0;
-                margin-top: 8px;
-            }
-        }
+        .no-data { text-align: center; padding: 40px; color: #64748b; font-style: italic; }
+        @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } .metrics-grid { grid-template-columns: repeat(2, 1fr); } .filters-bar { flex-direction: column; align-items: stretch; } .reset-btn { margin-left: 0; margin-top: 8px; } }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Sales Performance Dashboard</h1>
         <div class="subtitle">Q2 2026 | April Performance</div>
-        <div class="last-updated">Last updated: May 22, 2026</div>
+        <div class="last-updated">Last updated: May 26, 2026 at 10:10 AM</div>
     </div>
 
-    <!-- Filters -->
     <div class="filters-bar">
         <div class="filter-group">
             <label class="filter-label">Role / Team</label>
             <select id="roleFilter" class="filter-select" onchange="applyFilters()">
                 <option value="all">All Roles</option>
-                <option value="AE">AE (Account Executive)</option>
-                <option value="AM">AM (Account Manager)</option>
-                <option value="SM AM">SM AM (Small Market)</option>
+                <option value="AE">AE</option>
+                <option value="AM">AM</option>
+                <option value="SM AM">SM AM</option>
             </select>
         </div>
         <div class="filter-group">
@@ -363,111 +90,35 @@
         <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
     </div>
 
-    <!-- Key Metrics -->
     <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="metric-label">Deals</div>
-            <div class="metric-value" id="metricDeals">134</div>
-            <div class="metric-subtext">Current Selection</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Gross Revenue</div>
-            <div class="metric-value" id="metricGross">$361.9K</div>
-            <div class="metric-subtext">Total ARR</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Net New ARR</div>
-            <div class="metric-value" id="metricNetNew">$218.4K</div>
-            <div class="metric-subtext">Current Selection</div>
-        </div>
-        <div class="metric-card highlight">
-            <div class="metric-label">Avg % to Goal</div>
-            <div class="metric-value" id="metricGoal">68.97%</div>
-            <div class="metric-subtext">Monthly Target</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Total Earnings</div>
-            <div class="metric-value" id="metricEarnings">$42.6K</div>
-            <div class="metric-subtext">April Commissions</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Rep Count</div>
-            <div class="metric-value" id="metricRepCount">8</div>
-            <div class="metric-subtext">In Selection</div>
-        </div>
+        <div class="metric-card"><div class="metric-label">Deals</div><div class="metric-value" id="metricDeals">134</div><div class="metric-subtext">Current Selection</div></div>
+        <div class="metric-card"><div class="metric-label">Gross Revenue</div><div class="metric-value" id="metricGross">$361.9K</div><div class="metric-subtext">Total ARR</div></div>
+        <div class="metric-card"><div class="metric-label">Net New ARR</div><div class="metric-value" id="metricNetNew">$218.4K</div><div class="metric-subtext">Current Selection</div></div>
+        <div class="metric-card highlight"><div class="metric-label">Avg % to Goal</div><div class="metric-value" id="metricGoal">69.0%</div><div class="metric-subtext">Monthly Target</div></div>
+        <div class="metric-card"><div class="metric-label">Total Earnings</div><div class="metric-value" id="metricEarnings">$42.6K</div><div class="metric-subtext">April Commissions</div></div>
+        <div class="metric-card"><div class="metric-label">Rep Count</div><div class="metric-value" id="metricRepCount">8</div><div class="metric-subtext">In Selection</div></div>
     </div>
 
-    <!-- Charts -->
     <div class="charts-grid">
-        <div class="chart-card">
-            <h3>Net New ARR by Rep</h3>
-            <div class="chart-container">
-                <canvas id="repArrChart"></canvas>
-            </div>
-        </div>
-        <div class="chart-card">
-            <h3>Attainment % by Rep</h3>
-            <div class="chart-container">
-                <canvas id="attainmentChart"></canvas>
-            </div>
-        </div>
-        <div class="chart-card">
-            <h3>Deals by Rep</h3>
-            <div class="chart-container">
-                <canvas id="dealsChart"></canvas>
-            </div>
-        </div>
-        <div class="chart-card">
-            <h3>Earnings by Rep</h3>
-            <div class="chart-container">
-                <canvas id="earningsChart"></canvas>
-            </div>
-        </div>
+        <div class="chart-card"><h3>Net New ARR by Rep</h3><div class="chart-container"><canvas id="repArrChart"></canvas></div></div>
+        <div class="chart-card"><h3>Attainment % by Rep</h3><div class="chart-container"><canvas id="attainmentChart"></canvas></div></div>
+        <div class="chart-card"><h3>Deals by Rep</h3><div class="chart-container"><canvas id="dealsChart"></canvas></div></div>
+        <div class="chart-card"><h3>Earnings by Rep</h3><div class="chart-container"><canvas id="earningsChart"></canvas></div></div>
     </div>
 
-    <!-- Rep Scorecards Table -->
     <div class="table-card">
         <h3>Rep Scorecards - April 2026</h3>
-        <table id="repTable">
-            <thead>
-                <tr>
-                    <th>Rep</th>
-                    <th>Role</th>
-                    <th>Deals</th>
-                    <th>Net New ARR</th>
-                    <th>% to Goal</th>
-                    <th>Progress</th>
-                    <th>Gross Revenue</th>
-                    <th>April Earnings</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="repTableBody">
-            </tbody>
-        </table>
-        <div id="noDataMessage" class="no-data" style="display: none;">
-            No reps match the selected filters.
-        </div>
+        <table id="repTable"><thead><tr><th>Rep</th><th>Role</th><th>Deals</th><th>Net New ARR</th><th>% to Goal</th><th>Progress</th><th>Gross Revenue</th><th>April Earnings</th><th>Status</th></tr></thead><tbody id="repTableBody"></tbody></table>
+        <div id="noDataMessage" class="no-data" style="display: none;">No reps match the selected filters.</div>
     </div>
 
-    <!-- Monthly Breakdown Table -->
     <div class="table-card" style="margin-top: 24px;">
         <h3>Monthly Performance Breakdown - YTD 2026 (Team Total)</h3>
         <table>
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <th>Deals</th>
-                    <th>Gross Revenue</th>
-                    <th>Net New ARR</th>
-                    <th>% to Goal</th>
-                    <th>Commission</th>
-                    <th>Total Earnings</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Month</th><th>Deals</th><th>Gross Revenue</th><th>Net New ARR</th><th>% to Goal</th><th>Commission</th><th>Total Earnings</th></tr></thead>
             <tbody>
                 <tr>
-                    <td>January</td>
+                    <td>Jan</td>
                     <td>221</td>
                     <td>$524,590</td>
                     <td>$305,149</td>
@@ -476,7 +127,7 @@
                     <td>$47,435</td>
                 </tr>
                 <tr>
-                    <td>February</td>
+                    <td>Feb</td>
                     <td>260</td>
                     <td>$497,579</td>
                     <td>$246,289</td>
@@ -485,7 +136,7 @@
                     <td>$43,253</td>
                 </tr>
                 <tr>
-                    <td>March</td>
+                    <td>Mar</td>
                     <td>202</td>
                     <td>$479,383</td>
                     <td>$198,461</td>
@@ -494,7 +145,7 @@
                     <td>$56,374</td>
                 </tr>
                 <tr style="background: #334155;">
-                    <td><strong>April</strong></td>
+                    <td><strong>Apr</strong></td>
                     <td><strong>134</strong></td>
                     <td><strong>$361,935</strong></td>
                     <td><strong>$218,390</strong></td>
@@ -507,7 +158,7 @@
                     <td><strong>817</strong></td>
                     <td><strong>$1,863,488</strong></td>
                     <td><strong>$968,289</strong></td>
-                    <td><strong>25.5%</strong></td>
+                    <td><strong>—</strong></td>
                     <td><strong>$43,483</strong></td>
                     <td><strong>$463,962</strong></td>
                 </tr>
@@ -516,209 +167,28 @@
     </div>
 
     <script>
-        // Rep Data
         const repData = [
-            { name: 'Brian Carl', role: 'AE', deals: 13, netNew: 25598, goal: 61.4, gross: 46179, earnings: 7048, status: 'behind' },
+            { name: 'Brian Carl', role: 'AE', deals: 13, netNew: 25598, goal: 61.4, gross: 46178, earnings: 7048, status: 'behind' },
             { name: 'Caleb Gilbert', role: 'AE', deals: 6, netNew: 25713, goal: 61.7, gross: 34429, earnings: 7057, status: 'behind' },
             { name: 'Cameron Grissom', role: 'AM', deals: 54, netNew: 55323, goal: 110.6, gross: 85412, earnings: 5549, status: 'on-track' },
-            { name: 'Chase Bryant', role: 'AE', deals: 12, netNew: 37422, goal: 0, gross: 73570, earnings: 0, status: 'inactive' },
+            { name: 'Chase Bryant', role: 'AE', deals: 12, netNew: 37422, goal: 0.0, gross: 73570, earnings: 0, status: 'inactive' },
             { name: 'Connor Krauseneck', role: 'AE', deals: 15, netNew: 34517, goal: 82.8, gross: 39426, earnings: 7761, status: 'behind' },
-            { name: 'Connor O\'Brien', role: 'AE', deals: 22, netNew: 4903, goal: 11.8, gross: 20449, earnings: 6681, status: 'behind' },
+            { name: 'Connor O'Brien', role: 'AE', deals: 22, netNew: 4903, goal: 11.8, gross: 20449, earnings: 6681, status: 'behind' },
             { name: 'Elijah Diaz', role: 'AM', deals: 7, netNew: 9990, goal: 20.0, gross: 12782, earnings: 4337, status: 'behind' },
             { name: 'Kaitlyn Lack', role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6, gross: 48814, earnings: 5012, status: 'on-track' }
         ];
-
-        // Chart instances
         let repArrChart, attainmentChart, dealsChart, earningsChart;
-
-        // Chart.js defaults
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.borderColor = '#334155';
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            initCharts();
-            applyFilters();
-        });
-
-        function getFilteredData() {
-            const roleFilter = document.getElementById('roleFilter').value;
-            const repFilter = document.getElementById('repFilter').value;
-
-            return repData.filter(rep => {
-                const roleMatch = roleFilter === 'all' || rep.role === roleFilter;
-                const repMatch = repFilter === 'all' || rep.name === repFilter;
-                return roleMatch && repMatch;
-            });
-        }
-
-        function applyFilters() {
-            const filtered = getFilteredData();
-            updateMetrics(filtered);
-            updateTable(filtered);
-            updateCharts(filtered);
-            updateActiveFilters();
-        }
-
-        function resetFilters() {
-            document.getElementById('roleFilter').value = 'all';
-            document.getElementById('repFilter').value = 'all';
-            applyFilters();
-        }
-
-        function updateActiveFilters() {
-            const roleFilter = document.getElementById('roleFilter').value;
-            const repFilter = document.getElementById('repFilter').value;
-            const container = document.getElementById('activeFilters');
-            container.innerHTML = '';
-
-            if (roleFilter !== 'all') {
-                container.innerHTML += `<span class="filter-tag">${roleFilter} <span class="remove" onclick="document.getElementById('roleFilter').value='all';applyFilters();">×</span></span>`;
-            }
-            if (repFilter !== 'all') {
-                container.innerHTML += `<span class="filter-tag">${repFilter} <span class="remove" onclick="document.getElementById('repFilter').value='all';applyFilters();">×</span></span>`;
-            }
-        }
-
-        function updateMetrics(data) {
-            const totalDeals = data.reduce((sum, r) => sum + r.deals, 0);
-            const totalGross = data.reduce((sum, r) => sum + r.gross, 0);
-            const totalNetNew = data.reduce((sum, r) => sum + r.netNew, 0);
-            const totalEarnings = data.reduce((sum, r) => sum + r.earnings, 0);
-            const avgGoal = data.length > 0 ? data.reduce((sum, r) => sum + r.goal, 0) / data.length : 0;
-
-            document.getElementById('metricDeals').textContent = totalDeals;
-            document.getElementById('metricGross').textContent = '$' + (totalGross / 1000).toFixed(1) + 'K';
-            document.getElementById('metricNetNew').textContent = '$' + (totalNetNew / 1000).toFixed(1) + 'K';
-            document.getElementById('metricGoal').textContent = avgGoal.toFixed(1) + '%';
-            document.getElementById('metricEarnings').textContent = '$' + (totalEarnings / 1000).toFixed(1) + 'K';
-            document.getElementById('metricRepCount').textContent = data.length;
-        }
-
-        function updateTable(data) {
-            const tbody = document.getElementById('repTableBody');
-            const noData = document.getElementById('noDataMessage');
-
-            if (data.length === 0) {
-                tbody.innerHTML = '';
-                noData.style.display = 'block';
-                return;
-            }
-
-            noData.style.display = 'none';
-
-            // Sort by Net New ARR descending
-            const sorted = [...data].sort((a, b) => b.netNew - a.netNew);
-
-            tbody.innerHTML = sorted.map(rep => {
-                const progressClass = rep.goal >= 90 ? 'progress-green' : rep.goal >= 50 ? 'progress-yellow' : 'progress-red';
-                const statusClass = rep.status === 'on-track' ? 'status-on-track' : rep.status === 'inactive' ? 'status-inactive' : 'status-behind';
-                const statusText = rep.status === 'on-track' ? 'On Track' : rep.status === 'inactive' ? 'Inactive' : 'Behind';
-
-                return `
-                    <tr data-role="${rep.role}" data-name="${rep.name}">
-                        <td>${rep.name}</td>
-                        <td>${rep.role}</td>
-                        <td>${rep.deals}</td>
-                        <td>$${rep.netNew.toLocaleString()}</td>
-                        <td>${rep.goal}%</td>
-                        <td>
-                            <div class="progress-bar">
-                                <div class="progress-fill ${progressClass}" style="width: ${Math.min(rep.goal, 100)}%"></div>
-                            </div>
-                        </td>
-                        <td>$${rep.gross.toLocaleString()}</td>
-                        <td>$${rep.earnings.toLocaleString()}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function initCharts() {
-            // Rep ARR Chart
-            repArrChart = new Chart(document.getElementById('repArrChart'), {
-                type: 'bar',
-                data: { labels: [], datasets: [{ label: 'Net New ARR', data: [], backgroundColor: [], borderRadius: 6 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } }
-                }
-            });
-
-            // Attainment Chart
-            attainmentChart = new Chart(document.getElementById('attainmentChart'), {
-                type: 'bar',
-                data: { labels: [], datasets: [{ label: '% to Goal', data: [], backgroundColor: [], borderRadius: 6 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, max: 120, ticks: { callback: v => v + '%' } } }
-                }
-            });
-
-            // Deals Chart
-            dealsChart = new Chart(document.getElementById('dealsChart'), {
-                type: 'bar',
-                data: { labels: [], datasets: [{ label: 'Deals', data: [], backgroundColor: '#6366f1', borderRadius: 6 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true } }
-                }
-            });
-
-            // Earnings Chart
-            earningsChart = new Chart(document.getElementById('earningsChart'), {
-                type: 'bar',
-                data: { labels: [], datasets: [{ label: 'Earnings', data: [], backgroundColor: '#10b981', borderRadius: 6 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } }
-                }
-            });
-        }
-
-        function updateCharts(data) {
-            // Sort by Net New ARR descending
-            const sorted = [...data].sort((a, b) => b.netNew - a.netNew);
-
-            const labels = sorted.map(r => r.name.split(' ')[0] + ' ' + r.name.split(' ')[1][0] + '.');
-            const arrColors = sorted.map(r => r.goal >= 90 ? '#10b981' : r.goal >= 50 ? '#f59e0b' : '#ef4444');
-            const goalColors = sorted.map(r => r.goal >= 90 ? '#10b981' : r.goal >= 50 ? '#f59e0b' : '#ef4444');
-
-            // Update ARR Chart
-            repArrChart.data.labels = labels;
-            repArrChart.data.datasets[0].data = sorted.map(r => r.netNew);
-            repArrChart.data.datasets[0].backgroundColor = arrColors;
-            repArrChart.update();
-
-            // Update Attainment Chart
-            attainmentChart.data.labels = labels;
-            attainmentChart.data.datasets[0].data = sorted.map(r => r.goal);
-            attainmentChart.data.datasets[0].backgroundColor = goalColors;
-            attainmentChart.update();
-
-            // Update Deals Chart
-            dealsChart.data.labels = labels;
-            dealsChart.data.datasets[0].data = sorted.map(r => r.deals);
-            dealsChart.update();
-
-            // Update Earnings Chart
-            earningsChart.data.labels = labels;
-            earningsChart.data.datasets[0].data = sorted.map(r => r.earnings);
-            earningsChart.update();
-        }
+        document.addEventListener('DOMContentLoaded', function() { initCharts(); applyFilters(); });
+        function getFilteredData() { const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; return repData.filter(rep => { const roleMatch = roleFilter === 'all' || rep.role === roleFilter; const repMatch = repFilter === 'all' || rep.name === repFilter; return roleMatch && repMatch; }); }
+        function applyFilters() { const filtered = getFilteredData(); updateMetrics(filtered); updateTable(filtered); updateCharts(filtered); updateActiveFilters(); }
+        function resetFilters() { document.getElementById('roleFilter').value = 'all'; document.getElementById('repFilter').value = 'all'; applyFilters(); }
+        function updateActiveFilters() { const roleFilter = document.getElementById('roleFilter').value; const repFilter = document.getElementById('repFilter').value; const container = document.getElementById('activeFilters'); container.innerHTML = ''; if (roleFilter !== 'all') { container.innerHTML += `<span class="filter-tag">${roleFilter} <span class="remove" onclick="document.getElementById('roleFilter').value='all';applyFilters();">×</span></span>`; } if (repFilter !== 'all') { container.innerHTML += `<span class="filter-tag">${repFilter} <span class="remove" onclick="document.getElementById('repFilter').value='all';applyFilters();">×</span></span>`; } }
+        function updateMetrics(data) { const totalDeals = data.reduce((sum, r) => sum + r.deals, 0); const totalGross = data.reduce((sum, r) => sum + r.gross, 0); const totalNetNew = data.reduce((sum, r) => sum + r.netNew, 0); const totalEarnings = data.reduce((sum, r) => sum + r.earnings, 0); const avgGoal = data.length > 0 ? data.reduce((sum, r) => sum + r.goal, 0) / data.length : 0; document.getElementById('metricDeals').textContent = totalDeals; document.getElementById('metricGross').textContent = '$' + (totalGross / 1000).toFixed(1) + 'K'; document.getElementById('metricNetNew').textContent = '$' + (totalNetNew / 1000).toFixed(1) + 'K'; document.getElementById('metricGoal').textContent = avgGoal.toFixed(1) + '%'; document.getElementById('metricEarnings').textContent = '$' + (totalEarnings / 1000).toFixed(1) + 'K'; document.getElementById('metricRepCount').textContent = data.length; }
+        function updateTable(data) { const tbody = document.getElementById('repTableBody'); const noData = document.getElementById('noDataMessage'); if (data.length === 0) { tbody.innerHTML = ''; noData.style.display = 'block'; return; } noData.style.display = 'none'; const sorted = [...data].sort((a, b) => b.netNew - a.netNew); tbody.innerHTML = sorted.map(rep => { const progressClass = rep.goal >= 90 ? 'progress-green' : rep.goal >= 50 ? 'progress-yellow' : 'progress-red'; const statusClass = rep.status === 'on-track' ? 'status-on-track' : rep.status === 'inactive' ? 'status-inactive' : 'status-behind'; const statusText = rep.status === 'on-track' ? 'On Track' : rep.status === 'inactive' ? 'Inactive' : 'Behind'; return `<tr><td>${rep.name}</td><td>${rep.role}</td><td>${rep.deals}</td><td>${rep.netNew.toLocaleString()}</td><td>${rep.goal}%</td><td><div class="progress-bar"><div class="progress-fill ${progressClass}" style="width: ${Math.min(rep.goal, 100)}%"></div></div></td><td>${rep.gross.toLocaleString()}</td><td>${rep.earnings.toLocaleString()}</td><td><span class="status-badge ${statusClass}">${statusText}</span></td></tr>`; }).join(''); }
+        function initCharts() { repArrChart = new Chart(document.getElementById('repArrChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Net New ARR', data: [], backgroundColor: [], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } } } }); attainmentChart = new Chart(document.getElementById('attainmentChart'), { type: 'bar', data: { labels: [], datasets: [{ label: '% to Goal', data: [], backgroundColor: [], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 120, ticks: { callback: v => v + '%' } } } } }); dealsChart = new Chart(document.getElementById('dealsChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Deals', data: [], backgroundColor: '#6366f1', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } }); earningsChart = new Chart(document.getElementById('earningsChart'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Earnings', data: [], backgroundColor: '#10b981', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + (v / 1000) + 'K' } } } } }); }
+        function updateCharts(data) { const sorted = [...data].sort((a, b) => b.netNew - a.netNew); const labels = sorted.map(r => r.name.split(' ')[0] + ' ' + r.name.split(' ')[1][0] + '.'); const arrColors = sorted.map(r => r.goal >= 90 ? '#10b981' : r.goal >= 50 ? '#f59e0b' : '#ef4444'); repArrChart.data.labels = labels; repArrChart.data.datasets[0].data = sorted.map(r => r.netNew); repArrChart.data.datasets[0].backgroundColor = arrColors; repArrChart.update(); attainmentChart.data.labels = labels; attainmentChart.data.datasets[0].data = sorted.map(r => r.goal); attainmentChart.data.datasets[0].backgroundColor = arrColors; attainmentChart.update(); dealsChart.data.labels = labels; dealsChart.data.datasets[0].data = sorted.map(r => r.deals); dealsChart.update(); earningsChart.data.labels = labels; earningsChart.data.datasets[0].data = sorted.map(r => r.earnings); earningsChart.update(); }
     </script>
 </body>
 </html>
