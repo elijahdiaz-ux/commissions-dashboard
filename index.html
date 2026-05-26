@@ -716,6 +716,54 @@
   .pay-strip.total .key { color: var(--text); font-weight: 600; }
   .pay-strip.total .val { font-size: 18px; color: var(--accent-3); }
 
+  /* YTD CHART */
+  .ytd-legend {
+    display: flex;
+    gap: 20px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-3);
+  }
+  .legend-bar {
+    width: 16px;
+    height: 10px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #6EE7B7, #10B981);
+  }
+  .legend-line {
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #F3C969, #FBBF24);
+  }
+  .ytd-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--hairline);
+  }
+  .ytd-stat {
+    text-align: center;
+  }
+  .ytd-stat-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .ytd-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
   /* PACING CARD */
   .pacing-card {
     background: rgba(255,255,255,0.025);

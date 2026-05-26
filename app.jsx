@@ -320,6 +320,109 @@ function ForecastViz() {
 }
 
 // ───────── MINI BAR CHART ─────────
+// ───────── YTD NET NEW ARR CHART ─────────
+function YTDNetNewChart() {
+  const data = MONTHLY.map(m => ({ label: m.m, value: m.netNew, goal: m.goal }));
+  const max = Math.max(...data.map(d => d.value));
+  const W = 600, H = 200;
+  const padLeft = 60, padRight = 20, padTop = 20, padBot = 40;
+  const chartW = W - padLeft - padRight;
+  const chartH = H - padTop - padBot;
+  const barW = chartW / data.length - 16;
+
+  // Calculate cumulative YTD
+  let cumulative = 0;
+  const cumulativeData = data.map(d => {
+    cumulative += d.value;
+    return cumulative;
+  });
+  const maxCumulative = Math.max(...cumulativeData);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="ytd-bar-grad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.9"/>
+          <stop offset="100%" stopColor="#10B981" stopOpacity="1"/>
+        </linearGradient>
+        <linearGradient id="ytd-line-grad" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stopColor="#F3C969"/>
+          <stop offset="100%" stopColor="#FBBF24"/>
+        </linearGradient>
+      </defs>
+
+      {/* Y-axis labels */}
+      {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+        const y = padTop + chartH * (1 - pct);
+        const val = max * pct;
+        return (
+          <g key={i}>
+            <line x1={padLeft} x2={W - padRight} y1={y} y2={y} stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4"/>
+            <text x={padLeft - 8} y={y + 4} fontSize="10" fill="#6B8C7C" textAnchor="end" fontFamily="JetBrains Mono">
+              ${(val / 1000).toFixed(0)}K
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Bars */}
+      {data.map((d, i) => {
+        const barH = (d.value / max) * chartH;
+        const x = padLeft + i * (chartW / data.length) + 8;
+        const y = padTop + chartH - barH;
+        return (
+          <g key={i}>
+            <rect
+              x={x}
+              y={y}
+              width={barW}
+              height={barH}
+              rx={6}
+              fill="url(#ytd-bar-grad)"
+              style={{ filter: 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3))' }}
+            />
+            <text x={x + barW/2} y={y - 8} fontSize="11" fill="#F1F8F4" textAnchor="middle" fontWeight="600" fontFamily="JetBrains Mono">
+              ${(d.value / 1000).toFixed(0)}K
+            </text>
+            <text x={x + barW/2} y={H - 12} fontSize="12" fill="#A5C7B5" textAnchor="middle" fontWeight="500">
+              {d.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Cumulative line */}
+      <polyline
+        points={cumulativeData.map((val, i) => {
+          const x = padLeft + i * (chartW / data.length) + 8 + barW/2;
+          const y = padTop + chartH - (val / maxCumulative) * chartH;
+          return `${x},${y}`;
+        }).join(' ')}
+        fill="none"
+        stroke="url(#ytd-line-grad)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ filter: 'drop-shadow(0 0 6px rgba(243, 201, 105, 0.5))' }}
+      />
+
+      {/* Cumulative dots */}
+      {cumulativeData.map((val, i) => {
+        const x = padLeft + i * (chartW / data.length) + 8 + barW/2;
+        const y = padTop + chartH - (val / maxCumulative) * chartH;
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r="5" fill="#0E1A1D" stroke="#F3C969" strokeWidth="2"/>
+            <text x={x} y={y - 12} fontSize="9" fill="#F3C969" textAnchor="middle" fontWeight="600" fontFamily="JetBrains Mono">
+              ${(val / 1000).toFixed(0)}K
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function MiniBars({ data }) {
   const max = Math.max(...data.map(d => d.v));
   const W = 280, H = 70;
@@ -831,6 +934,41 @@ function App() {
             </div>
           </section>
         </div>
+
+        {/* YTD Net New ARR Chart */}
+        <section className="card">
+          <div className="card-head">
+            <div>
+              <div className="card-title">YTD Net New ARR</div>
+              <div className="card-sub">Monthly performance with cumulative trend line</div>
+            </div>
+            <div className="ytd-legend">
+              <span className="legend-item"><span className="legend-bar"></span>Monthly Net New</span>
+              <span className="legend-item"><span className="legend-line"></span>Cumulative YTD</span>
+            </div>
+          </div>
+          <div className="card-body" style={{ paddingTop: 8 }}>
+            <YTDNetNewChart/>
+            <div className="ytd-summary">
+              <div className="ytd-stat">
+                <div className="ytd-stat-label">YTD Total</div>
+                <div className="ytd-stat-value tab">{fmtMoney(YTD.netNew, { full: true })}</div>
+              </div>
+              <div className="ytd-stat">
+                <div className="ytd-stat-label">Monthly Avg</div>
+                <div className="ytd-stat-value tab">{fmtMoney(YTD.netNew / 4, { full: true })}</div>
+              </div>
+              <div className="ytd-stat">
+                <div className="ytd-stat-label">Best Month</div>
+                <div className="ytd-stat-value tab">Jan · $305K</div>
+              </div>
+              <div className="ytd-stat">
+                <div className="ytd-stat-label">Trend</div>
+                <div className="ytd-stat-value" style={{ color: 'var(--rose)' }}>↓ Declining</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Leaderboard */}
         <section className="card leaderboard">
