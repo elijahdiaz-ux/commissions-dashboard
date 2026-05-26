@@ -827,58 +827,34 @@ function App() {
 
         {/* Top row: hero card + forecast */}
         <div className="top-row">
-          {/* Key Metrics */}
+          {/* Net New ARR by Rep */}
           <section className="card">
             <div className="card-head">
               <div>
-                <div className="card-title">Team Performance</div>
-                <div className="card-sub">All reps · {period}</div>
+                <div className="card-title">Net New ARR by Rep</div>
+                <div className="card-sub">April 2026 · {fmtMoney(activeData.netNew, { full: true })} total</div>
               </div>
             </div>
             <div className="card-body">
-              <div className="metrics-grid">
-                <div className="metric-tile">
-                  <div className="metric-icon"><Icon.Target/></div>
-                  <div className="metric-content">
-                    <div className="metric-value tab">{activeData.deals}</div>
-                    <div className="metric-label">Deals Closed</div>
-                  </div>
-                </div>
-                <div className="metric-tile">
-                  <div className="metric-icon"><Icon.Coin/></div>
-                  <div className="metric-content">
-                    <div className="metric-value tab">{fmtMoney(activeData.gross)}</div>
-                    <div className="metric-label">Gross Revenue</div>
-                  </div>
-                </div>
-                <div className="metric-tile highlight">
-                  <div className="metric-icon"><Icon.Spark/></div>
-                  <div className="metric-content">
-                    <div className="metric-value tab">{fmtMoney(activeData.netNew)}</div>
-                    <div className="metric-label">Net New ARR</div>
-                  </div>
-                </div>
-                <div className="metric-tile">
-                  <div className="metric-icon"><Icon.Commission/></div>
-                  <div className="metric-content">
-                    <div className="metric-value tab">{fmtMoney(activeData.earnings)}</div>
-                    <div className="metric-label">Commissions Paid</div>
-                  </div>
-                </div>
-              </div>
-              <div className="metrics-secondary">
-                <div className="metric-secondary-item">
-                  <span className="metric-secondary-value tab">{avgAttain.toFixed(1)}%</span>
-                  <span className="metric-secondary-label">Avg Attainment</span>
-                </div>
-                <div className="metric-secondary-item">
-                  <span className="metric-secondary-value tab">{fmtMoney(avgDeal)}</span>
-                  <span className="metric-secondary-label">Avg Deal Size</span>
-                </div>
-                <div className="metric-secondary-item">
-                  <span className="metric-secondary-value tab">7/8</span>
-                  <span className="metric-secondary-label">Reps Earning</span>
-                </div>
+              <div className="rep-bar-chart">
+                {[...REPS].sort((a, b) => b.netNew - a.netNew).map((rep, i) => {
+                  const maxNetNew = Math.max(...REPS.map(r => r.netNew));
+                  const pct = (rep.netNew / maxNetNew) * 100;
+                  return (
+                    <div key={rep.name} className="rep-bar-row" onClick={() => setActiveRep(rep)}>
+                      <div className="rep-bar-label">
+                        <div className="avatar-sm" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)` }}>
+                          {initials(rep.name)}
+                        </div>
+                        <span className="rep-bar-name">{rep.name.split(' ')[0]}</span>
+                      </div>
+                      <div className="rep-bar-track">
+                        <div className="rep-bar-fill" style={{ width: pct + '%', background: `linear-gradient(90deg, ${rep.color}88, ${rep.color})` }}/>
+                      </div>
+                      <div className="rep-bar-value tab">{fmtMoney(rep.netNew)}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
