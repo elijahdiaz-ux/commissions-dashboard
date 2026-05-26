@@ -1,15 +1,16 @@
 const { useState, useMemo, useEffect } = React;
 
 // ───────── DATA ─────────
+// Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, earnings: 5549, status: 'on-track', spark: [11200, 18400, 32800, 55323], color: '#34D399' },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6,  gross: 48814, earnings: 5012, status: 'on-track', spark: [22400, 31100, 38200, 48814], color: '#6BD9A4' },
-  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C' },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 82.8,  gross: 39426, earnings: 7761, status: 'behind',   spark: [28200, 30100, 32400, 34517], color: '#F3C969' },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 61.7,  gross: 34429, earnings: 7057, status: 'behind',   spark: [9100, 14400, 21200, 25713], color: '#E26D8E' },
-  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 61.4,  gross: 46178, earnings: 7048, status: 'behind',   spark: [38100, 31200, 28400, 25598], color: '#F08F6A' },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, earnings: 4337, status: 'behind',   spark: [14200, 11100, 8400, 9990],   color: '#6EE7B7' },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 11.8,  gross: 20449, earnings: 6681, status: 'behind',   spark: [22100, 18400, 12200, 4903],  color: '#7BD3EA' },
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [11200, 18400, 32800, 55323], color: '#34D399' },
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 48814, goal: 97.6,  gross: 48814, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [22400, 31100, 38200, 48814], color: '#6BD9A4' },
+  { name: 'Chase Bryant',     role: 'AE',    deals: 12, netNew: 37422, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [42100, 38800, 35400, 37422], color: '#6B6F8C' },
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 82.8,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [28200, 30100, 32400, 34517], color: '#F3C969' },
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 61.7,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [9100, 14400, 21200, 25713], color: '#E26D8E' },
+  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 61.4,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [38100, 31200, 28400, 25598], color: '#F08F6A' },
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [14200, 11100, 8400, 9990],   color: '#6EE7B7' },
+  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 11.8,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [22100, 18400, 12200, 4903],  color: '#7BD3EA' },
 ];
 
 const MONTHLY = [
@@ -251,9 +252,9 @@ function RepDrawer({ rep, onClose }) {
     { label: 'Apr', v: rep.earnings, projected: false },
     { label: 'May ▴', v: rep.earnings * 1.08, projected: true },
   ];
-  // commission breakdown synthetic
-  const baseRate = rep.earnings > 0 ? rep.earnings * 0.45 : 0;
-  const variableRate = rep.earnings > 0 ? rep.earnings * 0.55 : 0;
+  // commission breakdown from actual data
+  const basePay = rep.basePay || 0;
+  const commissionEarned = rep.commission || 0;
   const apr = rep.earnings;
   return (
     <>
@@ -335,15 +336,15 @@ function RepDrawer({ rep, onClose }) {
           <h4>April Payout Breakdown</h4>
           <div>
             <div className="pay-strip">
-              <span className="key">Base commission (45%)</span>
-              <span className="val tab">{fmtMoney(baseRate, { full: true })}</span>
+              <span className="key">Base Pay</span>
+              <span className="val tab">{fmtMoney(basePay, { full: true })}</span>
             </div>
             <div className="pay-strip">
-              <span className="key">Variable / accelerators</span>
-              <span className="val tab">{fmtMoney(variableRate, { full: true })}</span>
+              <span className="key">Commission Earned</span>
+              <span className="val tab">{fmtMoney(commissionEarned, { full: true })}</span>
             </div>
             <div className="pay-strip">
-              <span className="key">Spiff / SPIF adjustments</span>
+              <span className="key">Spiff / Adjustments</span>
               <span className="val tab" style={{ color: 'var(--text-3)' }}>$0</span>
             </div>
             <div className="pay-strip total">
