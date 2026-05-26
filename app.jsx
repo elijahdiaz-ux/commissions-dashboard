@@ -746,16 +746,16 @@ function App() {
     deals: MONTHLY.slice(0,3).reduce((s,m)=>s+m.deals,0),
     gross: MONTHLY.slice(0,3).reduce((s,m)=>s+m.gross,0),
     netNew: MONTHLY.slice(0,3).reduce((s,m)=>s+m.netNew,0),
-    earnings: MONTHLY.slice(0,3).reduce((s,m)=>s+m.earnings,0),
+    commission: MONTHLY.slice(0,3).reduce((s,m)=>s+m.commission,0),
   } : periodData;
 
   // KPI bar percents — bar height relative to YTD peak across months
-  const peakDeals = 260, peakGross = 524590, peakNetNew = 305149, peakEarn = isYTD ? YTD.earnings : 56374;
+  const peakDeals = 260, peakGross = 524590, peakNetNew = 305149, peakComm = isYTD ? YTD.commission : 13253;
   const tiles = [
     { value: activeData.deals, label: 'Deals closed', pct: (activeData.deals / (isYTD ? YTD.deals : peakDeals)) * 100, color: 'normal' },
     { value: fmtMoney(activeData.gross), label: 'Gross revenue', pct: (activeData.gross / (isYTD ? YTD.gross : peakGross)) * 100, color: 'normal' },
     { value: fmtMoney(activeData.netNew), label: 'Net new ARR', pct: (activeData.netNew / (isYTD ? YTD.netNew : peakNetNew)) * 100, color: 'normal' },
-    { value: fmtMoney(activeData.earnings), label: 'Commissions paid', pct: (activeData.earnings / peakEarn) * 100, color: 'normal' },
+    { value: fmtMoney(activeData.commission), label: 'Commissions', pct: (activeData.commission / peakComm) * 100, color: 'normal' },
   ];
 
   // Filter + sort leaderboard
@@ -861,8 +861,8 @@ function App() {
                 <div className="metric-tile">
                   <div className="metric-icon"><Icon.Commission/></div>
                   <div className="metric-content">
-                    <div className="metric-value tab">{fmtMoney(activeData.earnings)}</div>
-                    <div className="metric-label">Commissions Paid</div>
+                    <div className="metric-value tab">{fmtMoney(activeData.commission)}</div>
+                    <div className="metric-label">Commissions</div>
                   </div>
                 </div>
               </div>
