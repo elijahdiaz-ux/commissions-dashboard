@@ -250,6 +250,7 @@ const Icon = {
   Coin: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 6v12M9 9h4.5a2.5 2.5 0 0 1 0 5H9M9 14h5"/></svg>,
   Target: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>,
   Spark: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/></svg>,
+  Info: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>,
 };
 
 // ───────── SPARKLINE ─────────
@@ -756,6 +757,7 @@ function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [toasts, setToasts] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
+  const [showMethodology, setShowMethodology] = useState(false);
 
   // Close popovers on outside click
   useEffect(() => {
@@ -1027,6 +1029,9 @@ function App() {
           <section className="card forecast">
             <div className="forecast-head">
               <div className="forecast-title">May <span className="accent">Projection</span></div>
+              <div className="info-btn" onClick={() => setShowMethodology(true)} title="How is this calculated?">
+                <Icon.Info />
+              </div>
             </div>
             <div className="orbit-viz">
               <ForecastViz/>
@@ -1170,6 +1175,91 @@ function App() {
       </main>
 
       <RepDrawer rep={activeRep} onClose={() => setActiveRep(null)}/>
+
+      {/* Methodology Modal */}
+      {showMethodology && (
+        <>
+          <div className="modal-scrim" onClick={() => setShowMethodology(false)} />
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Run Rate Projection Methodology</h3>
+              <div className="modal-close" onClick={() => setShowMethodology(false)}><Icon.X /></div>
+            </div>
+            <div className="modal-body">
+              <div className="method-section">
+                <h4>What is Run Rate?</h4>
+                <p>Run rate projects future performance based on historical trends. We use a weighted average that emphasizes recent performance while accounting for overall patterns.</p>
+              </div>
+
+              <div className="method-section">
+                <h4>Calculation Formula</h4>
+                <div className="formula-box">
+                  <code>Projected = (Recent Avg × 60%) + (Overall Avg × 40%)</code>
+                </div>
+                <ul>
+                  <li><strong>Recent Avg:</strong> Average of last 2 months (Mar + Apr)</li>
+                  <li><strong>Overall Avg:</strong> Average of all 4 months (Jan-Apr)</li>
+                  <li><strong>Weighting:</strong> 60/40 split favors recent trends</li>
+                </ul>
+              </div>
+
+              <div className="method-section">
+                <h4>Current Values</h4>
+                <div className="method-grid">
+                  <div className="method-stat">
+                    <span className="method-label">Jan Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[0].commission, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Feb Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[1].commission, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Mar Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[2].commission, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Apr Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[3].commission, { full: true })}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="method-section">
+                <h4>Projection Result</h4>
+                <div className="method-grid">
+                  <div className="method-stat highlight">
+                    <span className="method-label">Recent Avg (Mar+Apr)</span>
+                    <span className="method-value tab">{fmtMoney((MONTHLY[2].commission + MONTHLY[3].commission) / 2, { full: true })}</span>
+                  </div>
+                  <div className="method-stat highlight">
+                    <span className="method-label">Overall Avg</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY.reduce((s, m) => s + m.commission, 0) / 4, { full: true })}</span>
+                  </div>
+                  <div className="method-stat accent">
+                    <span className="method-label">May Projection</span>
+                    <span className="method-value tab">{fmtMoney(MAY.projectedCommission, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Confidence Range (±15%)</span>
+                    <span className="method-value tab">{fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="method-section">
+                <h4>Trend Analysis</h4>
+                <p>Comparing recent months to earlier months: <strong style={{ color: MAY.trendPct >= 0 ? 'var(--green)' : 'var(--rose)' }}>{MAY.trendPct >= 0 ? '+' : ''}{MAY.trendPct.toFixed(1)}%</strong></p>
+                <p style={{ color: 'var(--text-3)', fontSize: '12px', marginTop: '8px' }}>
+                  {MAY.trendPct >= 0
+                    ? 'Commission payouts are trending upward compared to earlier in the year.'
+                    : 'Commission payouts are trending downward compared to earlier in the year.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Toasts */}
       <div className="toast-wrap">
