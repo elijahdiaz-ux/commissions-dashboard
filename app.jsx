@@ -835,27 +835,24 @@ function App() {
                 <div className="card-sub">April 2026 · {fmtMoney(activeData.netNew, { full: true })} total</div>
               </div>
             </div>
-            <div className="card-body">
-              <div className="rep-bar-chart">
-                {[...REPS].sort((a, b) => b.netNew - a.netNew).map((rep, i) => {
-                  const maxNetNew = Math.max(...REPS.map(r => r.netNew));
-                  const pct = (rep.netNew / maxNetNew) * 100;
-                  return (
-                    <div key={rep.name} className="rep-bar-row" onClick={() => setActiveRep(rep)}>
-                      <div className="rep-bar-label">
-                        <div className="avatar-sm" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)` }}>
-                          {initials(rep.name)}
-                        </div>
-                        <span className="rep-bar-name">{rep.name.split(' ')[0]}</span>
-                      </div>
-                      <div className="rep-bar-track">
-                        <div className="rep-bar-fill" style={{ width: pct + '%', background: `linear-gradient(90deg, ${rep.color}88, ${rep.color})` }}/>
-                      </div>
-                      <div className="rep-bar-value tab">{fmtMoney(rep.netNew)}</div>
+            <div className="card-body" style={{ padding: '16px 20px' }}>
+              {[...REPS].sort((a, b) => b.netNew - a.netNew).map((rep, i) => {
+                const maxNetNew = Math.max(...REPS.map(r => r.netNew));
+                const pct = (rep.netNew / maxNetNew) * 100;
+                return (
+                  <div key={rep.name} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', cursor: 'pointer' }} onClick={() => setActiveRep(rep)}>
+                    <div style={{ width: '90px', fontSize: '13px', fontWeight: 500, color: '#A5C7B5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {rep.name.split(' ')[0]}
                     </div>
-                  );
-                })}
-              </div>
+                    <div style={{ flex: 1, height: '20px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: pct + '%', height: '100%', background: rep.color, borderRadius: '4px' }}/>
+                    </div>
+                    <div style={{ width: '60px', textAlign: 'right', fontSize: '13px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtMoney(rep.netNew)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
