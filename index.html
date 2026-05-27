@@ -1620,6 +1620,226 @@
     color: var(--text);
   }
 
+  /* Commissions View */
+  .approve-all-btn, .export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .approve-all-btn {
+    background: var(--accent);
+    border: none;
+    color: #0A1217;
+  }
+  .approve-all-btn:hover { background: var(--accent-2); }
+  .approve-all-btn svg { width: 16px; height: 16px; }
+  .export-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--hairline);
+    color: var(--text-2);
+  }
+  .export-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+  .export-btn svg { width: 16px; height: 16px; }
+
+  .payout-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 24px;
+    padding-bottom: 0;
+  }
+  .payout-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .payout-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .payout-icon svg { width: 24px; height: 24px; color: var(--text); }
+  .payout-value { font-size: 22px; font-weight: 700; color: var(--text); }
+  .payout-label { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+  .payout-section {
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    margin: 24px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .section-header h2 { font-size: 16px; font-weight: 600; color: var(--text); }
+  .section-meta { font-size: 13px; color: var(--text-3); }
+
+  .payout-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .payout-table th {
+    padding: 14px 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .payout-table td {
+    padding: 16px 20px;
+    font-size: 14px;
+    color: var(--text);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .payout-table tr:last-child td { border-bottom: none; }
+  .payout-table tr.approved { background: rgba(52, 211, 153, 0.05); }
+  .payout-table tfoot td {
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.02);
+    border-top: 2px solid var(--hairline);
+  }
+
+  .rep-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+  }
+  .plan-chip-sm {
+    font-size: 11px;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    color: var(--text-2);
+  }
+  .status-badge {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .status-badge.pending { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .status-badge.approved { background: rgba(52, 211, 153, 0.15); color: var(--accent-3); }
+  .approve-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .approve-btn:hover { background: var(--accent); color: #0A1217; border-color: var(--accent); }
+
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+  }
+  .schedule-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+  }
+  .schedule-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--card-2);
+    border-radius: 10px;
+  }
+  .schedule-date .day { font-size: 24px; font-weight: 700; color: var(--text); }
+  .schedule-date .month { font-size: 11px; color: var(--text-3); text-transform: uppercase; }
+  .schedule-info { flex: 1; }
+  .schedule-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .schedule-amount { font-size: 20px; font-weight: 700; color: var(--accent-3); margin: 6px 0; }
+  .schedule-desc { font-size: 12px; color: var(--text-3); }
+  .schedule-status {
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .schedule-status.paid { background: rgba(52, 211, 153, 0.15); color: var(--accent-3); }
+  .schedule-status.pending { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+
+  .plan-breakdown {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+  }
+  .plan-breakdown-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .plan-breakdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .plan-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .plan-total { font-size: 16px; font-weight: 700; color: var(--accent-3); }
+  .plan-breakdown-reps { display: flex; flex-direction: column; gap: 8px; }
+  .plan-rep-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .plan-breakdown-meta {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--hairline);
+  }
+
   @media (max-width: 1240px) {
     .top-row { grid-template-columns: 1fr; }
     .bars-row { grid-template-columns: repeat(2, 1fr); gap: 32px 16px; }

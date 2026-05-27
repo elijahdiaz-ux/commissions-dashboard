@@ -1227,6 +1227,227 @@ function RepDetailPanel({ rep }) {
   );
 }
 
+// ───────── COMMISSIONS VIEW (FOR LORI) ─────────
+function CommissionsView() {
+  const [payoutStatus, setPayoutStatus] = useState({});
+  const [selectedMonth, setSelectedMonth] = useState('Apr 2026');
+
+  // Calculate totals
+  const activeReps = REPS.filter(r => r.plan !== 'Inactive');
+  const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
+  const totalCommissions = activeReps.reduce((sum, r) => sum + r.commission, 0);
+  const totalEarnings = activeReps.reduce((sum, r) => sum + r.earnings, 0);
+  const midMonthPayout = totalBasePay / 2; // 50% advance
+
+  const toggleStatus = (repName) => {
+    setPayoutStatus(prev => ({
+      ...prev,
+      [repName]: prev[repName] === 'approved' ? 'pending' : 'approved'
+    }));
+  };
+
+  const approveAll = () => {
+    const allApproved = {};
+    activeReps.forEach(r => allApproved[r.name] = 'approved');
+    setPayoutStatus(allApproved);
+  };
+
+  const getStatus = (repName) => payoutStatus[repName] || 'pending';
+
+  return (
+    <main className="main">
+      <div className="topbar">
+        <div>
+          <h1 className="page-title">Commission Payouts</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+            April 2026 · {activeReps.length} active reps · awaiting approval
+          </div>
+        </div>
+        <div className="topbar-actions">
+          <button className="approve-all-btn" onClick={approveAll}>
+            <Icon.Target /> Approve All
+          </button>
+          <button className="export-btn">
+            <Icon.Reports /> Export to PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Payout Summary Cards */}
+      <div className="payout-summary">
+        <div className="payout-card">
+          <div className="payout-icon" style={{ background: 'rgba(52, 211, 153, 0.15)' }}>
+            <Icon.Coin />
+          </div>
+          <div className="payout-info">
+            <div className="payout-value tab">{fmtMoney(totalEarnings, { full: true })}</div>
+            <div className="payout-label">Total Payroll</div>
+          </div>
+        </div>
+        <div className="payout-card">
+          <div className="payout-icon" style={{ background: 'rgba(251, 191, 36, 0.15)' }}>
+            <Icon.Spark />
+          </div>
+          <div className="payout-info">
+            <div className="payout-value tab">{fmtMoney(totalCommissions, { full: true })}</div>
+            <div className="payout-label">Total Commissions</div>
+          </div>
+        </div>
+        <div className="payout-card">
+          <div className="payout-icon" style={{ background: 'rgba(99, 102, 241, 0.15)' }}>
+            <Icon.Reps />
+          </div>
+          <div className="payout-info">
+            <div className="payout-value tab">{fmtMoney(totalBasePay, { full: true })}</div>
+            <div className="payout-label">Total Base Salary</div>
+          </div>
+        </div>
+        <div className="payout-card">
+          <div className="payout-icon" style={{ background: 'rgba(244, 114, 182, 0.15)' }}>
+            <Icon.Cal />
+          </div>
+          <div className="payout-info">
+            <div className="payout-value tab">{fmtMoney(midMonthPayout, { full: true })}</div>
+            <div className="payout-label">Mid-Month Advance (15th)</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payout Table */}
+      <div className="payout-section">
+        <div className="section-header">
+          <h2>Individual Payouts</h2>
+          <div className="section-meta">
+            {Object.values(payoutStatus).filter(s => s === 'approved').length} of {activeReps.length} approved
+          </div>
+        </div>
+
+        <table className="payout-table">
+          <thead>
+            <tr>
+              <th>Rep</th>
+              <th>Role</th>
+              <th>Plan</th>
+              <th style={{ textAlign: 'right' }}>Base Salary</th>
+              <th style={{ textAlign: 'right' }}>Commission</th>
+              <th style={{ textAlign: 'right' }}>Total Payout</th>
+              <th style={{ textAlign: 'center' }}>Status</th>
+              <th style={{ textAlign: 'center' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activeReps.map(rep => {
+              const plan = PLANS[rep.plan] || PLANS.Inactive;
+              const status = getStatus(rep.name);
+              return (
+                <tr key={rep.name} className={status === 'approved' ? 'approved' : ''}>
+                  <td>
+                    <div className="rep-cell">
+                      <div className="avatar-sm" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)` }}>
+                        {initials(rep.name)}
+                      </div>
+                      <span>{rep.name}</span>
+                    </div>
+                  </td>
+                  <td><span className="role-chip">{rep.role}</span></td>
+                  <td><span className="plan-chip-sm">{plan.name.split('—')[0].trim()}</span></td>
+                  <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(rep.basePay, { full: true })}</td>
+                  <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(rep.commission, { full: true })}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 600 }} className="tab">{fmtMoney(rep.earnings, { full: true })}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className={'status-badge ' + status}>{status === 'approved' ? 'Approved' : 'Pending'}</span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button className="approve-btn" onClick={() => toggleStatus(rep.name)}>
+                      {status === 'approved' ? 'Undo' : 'Approve'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan="3"><strong>TOTALS</strong></td>
+              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalBasePay, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommissions, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalEarnings, { full: true })}</strong></td>
+              <td colSpan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Payment Schedule */}
+      <div className="payout-section">
+        <div className="section-header">
+          <h2>Payment Schedule</h2>
+        </div>
+        <div className="schedule-grid">
+          <div className="schedule-card">
+            <div className="schedule-date">
+              <span className="day">15</span>
+              <span className="month">Apr</span>
+            </div>
+            <div className="schedule-info">
+              <div className="schedule-title">Mid-Month Advance</div>
+              <div className="schedule-amount tab">{fmtMoney(midMonthPayout, { full: true })}</div>
+              <div className="schedule-desc">50% of base salary for all active reps</div>
+            </div>
+            <span className="schedule-status paid">Paid</span>
+          </div>
+          <div className="schedule-card">
+            <div className="schedule-date">
+              <span className="day">30</span>
+              <span className="month">Apr</span>
+            </div>
+            <div className="schedule-info">
+              <div className="schedule-title">End of Month Payout</div>
+              <div className="schedule-amount tab">{fmtMoney(totalEarnings - midMonthPayout, { full: true })}</div>
+              <div className="schedule-desc">Remaining base + all commissions</div>
+            </div>
+            <span className="schedule-status pending">Pending</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Commission Breakdown by Plan */}
+      <div className="payout-section">
+        <div className="section-header">
+          <h2>Commission Breakdown by Plan</h2>
+        </div>
+        <div className="plan-breakdown">
+          {['A', 'B', 'C', 'D'].map(planKey => {
+            const plan = PLANS[planKey];
+            const repsOnPlan = activeReps.filter(r => r.plan === planKey);
+            if (repsOnPlan.length === 0) return null;
+            const planCommissions = repsOnPlan.reduce((sum, r) => sum + r.commission, 0);
+            return (
+              <div key={planKey} className="plan-breakdown-card">
+                <div className="plan-breakdown-header">
+                  <span className="plan-name">{plan.name}</span>
+                  <span className="plan-total tab">{fmtMoney(planCommissions, { full: true })}</span>
+                </div>
+                <div className="plan-breakdown-reps">
+                  {repsOnPlan.map(r => (
+                    <div key={r.name} className="plan-rep-row">
+                      <span>{r.name}</span>
+                      <span className="tab">{fmtMoney(r.commission, { full: true })}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="plan-breakdown-meta">
+                  {plan.type} · {repsOnPlan.length} rep{repsOnPlan.length > 1 ? 's' : ''} · Base rate {(plan.baseRate * 100).toFixed(1)}%
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </main>
+  );
+}
+
 // ───────── MAIN APP ─────────
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -1377,6 +1598,8 @@ function App() {
 
       {activeTab === 'Reps' ? (
         <RepsView onSelectRep={setActiveRep} />
+      ) : activeTab === 'Commissions' ? (
+        <CommissionsView />
       ) : (
       <main className="main">
         {/* Topbar */}
