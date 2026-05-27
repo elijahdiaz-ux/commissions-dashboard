@@ -1,5 +1,9 @@
 const { useState, useMemo, useEffect } = React;
 
+// ───────── PERIOD OPTIONS ─────────
+const PERIOD_OPTIONS = ['Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
+const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3 };
+
 // ───────── PACING CONFIG ─────────
 // For live tracking, update these values to current date
 const CURRENT_MONTH = {
@@ -321,6 +325,29 @@ const Icon = {
   Compare: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><path d="M10 12h4"/></svg>,
   ArrowLeft: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>,
 };
+
+// ───────── PERIOD SELECTOR ─────────
+function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
+  return (
+    <div className="popover-wrap">
+      <div className="pill" onClick={(e) => { e.stopPropagation(); setPeriodOpen(o => !o); }}>
+        <span className="label">Period:</span>
+        <span className="value">{period}</span>
+        <Icon.ChevD/>
+      </div>
+      {periodOpen && (
+        <div className="popover">
+          {PERIOD_OPTIONS.map(p => (
+            <div key={p} className={'popover-item' + (period === p ? ' active' : '')} onClick={() => { setPeriod(p); setPeriodOpen(false); }}>
+              <span>{p}</span>
+              <span className="check">✓</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ───────── SPARKLINE ─────────
 function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled = true, glow = true }) {
@@ -966,11 +993,14 @@ function CompareView({ reps, onExit }) {
 }
 
 // ───────── REPS VIEW ─────────
-function RepsView({ onSelectRep }) {
+function RepsView({ onSelectRep, period, setPeriod }) {
   const [selectedRep, setSelectedRep] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [compareMode, setCompareMode] = useState(false);
   const [compareReps, setCompareReps] = useState([]);
+  const [periodOpen, setPeriodOpen] = useState(false);
+
+  const monthIdx = MONTH_INDEX[period];
 
   const filteredReps = REPS.filter(r =>
     r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1017,6 +1047,7 @@ function RepsView({ onSelectRep }) {
           </div>
         </div>
         <div className="topbar-actions">
+          <PeriodSelector period={period} setPeriod={setPeriod} periodOpen={periodOpen} setPeriodOpen={setPeriodOpen} />
           <button className={'compare-btn' + (compareMode ? ' active' : '')} onClick={toggleCompareMode}>
             <Icon.Compare />
             {compareMode ? 'Cancel' : 'Compare'}
@@ -1061,18 +1092,18 @@ function RepsView({ onSelectRep }) {
                 </div>
                 <div className="rep-card-stats">
                   <div className="rep-card-stat">
-                    <span className="stat-value tab">{fmtMoney(rep.netNew)}</span>
-                    <span className="stat-label">Apr Net New</span>
+                    <span className="stat-value tab">{fmtMoney(monthIdx !== undefined ? rep.spark[monthIdx] : rep.netNew)}</span>
+                    <span className="stat-label">{period.split(' ')[0]} Net New</span>
                   </div>
                   <div className="rep-card-stat">
-                    <span className="stat-value tab">{ytd.ytdDeals}</span>
-                    <span className="stat-label">YTD Deals</span>
+                    <span className="stat-value tab">{monthIdx !== undefined && rep.monthlyDeals ? rep.monthlyDeals[monthIdx] : ytd.ytdDeals}</span>
+                    <span className="stat-label">{monthIdx !== undefined ? period.split(' ')[0] + ' Deals' : 'YTD Deals'}</span>
                   </div>
                   <div className="rep-card-stat">
                     <span className="stat-value tab" style={{ color: rep.commission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
-                      {fmtMoney(rep.commission)}
+                      {fmtMoney(monthIdx !== undefined ? Math.round(rep.spark[monthIdx] * (rep.plan === 'C' || rep.plan === 'D' ? 0.017 : 0.08)) : rep.commission)}
                     </span>
-                    <span className="stat-label">Apr Commission</span>
+                    <span className="stat-label">{period.split(' ')[0]} Commission</span>
                   </div>
                 </div>
               </div>
@@ -1228,15 +1259,32 @@ function RepDetailPanel({ rep }) {
 }
 
 // ───────── COMMISSIONS VIEW (FOR LORI) ─────────
-function CommissionsView() {
+function CommissionsView({ period, setPeriod }) {
   const [payoutStatus, setPayoutStatus] = useState({});
-  const [selectedMonth, setSelectedMonth] = useState('Apr 2026');
+  const [periodOpen, setPeriodOpen] = useState(false);
 
-  // Calculate totals
+  const monthIdx = MONTH_INDEX[period];
+  const monthName = period.split(' ')[0]; // "Apr" from "Apr 2026"
+
+  // Calculate totals based on selected period
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
+
+  // Get commission for selected month (simplified - using stored commission for now)
+  const getRepCommission = (rep) => {
+    if (monthIdx !== undefined && rep.spark) {
+      // Calculate commission based on that month's net new
+      const netNew = rep.spark[monthIdx] || 0;
+      const rate = rep.plan === 'C' || rep.plan === 'D' ? 0.017 : 0.08;
+      return Math.round(netNew * rate);
+    }
+    return rep.commission;
+  };
+
+  const getRepEarnings = (rep) => rep.basePay + getRepCommission(rep);
+
   const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
-  const totalCommissions = activeReps.reduce((sum, r) => sum + r.commission, 0);
-  const totalEarnings = activeReps.reduce((sum, r) => sum + r.earnings, 0);
+  const totalCommissions = activeReps.reduce((sum, r) => sum + getRepCommission(r), 0);
+  const totalEarnings = activeReps.reduce((sum, r) => sum + getRepEarnings(r), 0);
   const midMonthPayout = totalBasePay / 2; // 50% advance
 
   const toggleStatus = (repName) => {
@@ -1260,10 +1308,11 @@ function CommissionsView() {
         <div>
           <h1 className="page-title">Commission Payouts</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            April 2026 · {activeReps.length} active reps · awaiting approval
+            {period} · {activeReps.length} active reps · awaiting approval
           </div>
         </div>
         <div className="topbar-actions">
+          <PeriodSelector period={period} setPeriod={setPeriod} periodOpen={periodOpen} setPeriodOpen={setPeriodOpen} />
           <button className="approve-all-btn" onClick={approveAll}>
             <Icon.Target /> Approve All
           </button>
@@ -1339,6 +1388,8 @@ function CommissionsView() {
             {activeReps.map(rep => {
               const plan = PLANS[rep.plan] || PLANS.Inactive;
               const status = getStatus(rep.name);
+              const commission = getRepCommission(rep);
+              const earnings = getRepEarnings(rep);
               return (
                 <tr key={rep.name} className={status === 'approved' ? 'approved' : ''}>
                   <td>
@@ -1352,8 +1403,8 @@ function CommissionsView() {
                   <td><span className="role-chip">{rep.role}</span></td>
                   <td><span className="plan-chip-sm">{plan.name.split('—')[0].trim()}</span></td>
                   <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(rep.basePay, { full: true })}</td>
-                  <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(rep.commission, { full: true })}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600 }} className="tab">{fmtMoney(rep.earnings, { full: true })}</td>
+                  <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(commission, { full: true })}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 600 }} className="tab">{fmtMoney(earnings, { full: true })}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span className={'status-badge ' + status}>{status === 'approved' ? 'Approved' : 'Pending'}</span>
                   </td>
@@ -1588,7 +1639,7 @@ function App() {
   const avgAttain = REPS.reduce((s, r) => s + getRepGoal(r), 0) / REPS.length;
   const avgDeal = activeData.netNew / activeData.deals;
 
-  const periodOptions = ['Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
+  const periodOptions = PERIOD_OPTIONS;
   const viewOptions = ['By metric', 'By rep', 'By role'];
   const forecastOptions = ['May', 'Jun', 'Jul', 'Q2 close'];
 
@@ -1597,9 +1648,9 @@ function App() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {activeTab === 'Reps' ? (
-        <RepsView onSelectRep={setActiveRep} />
+        <RepsView onSelectRep={setActiveRep} period={period} setPeriod={setPeriod} />
       ) : activeTab === 'Commissions' ? (
-        <CommissionsView />
+        <CommissionsView period={period} setPeriod={setPeriod} />
       ) : (
       <main className="main">
         {/* Topbar */}
