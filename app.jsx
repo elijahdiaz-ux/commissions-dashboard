@@ -1,10 +1,10 @@
 const { useState, useMemo, useEffect } = React;
 
-// ───────── PERIOD OPTIONS ─────────
+// --------- PERIOD OPTIONS ---------
 const PERIOD_OPTIONS = ['May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
 const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4 };
 
-// ───────── PACING CONFIG ─────────
+// --------- PACING CONFIG ---------
 // For live tracking, update these values to current date
 const CURRENT_MONTH = {
   name: 'April',
@@ -35,12 +35,12 @@ const getStatusInfo = (status) => {
   }
 };
 
-// ───────── DATA ─────────
+// --------- DATA ---------
 // Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
-// ───────── PLAN DETAILS ─────────
+// --------- PLAN DETAILS ---------
 const PLANS = {
   A: {
-    name: 'Plan A — AE Standard',
+    name: 'Plan A - AE Standard',
     type: 'Quarterly',
     quota: 125000,
     annualQuota: 500000,
@@ -54,7 +54,7 @@ const PLANS = {
     description: '8% base rate on Net New ARR with accelerators at quota milestones',
   },
   B: {
-    name: 'Plan B — AE with Dead Zone',
+    name: 'Plan B - AE with Dead Zone',
     type: 'Quarterly',
     quota: 125000,
     annualQuota: 500000,
@@ -69,7 +69,7 @@ const PLANS = {
     description: 'No commission until $42K dead zone cleared, then 6% base rate',
   },
   C: {
-    name: 'Plan C — AM Monthly',
+    name: 'Plan C - AM Monthly',
     type: 'Monthly',
     quota: 50000,
     annualQuota: 600000,
@@ -82,7 +82,7 @@ const PLANS = {
     description: '1.7% on Net New ARR up to quota, 10% kicker on overages',
   },
   D: {
-    name: 'Plan D — SME ARR Collected',
+    name: 'Plan D - SME ARR Collected',
     type: 'Monthly',
     quota: 50000,
     annualQuota: 600000,
@@ -249,7 +249,7 @@ const YTD = {
   deals: 905, gross: 2130203, netNew: 1128984, commission: 51109, earnings: 502770,
 };
 
-// ───────── RUN RATE PROJECTION ─────────
+// --------- RUN RATE PROJECTION ---------
 // Calculate monthly run rate and project next month
 const calcRunRate = () => {
   const commissions = MONTHLY.map(m => m.commission);
@@ -271,7 +271,7 @@ const calcRunRate = () => {
   const recentNetNew = (netNewArr[2] + netNewArr[3]) / 2;
   const projectedNetNew = Math.round(recentNetNew * 0.6 + avgNetNew * 0.4);
 
-  // Confidence range: ±15%
+  // Confidence range: +/-15%
   const projLow = Math.round(projectedCommission * 0.85);
   const projHigh = Math.round(projectedCommission * 1.15);
 
@@ -301,7 +301,7 @@ const MAY = {
   trendPct: PROJECTION.trendPct,
 };
 
-// ───────── HELPERS ─────────
+// --------- HELPERS ---------
 const fmtMoney = (v, opts = {}) => {
   const { full = false } = opts;
   if (full) return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -331,7 +331,7 @@ const calcCommission = (rep, netNew) => {
   return Math.round(netNew * 0.08);
 };
 
-// ───────── ICONS ─────────
+// --------- ICONS ---------
 const Icon = {
   Dashboard: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>,
   Reps: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15 14.5c2.5 0 6 1.7 6 5"/></svg>,
@@ -362,7 +362,7 @@ const Icon = {
   Wallet: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M22 10H18a2 2 0 0 0 0 4h4"/><path d="M18 12h.01"/><path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>,
 };
 
-// ───────── PERIOD SELECTOR ─────────
+// --------- PERIOD SELECTOR ---------
 function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
   return (
     <div className="popover-wrap">
@@ -376,7 +376,7 @@ function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
           {PERIOD_OPTIONS.map(p => (
             <div key={p} className={'popover-item' + (period === p ? ' active' : '')} onClick={() => { setPeriod(p); setPeriodOpen(false); }}>
               <span>{p}</span>
-              <span className="check">✓</span>
+              <span className="check">[ok]</span>
             </div>
           ))}
         </div>
@@ -385,7 +385,7 @@ function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
   );
 }
 
-// ───────── SPARKLINE ─────────
+// --------- SPARKLINE ---------
 function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled = true, glow = true }) {
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -413,7 +413,7 @@ function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled =
   );
 }
 
-// ───────── ORBITAL / FORECAST VIZ ─────────
+// --------- ORBITAL / FORECAST VIZ ---------
 function ForecastViz() {
   // Use actual commission data from MONTHLY and run rate projection
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
@@ -508,8 +508,8 @@ function ForecastViz() {
   );
 }
 
-// ───────── MINI BAR CHART ─────────
-// ───────── YTD NET NEW ARR CHART ─────────
+// --------- MINI BAR CHART ---------
+// --------- YTD NET NEW ARR CHART ---------
 function YTDNetNewChart() {
   const data = MONTHLY.map(m => ({ label: m.m, value: m.netNew, goal: m.goal }));
   const max = Math.max(...data.map(d => d.value));
@@ -643,7 +643,7 @@ function MiniBars({ data }) {
   );
 }
 
-// ───────── BAR TILE ─────────
+// --------- BAR TILE ---------
 function BarTile({ value, label, pct, color = 'normal' }) {
   const heightPct = Math.max(8, Math.min(100, pct));
   return (
@@ -660,7 +660,7 @@ function BarTile({ value, label, pct, color = 'normal' }) {
   );
 }
 
-// ───────── ATTAINMENT BARS (SEGMENT VIZ) ─────────
+// --------- ATTAINMENT BARS (SEGMENT VIZ) ---------
 function AttainBars({ pct }) {
   // 5 segments, fill based on % to goal (cap 110%)
   const segments = 5;
@@ -680,7 +680,7 @@ function AttainBars({ pct }) {
   );
 }
 
-// ───────── DRAWER ─────────
+// --------- DRAWER ---------
 function RepDrawer({ rep, onClose }) {
   if (!rep) return null;
   const monthlyEarn = [
@@ -688,7 +688,7 @@ function RepDrawer({ rep, onClose }) {
     { label: 'Feb', v: rep.earnings * 0.92, projected: false },
     { label: 'Mar', v: rep.earnings * 1.18, projected: false },
     { label: 'Apr', v: rep.earnings, projected: false },
-    { label: 'May ▴', v: rep.earnings * 1.08, projected: true },
+    { label: 'May ^', v: rep.earnings * 1.08, projected: true },
   ];
   // commission breakdown from actual data
   const basePay = rep.basePay || 0;
@@ -711,7 +711,7 @@ function RepDrawer({ rep, onClose }) {
         </div>
 
         <div className="drawer-section">
-          <h4>{CURRENT_MONTH.name} Pacing · Day {CURRENT_MONTH.dayOfMonth} of {CURRENT_MONTH.daysInMonth}</h4>
+          <h4>{CURRENT_MONTH.name} Pacing * Day {CURRENT_MONTH.dayOfMonth} of {CURRENT_MONTH.daysInMonth}</h4>
           <div className="pacing-card">
             <div className="pacing-row">
               <div className="pacing-metric">
@@ -744,10 +744,10 @@ function RepDrawer({ rep, onClose }) {
               <span className={'dot ' + getStatusInfo(getRepStatus(rep.goal)).dotClass} style={{ width: 10, height: 10 }}/>
               <span style={{ color: getStatusInfo(getRepStatus(rep.goal)).color, fontWeight: 600 }}>{getStatusInfo(getRepStatus(rep.goal)).label}</span>
               <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
-                {getRepStatus(rep.goal) === 'on-track' && '— Meeting or exceeding expected pace'}
-                {getRepStatus(rep.goal) === 'at-risk' && '— Within 10% of expected pace'}
-                {getRepStatus(rep.goal) === 'behind' && '— More than 10% below expected pace'}
-                {getRepStatus(rep.goal) === 'inactive' && '— No quota assigned this month'}
+                {getRepStatus(rep.goal) === 'on-track' && '- Meeting or exceeding expected pace'}
+                {getRepStatus(rep.goal) === 'at-risk' && '- Within 10% of expected pace'}
+                {getRepStatus(rep.goal) === 'behind' && '- More than 10% below expected pace'}
+                {getRepStatus(rep.goal) === 'inactive' && '- No quota assigned this month'}
               </span>
             </div>
           </div>
@@ -842,7 +842,7 @@ function RepDrawer({ rep, onClose }) {
   );
 }
 
-// ───────── SIDEBAR ─────────
+// --------- SIDEBAR ---------
 function Sidebar({ activeTab, setActiveTab }) {
   const items = [
     ['Dashboard', Icon.Dashboard],
@@ -885,7 +885,7 @@ function Sidebar({ activeTab, setActiveTab }) {
   );
 }
 
-// ───────── COMPARE VIEW ─────────
+// --------- COMPARE VIEW ---------
 function CompareView({ reps, onExit }) {
   const rep1 = reps[0];
   const rep2 = reps[1];
@@ -918,7 +918,7 @@ function CompareView({ reps, onExit }) {
             <h2>{rep.name}</h2>
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <span className="role-chip">{rep.role}</span>
-              <span className="plan-chip">{plan.name.split('—')[0].trim()}</span>
+              <span className="plan-chip">{plan.name.split('-')[0].trim()}</span>
             </div>
           </div>
         </div>
@@ -1028,7 +1028,7 @@ function CompareView({ reps, onExit }) {
   );
 }
 
-// ───────── REPS VIEW ─────────
+// --------- REPS VIEW ---------
 function RepsView({ onSelectRep, period, setPeriod }) {
   const [selectedRep, setSelectedRep] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1079,7 +1079,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
         <div>
           <h1 className="page-title">Sales Reps</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${REPS.length} reps · ${REPS.filter(r => r.plan !== 'Inactive').length} active`}
+            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${REPS.length} reps * ${REPS.filter(r => r.plan !== 'Inactive').length} active`}
           </div>
         </div>
         <div className="topbar-actions">
@@ -1122,7 +1122,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                     <div className="rep-card-name">{rep.name}</div>
                     <div className="rep-card-role">
                       <span className="role-chip">{rep.role}</span>
-                      <span className="plan-chip">{plan.name.split('—')[0].trim()}</span>
+                      <span className="plan-chip">{plan.name.split('-')[0].trim()}</span>
                     </div>
                   </div>
                 </div>
@@ -1163,7 +1163,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
   );
 }
 
-// ───────── REP DETAIL PANEL ─────────
+// --------- REP DETAIL PANEL ---------
 function RepDetailPanel({ rep }) {
   const plan = PLANS[rep.plan] || PLANS.Inactive;
   const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
@@ -1254,7 +1254,7 @@ function RepDetailPanel({ rep }) {
             <div key={m} className="monthly-row">
               <span className="month-label">{m}</span>
               <span className="month-value tab">{fmtMoney(rep.spark[i], { full: true })}</span>
-              <span className="month-deals tab">{rep.monthlyDeals ? rep.monthlyDeals[i] : '—'}</span>
+              <span className="month-deals tab">{rep.monthlyDeals ? rep.monthlyDeals[i] : '-'}</span>
             </div>
           ))}
         </div>
@@ -1294,7 +1294,7 @@ function RepDetailPanel({ rep }) {
   );
 }
 
-// ───────── COMMISSIONS VIEW (FOR LORI) ─────────
+// --------- COMMISSIONS VIEW (FOR LORI) ---------
 function CommissionsView({ period, setPeriod }) {
   const [payoutStatus, setPayoutStatus] = useState({});
   const [periodOpen, setPeriodOpen] = useState(false);
@@ -1369,7 +1369,7 @@ function CommissionsView({ period, setPeriod }) {
           <div class="header">
             <div>
               <div class="logo">Amazing Life Foundation</div>
-              <div class="title">Commission Payout Report — ${period}</div>
+              <div class="title">Commission Payout Report - ${period}</div>
             </div>
             <div class="meta">
               <div>Generated ${new Date().toLocaleString()}</div>
@@ -1421,13 +1421,13 @@ function CommissionsView({ period, setPeriod }) {
                   <td class="mono">${fmtMoney(commission, { full: true })}</td>
                   <td class="mono">${fmtMoney(rep.basePay, { full: true })}</td>
                   <td class="mono" style="font-weight: 600">${fmtMoney(total, { full: true })}</td>
-                  <td class="${status}">${status === 'approved' ? '✓ Approved' : '○ Pending'}</td>
+                  <td class="${status}">${status === 'approved' ? '[ok] Approved' : 'o Pending'}</td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
           <div class="footer">
-            Amazing Life Foundation · RevOps Dashboard · Confidential
+            Amazing Life Foundation * RevOps Dashboard * Confidential
           </div>
         </body>
         </html>
@@ -1449,7 +1449,7 @@ function CommissionsView({ period, setPeriod }) {
         <div>
           <h1 className="page-title">Commission Payouts</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {period} · {activeReps.length} active reps · awaiting approval
+            {period} * {activeReps.length} active reps * awaiting approval
           </div>
         </div>
         <div className="topbar-actions">
@@ -1549,7 +1549,7 @@ function CommissionsView({ period, setPeriod }) {
                     </div>
                   </td>
                   <td><span className="role-chip">{rep.role}</span></td>
-                  <td><span className="plan-chip-sm">{plan.name.split('—')[0].trim()}</span></td>
+                  <td><span className="plan-chip-sm">{plan.name.split('-')[0].trim()}</span></td>
                   <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(rep.basePay, { full: true })}</td>
                   <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(commission, { full: true })}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600 }} className="tab">{fmtMoney(earnings, { full: true })}</td>
@@ -1636,7 +1636,7 @@ function CommissionsView({ period, setPeriod }) {
                   ))}
                 </div>
                 <div className="plan-breakdown-meta">
-                  {plan.type} · {repsOnPlan.length} rep{repsOnPlan.length > 1 ? 's' : ''} · Base rate {(plan.baseRate * 100).toFixed(1)}%
+                  {plan.type} * {repsOnPlan.length} rep{repsOnPlan.length > 1 ? 's' : ''} * Base rate {(plan.baseRate * 100).toFixed(1)}%
                 </div>
               </div>
             );
@@ -1647,7 +1647,7 @@ function CommissionsView({ period, setPeriod }) {
   );
 }
 
-// ───────── REPORTS VIEW ─────────
+// --------- REPORTS VIEW ---------
 function ReportsView({ period, setPeriod }) {
   const [periodOpen, setPeriodOpen] = useState(false);
   const [activeReport, setActiveReport] = useState('executive');
@@ -1784,7 +1784,7 @@ function ReportsView({ period, setPeriod }) {
           <body>
             ${printContent.innerHTML}
             <div class="footer">
-              Generated ${new Date().toLocaleString()} · Amazing Life Foundation RevOps · Confidential
+              Generated ${new Date().toLocaleString()} * Amazing Life Foundation RevOps * Confidential
             </div>
           </body>
           </html>
@@ -1820,7 +1820,7 @@ function ReportsView({ period, setPeriod }) {
       <div className="report-header">
         <div>
           <div className="report-logo">Amazing Life Foundation</div>
-          <div className="report-title">Executive Summary — {period}</div>
+          <div className="report-title">Executive Summary - {period}</div>
         </div>
         <div className="report-meta">
           <div>RevOps Dashboard</div>
@@ -1834,7 +1834,7 @@ function ReportsView({ period, setPeriod }) {
           <div className="metric-value">{fmtMoney(totalNetNew, { full: true })}</div>
           {prevMonthData && (
             <div className={`metric-change ${netNewChange >= 0 ? 'positive' : 'negative'}`}>
-              {netNewChange >= 0 ? '↑' : '↓'} {Math.abs(netNewChange).toFixed(1)}% vs prior month
+              {netNewChange >= 0 ? '+' : '-'} {Math.abs(netNewChange).toFixed(1)}% vs prior month
             </div>
           )}
         </div>
@@ -1843,7 +1843,7 @@ function ReportsView({ period, setPeriod }) {
           <div className="metric-value">{totalDeals}</div>
           {prevMonthData && (
             <div className={`metric-change ${dealsChange >= 0 ? 'positive' : 'negative'}`}>
-              {dealsChange >= 0 ? '↑' : '↓'} {Math.abs(dealsChange).toFixed(1)}% vs prior month
+              {dealsChange >= 0 ? '+' : '-'} {Math.abs(dealsChange).toFixed(1)}% vs prior month
             </div>
           )}
         </div>
@@ -1925,10 +1925,10 @@ function ReportsView({ period, setPeriod }) {
       <div className="data-needed">
         <div className="data-needed-title">Additional Data Needed for Full Executive Report</div>
         <ul className="data-needed-list">
-          <li>Net Revenue Retention (NRR) — requires cohort-level MRR data</li>
-          <li>Gross Revenue Retention (GRR) — requires churn and contraction data</li>
-          <li>Logo Churn Rate — requires customer count by month</li>
-          <li>Pipeline Coverage — requires opportunity stage data</li>
+          <li>Net Revenue Retention (NRR) - requires cohort-level MRR data</li>
+          <li>Gross Revenue Retention (GRR) - requires churn and contraction data</li>
+          <li>Logo Churn Rate - requires customer count by month</li>
+          <li>Pipeline Coverage - requires opportunity stage data</li>
         </ul>
       </div>
     </div>
@@ -1950,7 +1950,7 @@ function ReportsView({ period, setPeriod }) {
         <div className="report-header">
           <div>
             <div className="report-logo">Amazing Life Foundation</div>
-            <div className="report-title">ARR Movement (Bridge) — {period}</div>
+            <div className="report-title">ARR Movement (Bridge) - {period}</div>
           </div>
           <div className="report-meta">
             <div>RevOps Dashboard</div>
@@ -1958,7 +1958,7 @@ function ReportsView({ period, setPeriod }) {
           </div>
         </div>
 
-        <div className="section-title">ARR Bridge — Available Data</div>
+        <div className="section-title">ARR Bridge - Available Data</div>
         <table>
           <thead>
             <tr>
@@ -1980,17 +1980,17 @@ function ReportsView({ period, setPeriod }) {
             </tr>
             <tr style={{ background: '#fef3c7' }}>
               <td style={{ fontWeight: 500, color: '#92400e' }}>+ Expansion</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>—</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>-</td>
               <td style={{ color: '#92400e', fontSize: 12 }}>Data needed: Upgrade/upsell amounts</td>
             </tr>
             <tr style={{ background: '#fee2e2' }}>
-              <td style={{ fontWeight: 500, color: '#991b1b' }}>− Contraction</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
+              <td style={{ fontWeight: 500, color: '#991b1b' }}>- Contraction</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>-</td>
               <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Downgrade amounts</td>
             </tr>
             <tr style={{ background: '#fee2e2' }}>
-              <td style={{ fontWeight: 500, color: '#991b1b' }}>− Churn</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
+              <td style={{ fontWeight: 500, color: '#991b1b' }}>- Churn</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>-</td>
               <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Churned ARR amounts</td>
             </tr>
             <tr style={{ background: '#e0e7ff' }}>
@@ -2023,7 +2023,7 @@ function ReportsView({ period, setPeriod }) {
                   <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{m.deals}</td>
                   <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(m.gross, { full: true })}</td>
                   <td style={{ fontFamily: 'JetBrains Mono, monospace', color: change >= 0 ? '#065f46' : '#991b1b' }}>
-                    {i > 0 ? `${change >= 0 ? '+' : ''}${change.toFixed(1)}%` : '—'}
+                    {i > 0 ? `${change >= 0 ? '+' : ''}${change.toFixed(1)}%` : '-'}
                   </td>
                 </tr>
               );
@@ -2071,7 +2071,7 @@ function ReportsView({ period, setPeriod }) {
         <div className="report-header">
           <div>
             <div className="report-logo">Amazing Life Foundation</div>
-            <div className="report-title">Product Performance — {period}</div>
+            <div className="report-title">Product Performance - {period}</div>
           </div>
           <div className="report-meta">
             <div>RevOps Dashboard</div>
@@ -2131,7 +2131,7 @@ function ReportsView({ period, setPeriod }) {
       <div className="report-header">
         <div>
           <div className="report-logo">Amazing Life Foundation</div>
-          <div className="report-title">{report.name} — Data Required</div>
+          <div className="report-title">{report.name} - Data Required</div>
         </div>
         <div className="report-meta">
           <div>RevOps Dashboard</div>
@@ -2248,7 +2248,7 @@ function ReportsView({ period, setPeriod }) {
   );
 }
 
-// ───────── MAIN APP ─────────
+// --------- MAIN APP ---------
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
@@ -2286,7 +2286,7 @@ function App() {
     setReportLoading(true);
     setTimeout(() => {
       setReportLoading(false);
-      pushToast('Payout report generated', `${period} · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(periodData.earnings, { full: true })} · sent to elijah.diaz@amazinglife.com`);
+      pushToast('Payout report generated', `${period} * ${REPS.filter(r => r.earnings > 0).length} reps * ${fmtMoney(periodData.earnings, { full: true })} * sent to elijah.diaz@amazinglife.com`);
     }, 1100);
   };
 
@@ -2313,7 +2313,7 @@ function App() {
     commission: calcPeriodCommission(MONTH_INDEX[period]),
   };
 
-  // KPI bar percents — bar height relative to YTD peak across months
+  // KPI bar percents - bar height relative to YTD peak across months
   const peakDeals = 260, peakGross = 524590, peakNetNew = 305149, peakComm = isYTD ? YTD.commission : 13253;
   const tiles = [
     { value: activeData.deals, label: 'Deals closed', pct: (activeData.deals / (isYTD ? YTD.deals : peakDeals)) * 100, color: 'normal' },
@@ -2394,7 +2394,7 @@ function App() {
     if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
     else { setSortKey(key); setSortDir('desc'); }
   };
-  const sortInd = (key) => sortKey === key ? <span className="sort-ind">{sortDir === 'desc' ? '▼' : '▲'}</span> : null;
+  const sortInd = (key) => sortKey === key ? <span className="sort-ind">{sortDir === 'desc' ? 'v' : '^'}</span> : null;
 
   const avgAttain = REPS.reduce((s, r) => s + getRepGoal(r), 0) / REPS.length;
   const avgDeal = activeData.netNew / activeData.deals;
@@ -2420,7 +2420,7 @@ function App() {
           <div>
             <h1 className="page-title">Commissions</h1>
             <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-              Q2 2026 · finalized May 26 · awaiting payout approval
+              Q2 2026 * finalized May 26 * awaiting payout approval
             </div>
           </div>
           <div className="topbar-actions">
@@ -2435,7 +2435,7 @@ function App() {
                   {periodOptions.map(p => (
                     <div key={p} className={'popover-item' + (period === p ? ' active' : '')} onClick={() => { setPeriod(p); setPeriodOpen(false); }}>
                       <span>{p}</span>
-                      <span className="check">✓</span>
+                      <span className="check">[ok]</span>
                     </div>
                   ))}
                 </div>
@@ -2464,7 +2464,7 @@ function App() {
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
-                <div className="card-sub">All reps · {period}</div>
+                <div className="card-sub">All reps * {period}</div>
               </div>
             </div>
             <div className="card-body">
@@ -2567,7 +2567,7 @@ function App() {
               <div className="forecast-meta-left">
                 <div className="forecast-label tab">Run Rate: {fmtMoney(MAY.projectedCommission)}</div>
                 <div className="forecast-sub">
-                  {MAY.trendPct >= 0 ? '↑' : '↓'} {Math.abs(MAY.trendPct).toFixed(0)}% vs prior months · Range: {fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}
+                  {MAY.trendPct >= 0 ? '+' : '-'} {Math.abs(MAY.trendPct).toFixed(0)}% vs prior months * Range: {fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}
                 </div>
               </div>
               <div className="popover-wrap">
@@ -2577,7 +2577,7 @@ function App() {
                     {forecastOptions.map(f => (
                       <div key={f} className={'popover-item' + (forecastMonth === f ? ' active' : '')} onClick={() => { setForecastMonth(f); setForecastOpen(false); }}>
                         <span>{f}</span>
-                        <span className="check">✓</span>
+                        <span className="check">[ok]</span>
                       </div>
                     ))}
                   </div>
@@ -2585,7 +2585,7 @@ function App() {
               </div>
             </div>
             <div className="mini-chart">
-              <div className="mini-chart-label">Commission · YTD + Projection</div>
+              <div className="mini-chart-label">Commission * YTD + Projection</div>
               <MiniBars data={[
                 { label: 'Jan', v: MONTHLY[0].commission, projected: false },
                 { label: 'Feb', v: MONTHLY[1].commission, projected: false },
@@ -2594,7 +2594,7 @@ function App() {
                 { label: 'May', v: MAY.projectedCommission, projected: true },
               ]}/>
               <button className="cta-pill" onClick={handleGenerateReport} disabled={reportLoading}>
-                {reportLoading ? 'Generating…' : 'Generate payout report'}
+                {reportLoading ? 'Generating...' : 'Generate payout report'}
               </button>
             </div>
           </section>
@@ -2625,11 +2625,11 @@ function App() {
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Best Month</div>
-                <div className="ytd-stat-value tab">Jan · $305K</div>
+                <div className="ytd-stat-value tab">Jan * $305K</div>
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Trend</div>
-                <div className="ytd-stat-value" style={{ color: 'var(--rose)' }}>↓ Declining</div>
+                <div className="ytd-stat-value" style={{ color: 'var(--rose)' }}>- Declining</div>
               </div>
             </div>
           </div>
@@ -2639,10 +2639,10 @@ function App() {
         <section className="card leaderboard">
           <div className="lb-head">
             <div>
-              <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>· {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
-              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'deals' : 'value'} · click a row to view scorecard</div>
+              <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>* {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
+              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'deals' : 'value'} * click a row to view scorecard</div>
             </div>
-            <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster…')}>See all reps →</a>
+            <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster...')}>See all reps -></a>
           </div>
 
           <table className="lb-table">
@@ -2772,7 +2772,7 @@ function App() {
                     <tr>
                       <td><strong>Commission</strong></td>
                       <td>Variable compensation based on Net New ARR and plan</td>
-                      <td><code>calcCommission(rep, netNew)</code> — see rates below</td>
+                      <td><code>calcCommission(rep, netNew)</code> - see rates below</td>
                     </tr>
                     <tr>
                       <td><strong>Base Pay</strong></td>
@@ -2787,7 +2787,7 @@ function App() {
                     <tr>
                       <td><strong>Goal %</strong></td>
                       <td>Progress toward monthly quota</td>
-                      <td><code>(Net New ARR / Monthly Quota) × 100</code></td>
+                      <td><code>(Net New ARR / Monthly Quota) x 100</code></td>
                     </tr>
                   </tbody>
                 </table>
@@ -2864,7 +2864,7 @@ function App() {
                 <h4>Run Rate Projection</h4>
                 <p>Projects future performance using weighted historical average:</p>
                 <div className="formula-box">
-                  <code>Projected = (Recent 2-Month Avg × 60%) + (Overall Avg × 40%)</code>
+                  <code>Projected = (Recent 2-Month Avg x 60%) + (Overall Avg x 40%)</code>
                 </div>
                 <div className="method-grid" style={{ marginTop: 12 }}>
                   <div className="method-stat highlight">

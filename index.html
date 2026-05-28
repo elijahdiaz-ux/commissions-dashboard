@@ -2127,6 +2127,53 @@
 <body>
 <div id="root"></div>
 
+<!-- SAFETY: Fallback error display if React fails to load -->
+<div id="error-fallback" style="display:none; padding:40px; text-align:center; font-family:system-ui;">
+  <h1 style="color:#F08F6A; margin-bottom:16px;">Dashboard Error</h1>
+  <p style="color:#A5C7B5; margin-bottom:24px;">The dashboard encountered an error. Details below:</p>
+  <pre id="error-details" style="background:#112025; color:#F08F6A; padding:20px; border-radius:12px; text-align:left; overflow:auto; max-height:300px;"></pre>
+  <button onclick="location.reload()" style="margin-top:20px; padding:12px 24px; background:#34D399; border:none; border-radius:8px; color:#0A1217; font-weight:600; cursor:pointer;">Reload Dashboard</button>
+</div>
+
+<script>
+// SAFETY LAYER 1: Global error handler - catches any uncaught errors
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+  console.error('Dashboard Error:', msg, 'at', url, lineNo, columnNo);
+  document.getElementById('root').style.display = 'none';
+  document.getElementById('error-fallback').style.display = 'block';
+  document.getElementById('error-details').textContent =
+    'Error: ' + msg + '\n' +
+    'Location: ' + url + ' (line ' + lineNo + ', col ' + columnNo + ')\n' +
+    (error && error.stack ? '\nStack:\n' + error.stack : '');
+  return false;
+};
+
+// SAFETY LAYER 2: Unhandled promise rejection handler
+window.onunhandledrejection = function(event) {
+  console.error('Unhandled Promise:', event.reason);
+  document.getElementById('root').style.display = 'none';
+  document.getElementById('error-fallback').style.display = 'block';
+  document.getElementById('error-details').textContent =
+    'Promise Error: ' + (event.reason ? event.reason.message || event.reason : 'Unknown');
+};
+
+// SAFETY LAYER 3: Check if app rendered after timeout
+setTimeout(function() {
+  var root = document.getElementById('root');
+  if (root && root.innerHTML.trim() === '') {
+    document.getElementById('root').style.display = 'none';
+    document.getElementById('error-fallback').style.display = 'block';
+    document.getElementById('error-details').textContent =
+      'The dashboard failed to render.\n\n' +
+      'Possible causes:\n' +
+      '- JavaScript syntax error in app.jsx\n' +
+      '- Special characters causing encoding issues\n' +
+      '- React/Babel failed to transpile\n\n' +
+      'Check browser console (F12) for details.';
+  }
+}, 5000);
+</script>
+
 <script type="text/babel" data-presets="react" src="app.jsx"></script>
 </body>
 </html>
