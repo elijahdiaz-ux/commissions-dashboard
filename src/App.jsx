@@ -2346,41 +2346,59 @@ function App() {
     return getRepNetNew(rep);
   };
   // Quota logic: AMs have monthly quota $50K, AEs have quarterly quota $125K
+  // Full year support: Q1 (ramp 50%), Q2-Q4 (full quota)
   const getRepGoal = (rep) => {
     const basis = getRepBasis(rep);
     const isAE = rep.role === 'AE';
+    const quarterlyQuota = 125000;
+    const monthlyQuota = 50000;
+
+    // Helper: get quarter from month index (0-11)
+    const getQuarter = (idx) => Math.floor(idx / 3) + 1; // Q1=1, Q2=2, Q3=3, Q4=4
+
+    // Helper: get quarterly quota (Q1 is ramp at 50%)
+    const getQuarterlyQuota = (q) => q === 1 ? quarterlyQuota * 0.5 : quarterlyQuota;
+
+    // Helper: count months with data
+    const monthsWithData = rep.spark ? rep.spark.filter(v => v !== undefined && v !== null).length : 0;
 
     if (isAE) {
-      // AEs are measured quarterly - $125K quota per quarter
-      const quarterlyQuota = 125000;
+      // Handle quarterly period selections
+      if (period === 'Q1 2026') return (basis / getQuarterlyQuota(1)) * 100;
+      if (period === 'Q2 2026') return (basis / getQuarterlyQuota(2)) * 100;
+      if (period === 'Q3 2026') return (basis / getQuarterlyQuota(3)) * 100;
+      if (period === 'Q4 2026') return (basis / getQuarterlyQuota(4)) * 100;
 
-      if (period === 'Q1 2026') {
-        // Q1 had ramp quota (50%)
-        return (basis / (quarterlyQuota * 0.5)) * 100;
-      }
+      // YTD: Sum of quarterly quotas for completed quarters + current quarter
       if (period === 'YTD 2026') {
-        // Q1 (ramp) + Q2 start
-        return (basis / (quarterlyQuota * 0.5 + quarterlyQuota)) * 100;
+        const currentQuarter = Math.ceil(monthsWithData / 3);
+        let ytdQuota = 0;
+        for (let q = 1; q <= currentQuarter; q++) {
+          ytdQuota += getQuarterlyQuota(q);
+        }
+        return (basis / ytdQuota) * 100;
       }
 
-      // Q1 months (Jan=0, Feb=1, Mar=2) - use Q1 cumulative vs ramp quota
-      if (monthIndex !== undefined && monthIndex <= 2) {
-        const q1Total = (rep.spark[0] || 0) + (rep.spark[1] || 0) + (rep.spark[2] || 0);
-        return (q1Total / (quarterlyQuota * 0.5)) * 100;
+      // Monthly view: show that month's contribution to its quarterly quota
+      if (monthIndex !== undefined) {
+        const quarter = getQuarter(monthIndex);
+        return (basis / getQuarterlyQuota(quarter)) * 100;
       }
 
-      // Q2 months (Apr=3, May=4, Jun=5) - show that month's % of Q2 quota
-      if (monthIndex !== undefined && monthIndex >= 3) {
-        return (basis / quarterlyQuota) * 100;
-      }
-
-      // Fallback
       return (basis / quarterlyQuota) * 100;
     } else {
-      // AMs (including SM AM) have monthly quota $50K
-      const monthlyQuota = 50000;
+      // AMs: monthly quota throughout the year
       if (period === 'Q1 2026') return (basis / (monthlyQuota * 3)) * 100;
-      if (period === 'YTD 2026') return (basis / (monthlyQuota * 5)) * 100; // 5 months Jan-May
+      if (period === 'Q2 2026') return (basis / (monthlyQuota * 3)) * 100;
+      if (period === 'Q3 2026') return (basis / (monthlyQuota * 3)) * 100;
+      if (period === 'Q4 2026') return (basis / (monthlyQuota * 3)) * 100;
+
+      // YTD: based on actual months with data
+      if (period === 'YTD 2026') {
+        return (basis / (monthlyQuota * Math.max(1, monthsWithData))) * 100;
+      }
+
+      // Monthly view
       return (basis / monthlyQuota) * 100;
     }
   };
