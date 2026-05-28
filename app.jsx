@@ -1,8 +1,8 @@
 const { useState, useMemo, useEffect } = React;
 
 // ───────── PERIOD OPTIONS ─────────
-const PERIOD_OPTIONS = ['Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
-const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3 };
+const PERIOD_OPTIONS = ['May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
+const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4 };
 
 // ───────── PACING CONFIG ─────────
 // For live tracking, update these values to current date
@@ -105,7 +105,7 @@ const PLANS = {
 };
 
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 54, netNew: 55323, goal: 110.6, gross: 85412, commission: 1382, basePay: 4167, earnings: 5549, status: 'on-track', spark: [89945, 56342, 20377, 55323], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54],
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 26, netNew: 27027, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 20377, 55323, 27027], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 26],
     dealsList: [
       { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
       { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
@@ -130,7 +130,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 26, netNew: 49690, goal: 99.4,  gross: 49690, commission: 845,  basePay: 4167, earnings: 5012, status: 'on-track', spark: [14877, 44955, 54195, 49690], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690], monthlyDeals: [14, 35, 30, 26],
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 14, netNew: 30403, goal: 60.8,  gross: 30403, commission: 517,  basePay: 4167, earnings: 4684, status: 'on-track', spark: [14877, 44955, 54195, 49690, 30403], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690, 30403], monthlyDeals: [14, 35, 30, 26, 14],
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
@@ -150,7 +150,7 @@ const REPS = [
       { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
     ]
   },
-  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0],
+  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0],
     dealsList: [
       { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
       { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
@@ -165,7 +165,7 @@ const REPS = [
       { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
     ]
   },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 15, netNew: 34517, goal: 27.6,  gross: 39426, commission: 2761, basePay: 5000, earnings: 7761, status: 'behind',   spark: [1569, 17920, 21781, 34517], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15],
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 9, netNew: 21374, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 21374], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 9],
     dealsList: [
       { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
       { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
@@ -183,7 +183,7 @@ const REPS = [
       { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
     ]
   },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 6,  netNew: 25713, goal: 20.6,  gross: 34429, commission: 2057, basePay: 5000, earnings: 7057, status: 'behind',   spark: [32535, 30412, 66096, 25713], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6],
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 10,  netNew: 38410, goal: 92.2,  gross: 63760, commission: 3073, basePay: 5000, earnings: 8073, status: 'on-track',   spark: [32535, 30412, 66096, 25713, 38410], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6, 10],
     dealsList: [
       { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
       { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
@@ -192,7 +192,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 13, netNew: 25598, goal: 20.5,  gross: 46178, commission: 2048, basePay: 5000, earnings: 7048, status: 'behind',   spark: [58472, 24416, 30117, 25598], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13],
+  { name: 'Brian Carl',       role: 'AE',    deals: 9, netNew: 20524, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 30117, 25598, 20524], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 9],
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -207,7 +207,7 @@ const REPS = [
       { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
     ]
   },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 9990,  goal: 20.0,  gross: 12782, commission: 170,  basePay: 4167, earnings: 4337, status: 'behind',   spark: [44074, 35159, 16829, 9990],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7],
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 7,  netNew: 13261,  goal: 26.5,  gross: 22013, commission: 225,  basePay: 4167, earnings: 4392, status: 'behind',   spark: [44074, 35159, 16829, 9990, 13261],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7, 7],
     dealsList: [
       { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: 0 },
       { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: 1125 },
@@ -218,7 +218,7 @@ const REPS = [
       { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
     ]
   },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 22, netNew: 4903,  goal: 3.9,  gross: 20449, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22],
+  { name: "Connor O'Brien",   role: 'AE',    deals: 13, netNew: 9696,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903, 9696],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13],
     dealsList: [
       { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
       { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
@@ -229,11 +229,11 @@ const REPS = [
       { customer: 'Westminster Chapel', product: 'Manual Charge', arr: 778, netNew: 778 },
     ]
   },
-  { name: 'Jordy Hornbuckle', role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0], color: '#9F7AEA', plan: 'C', monthlyDeals: [0, 0, 0, 0], dealsList: [] },
-  { name: 'Sean Parr',        role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0], dealsList: [] },
-  { name: 'Carson Santee',    role: 'SM AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0], dealsList: [] },
-  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0], dealsList: [] },
-  { name: 'Tim Horton',       role: 'Sr AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0], dealsList: [] },
+  { name: 'Jordy Hornbuckle', role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0], color: '#9F7AEA', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Sean Parr',        role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Carson Santee',    role: 'SM AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Timm Horton',      role: 'Sr AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 0], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0], dealsList: [] },
 ];
 
 const MONTHLY = [
@@ -241,11 +241,12 @@ const MONTHLY = [
   { m: 'Feb', deals: 260, gross: 497579, netNew: 246289, goal: 77.8, commission:  9071, earnings: 43253 },
   { m: 'Mar', deals: 202, gross: 479383, netNew: 198461, goal: 62.7, commission: 11896, earnings: 56374 },
   { m: 'Apr', deals: 134, gross: 361935, netNew: 218390, goal: 69.0, commission:  9263, earnings: 43445 },
+  { m: 'May', deals: 88,  gross: 266715, netNew: 160695, goal: 50.8, commission:  7626, earnings: 38808 },
 ];
 
-const APR = MONTHLY[3];
+const MAY_DATA = MONTHLY[4];
 const YTD = {
-  deals: 817, gross: 1863488, netNew: 968289, commission: 43483, earnings: 463962,
+  deals: 905, gross: 2130203, netNew: 1128984, commission: 51109, earnings: 502770,
 };
 
 // ───────── RUN RATE PROJECTION ─────────
@@ -1542,13 +1543,13 @@ function App() {
     setReportLoading(true);
     setTimeout(() => {
       setReportLoading(false);
-      pushToast('Payout report generated', `April 2026 · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(APR.earnings, { full: true })} · sent to finance@oneflow.com`);
+      pushToast('Payout report generated', `${period} · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(periodData.earnings, { full: true })} · sent to finance@oneflow.com`);
     }, 1100);
   };
 
   // Resolve current period to monthly data
-  const periodMonth = { 'Jan 2026': 'Jan', 'Feb 2026': 'Feb', 'Mar 2026': 'Mar', 'Apr 2026': 'Apr' }[period];
-  const periodData = MONTHLY.find(m => m.m === periodMonth) || APR;
+  const periodMonth = { 'Jan 2026': 'Jan', 'Feb 2026': 'Feb', 'Mar 2026': 'Mar', 'Apr 2026': 'Apr', 'May 2026': 'May' }[period];
+  const periodData = MONTHLY.find(m => m.m === periodMonth) || MAY_DATA;
   const isYTD = period === 'YTD 2026';
   const isQ1 = period === 'Q1 2026';
   const activeData = isYTD ? YTD : isQ1 ? {
@@ -1568,7 +1569,7 @@ function App() {
   ];
 
   // Helper to get rep data for selected period
-  const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3 }[period];
+  const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4 }[period];
   const getRepNetNew = (rep) => {
     if (monthIndex !== undefined) return rep.spark[monthIndex];
     if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
@@ -1755,8 +1756,8 @@ function App() {
 
               {/* Net New ARR by Rep Bar Chart */}
               {(() => {
-                // Map period to spark array index (0=Jan, 1=Feb, 2=Mar, 3=Apr)
-                const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3 }[period];
+                // Map period to spark array index (0=Jan, 1=Feb, 2=Mar, 3=Apr, 4=May)
+                const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4 }[period];
                 const getRepNetNew = (rep) => {
                   if (monthIndex !== undefined) return rep.spark[monthIndex];
                   if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
