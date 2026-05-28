@@ -2441,6 +2441,9 @@ function App() {
                 </div>
               )}
             </div>
+            <button className="data-dict-btn" onClick={() => setShowMethodology(true)} title="Data Dictionary & Methodology">
+              <Icon.Info /> Data Dictionary
+            </button>
             <div className="search">
               <Icon.Search/>
               <input
@@ -2491,7 +2494,7 @@ function App() {
                   <div className="metric-icon"><Icon.Commission/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{fmtMoney(activeData.commission)}</div>
-                    <div className="metric-label">Commissions</div>
+                    <div className="metric-label">Commissions <span className="info-btn" onClick={() => setShowMethodology(true)} title="View calculation methodology"><Icon.Info/></span></div>
                   </div>
                 </div>
               </div>
@@ -2701,84 +2704,189 @@ function App() {
 
       <RepDrawer rep={activeRep} onClose={() => setActiveRep(null)}/>
 
-      {/* Methodology Modal */}
+      {/* Data Dictionary & Methodology Modal */}
       {showMethodology && (
         <>
           <div className="modal-scrim" onClick={() => setShowMethodology(false)} />
-          <div className="modal">
+          <div className="modal modal-large">
             <div className="modal-header">
-              <h3>Run Rate Projection Methodology</h3>
+              <h3>Data Dictionary & Methodology</h3>
               <div className="modal-close" onClick={() => setShowMethodology(false)}><Icon.X /></div>
             </div>
             <div className="modal-body">
+              {/* Data Sources */}
               <div className="method-section">
-                <h4>What is Run Rate?</h4>
-                <p>Run rate projects future performance based on historical trends. We use a weighted average that emphasizes recent performance while accounting for overall patterns.</p>
+                <h4>📁 Data Sources</h4>
+                <table className="data-dict-table">
+                  <thead>
+                    <tr><th>Source</th><th>Location</th><th>Update Frequency</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Primary Workbook</strong></td>
+                      <td><code>Commissions Workbook - Elijah's Copy for Payouts for Lori.xlsx</code></td>
+                      <td>Manual sync or daily 5pm auto-sync</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Rep Performance</strong></td>
+                      <td>Individual rep sheets (e.g., "Cameron Grissom", "Brian Carl")</td>
+                      <td>Row 15 = Deals, Row 16 = Net New ARR</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Settings & Roster</strong></td>
+                      <td>Settings sheet, Rows 15-30</td>
+                      <td>Name, Role, Quota, Base Pay</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Dashboard Totals</strong></td>
+                      <td>Dashboard sheet</td>
+                      <td>Aggregated monthly totals</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
+              {/* Metric Definitions */}
               <div className="method-section">
-                <h4>Calculation Formula</h4>
+                <h4>📊 Metric Definitions</h4>
+                <table className="data-dict-table">
+                  <thead>
+                    <tr><th>Metric</th><th>Definition</th><th>Formula / Source</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Net New ARR</strong></td>
+                      <td>New annual recurring revenue from new and existing customers</td>
+                      <td><code>Sum of rep.spark[monthIndex]</code> for all active reps</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Deals Closed</strong></td>
+                      <td>Count of closed-won opportunities</td>
+                      <td><code>Sum of rep.monthlyDeals[monthIndex]</code></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Gross Revenue</strong></td>
+                      <td>Total contract value of closed deals</td>
+                      <td>From Excel Dashboard sheet</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Commission</strong></td>
+                      <td>Variable compensation based on Net New ARR and plan</td>
+                      <td><code>calcCommission(rep, netNew)</code> — see rates below</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Base Pay</strong></td>
+                      <td>Fixed monthly salary component</td>
+                      <td>From Settings sheet Column E</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Total Earnings</strong></td>
+                      <td>Total monthly compensation</td>
+                      <td><code>Commission + Base Pay</code></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Goal %</strong></td>
+                      <td>Progress toward monthly quota</td>
+                      <td><code>(Net New ARR / Monthly Quota) × 100</code></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Commission Plans */}
+              <div className="method-section">
+                <h4>💰 Commission Plan Rates</h4>
+                <table className="data-dict-table">
+                  <thead>
+                    <tr><th>Plan</th><th>Role</th><th>Base Rate</th><th>Special Rules</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Plan A</strong></td>
+                      <td>AE Standard</td>
+                      <td>8%</td>
+                      <td>Accelerators at 100%, 125%, 150% of quota</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Plan B</strong></td>
+                      <td>AE with Dead Zone</td>
+                      <td>6%</td>
+                      <td><strong>$0 commission until $42,367 cleared</strong>, then 6% on amount above</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Plan C</strong></td>
+                      <td>AM Monthly</td>
+                      <td>1.7%</td>
+                      <td>10% kicker on amounts over $50K quota</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Plan D</strong></td>
+                      <td>SME ARR Collected</td>
+                      <td>1.7%</td>
+                      <td>Flat rate on ARR Collected (no tiers)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="formula-box" style={{ marginTop: 12 }}>
+                  <code>
+                    Plan A: commission = netNew × 0.08<br/>
+                    Plan B: commission = (netNew {'>'} $42,367) ? (netNew - $42,367) × 0.06 : $0<br/>
+                    Plan C/D: commission = netNew × 0.017
+                  </code>
+                </div>
+              </div>
+
+              {/* Current Period Values */}
+              <div className="method-section">
+                <h4>📈 Current Period: {period}</h4>
+                <div className="method-grid">
+                  <div className="method-stat">
+                    <span className="method-label">Net New ARR</span>
+                    <span className="method-value tab">{fmtMoney(activeData.netNew, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Deals Closed</span>
+                    <span className="method-value tab">{activeData.deals}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Total Commission</span>
+                    <span className="method-value tab">{fmtMoney(activeData.commission, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Active Reps</span>
+                    <span className="method-value tab">{activeReps.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Run Rate Methodology */}
+              <div className="method-section">
+                <h4>🔮 Run Rate Projection</h4>
+                <p>Projects future performance using weighted historical average:</p>
                 <div className="formula-box">
-                  <code>Projected = (Recent Avg × 60%) + (Overall Avg × 40%)</code>
+                  <code>Projected = (Recent 2-Month Avg × 60%) + (Overall Avg × 40%)</code>
                 </div>
-                <ul>
-                  <li><strong>Recent Avg:</strong> Average of last 2 months (Mar + Apr)</li>
-                  <li><strong>Overall Avg:</strong> Average of all 4 months (Jan-Apr)</li>
-                  <li><strong>Weighting:</strong> 60/40 split favors recent trends</li>
-                </ul>
-              </div>
-
-              <div className="method-section">
-                <h4>Current Values</h4>
-                <div className="method-grid">
-                  <div className="method-stat">
-                    <span className="method-label">Jan Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[0].commission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Feb Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[1].commission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Mar Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[2].commission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Apr Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[3].commission, { full: true })}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="method-section">
-                <h4>Projection Result</h4>
-                <div className="method-grid">
+                <div className="method-grid" style={{ marginTop: 12 }}>
                   <div className="method-stat highlight">
                     <span className="method-label">Recent Avg (Mar+Apr)</span>
                     <span className="method-value tab">{fmtMoney((MONTHLY[2].commission + MONTHLY[3].commission) / 2, { full: true })}</span>
                   </div>
-                  <div className="method-stat highlight">
-                    <span className="method-label">Overall Avg</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY.reduce((s, m) => s + m.commission, 0) / 4, { full: true })}</span>
-                  </div>
                   <div className="method-stat accent">
-                    <span className="method-label">May Projection</span>
+                    <span className="method-label">Projected Commission</span>
                     <span className="method-value tab">{fmtMoney(MAY.projectedCommission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Confidence Range (±15%)</span>
-                    <span className="method-value tab">{fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}</span>
                   </div>
                 </div>
               </div>
 
+              {/* Audit Trail */}
               <div className="method-section">
-                <h4>Trend Analysis</h4>
-                <p>Comparing recent months to earlier months: <strong style={{ color: MAY.trendPct >= 0 ? 'var(--green)' : 'var(--rose)' }}>{MAY.trendPct >= 0 ? '+' : ''}{MAY.trendPct.toFixed(1)}%</strong></p>
-                <p style={{ color: 'var(--text-3)', fontSize: '12px', marginTop: '8px' }}>
-                  {MAY.trendPct >= 0
-                    ? 'Commission payouts are trending upward compared to earlier in the year.'
-                    : 'Commission payouts are trending downward compared to earlier in the year.'}
+                <h4>🔍 Audit Trail</h4>
+                <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
+                  All values can be traced back to the source Excel workbook. The sync script logs every update to <code>sync_log.txt</code>.
+                  Commission calculations use the shared <code>calcCommission()</code> function ensuring consistency across all dashboard tabs.
+                </p>
+                <p style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 8 }}>
+                  Last sync: Check <code>/Users/elijah/Desktop/Sales Dash Automation/sync_log.txt</code>
                 </p>
               </div>
             </div>
