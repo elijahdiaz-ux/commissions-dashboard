@@ -1,4 +1,4 @@
-const { useState, useMemo, useEffect } = React;
+import { useState, useMemo, useEffect } from 'react';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -2796,4 +2796,5 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+export default App;
