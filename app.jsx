@@ -330,6 +330,15 @@ const Icon = {
   Info: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>,
   Compare: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><path d="M10 12h4"/></svg>,
   ArrowLeft: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>,
+  // Report type icons
+  ChartBar: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="10" width="4" height="10" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="2" width="4" height="18" rx="1"/></svg>,
+  Bridge: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 18h16"/><path d="M4 18c0-4 2-6 4-6s4 2 4 6"/><path d="M12 18c0-4 2-6 4-6s4 2 4 6"/><path d="M2 18h2M20 18h2"/></svg>,
+  Refresh: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>,
+  Calendar: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
+  Bullseye: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  Globe: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10"/></svg>,
+  Package: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M16.5 9.4l-9-5.2M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>,
+  Wallet: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M22 10H18a2 2 0 0 0 0 4h4"/><path d="M18 12h.01"/><path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>,
 };
 
 // ───────── PERIOD SELECTOR ─────────
@@ -1772,14 +1781,14 @@ function ReportsView({ period, setPeriod }) {
 
   // Report definitions
   const reports = [
-    { id: 'executive', name: 'Executive Summary', icon: '📊', available: true },
-    { id: 'arr-bridge', name: 'ARR Movement', icon: '🌉', available: true },
-    { id: 'retention', name: 'Revenue Retention', icon: '🔄', available: false, needs: ['Cohort data by signup month', 'Monthly recurring revenue by customer', 'Churn dates'] },
-    { id: 'renewals', name: 'Renewal Forecast', icon: '📅', available: false, needs: ['Renewal dates by account', 'Contract values', 'Risk scoring data'] },
-    { id: 'pipeline', name: 'Pipeline & Win Rate', icon: '🎯', available: false, needs: ['Opportunity stage data', 'Created/closed dates', 'Deal amounts by stage'] },
-    { id: 'regional', name: 'Regional Performance', icon: '🌎', available: false, needs: ['Region assignment per account', 'LATAM vs US revenue split'] },
-    { id: 'product', name: 'Product Performance', icon: '📦', available: true },
-    { id: 'deferred', name: 'Deferred Revenue', icon: '💰', available: false, needs: ['Billing dates', 'Revenue recognition schedule', 'Deferred balance by month'] },
+    { id: 'executive', name: 'Executive Summary', IconComponent: Icon.ChartBar, available: true },
+    { id: 'arr-bridge', name: 'ARR Movement', IconComponent: Icon.Bridge, available: true },
+    { id: 'retention', name: 'Revenue Retention', IconComponent: Icon.Refresh, available: false, needs: ['Cohort data by signup month', 'Monthly recurring revenue by customer', 'Churn dates'] },
+    { id: 'renewals', name: 'Renewal Forecast', IconComponent: Icon.Calendar, available: false, needs: ['Renewal dates by account', 'Contract values', 'Risk scoring data'] },
+    { id: 'pipeline', name: 'Pipeline & Win Rate', IconComponent: Icon.Bullseye, available: false, needs: ['Opportunity stage data', 'Created/closed dates', 'Deal amounts by stage'] },
+    { id: 'regional', name: 'Regional Performance', IconComponent: Icon.Globe, available: false, needs: ['Region assignment per account', 'LATAM vs US revenue split'] },
+    { id: 'product', name: 'Product Performance', IconComponent: Icon.Package, available: true },
+    { id: 'deferred', name: 'Deferred Revenue', IconComponent: Icon.Wallet, available: false, needs: ['Billing dates', 'Revenue recognition schedule', 'Deferred balance by month'] },
   ];
 
   // Render Executive Summary
@@ -2198,7 +2207,7 @@ function ReportsView({ period, setPeriod }) {
               className={`report-nav-item ${activeReport === report.id ? 'active' : ''} ${!report.available ? 'unavailable' : ''}`}
               onClick={() => setActiveReport(report.id)}
             >
-              <span className="report-nav-icon">{report.icon}</span>
+              <span className="report-nav-icon"><report.IconComponent /></span>
               <span className="report-nav-name">{report.name}</span>
               {!report.available && <span className="report-nav-badge">Data Needed</span>}
             </div>

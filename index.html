@@ -1693,7 +1693,9 @@
   }
   .report-nav-item.unavailable { opacity: 0.6; }
   .report-nav-item.unavailable:hover { opacity: 0.8; }
-  .report-nav-icon { font-size: 18px; }
+  .report-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
+  .report-nav-icon svg { width: 18px; height: 18px; }
+  .report-nav-item.active .report-nav-icon { color: var(--accent); }
   .report-nav-name { font-size: 13px; font-weight: 500; flex: 1; }
   .report-nav-badge {
     font-size: 9px;
