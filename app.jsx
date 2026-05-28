@@ -1,10 +1,10 @@
 const { useState, useMemo, useEffect } = React;
 
-// --------- PERIOD OPTIONS ---------
+// ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
 const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4 };
 
-// --------- PACING CONFIG ---------
+// ───────── PACING CONFIG ─────────
 // For live tracking, update these values to current date
 const CURRENT_MONTH = {
   name: 'April',
@@ -35,12 +35,12 @@ const getStatusInfo = (status) => {
   }
 };
 
-// --------- DATA ---------
+// ───────── DATA ─────────
 // Values from Excel: Commissions Workbook - Dashboard sheet (April 2026)
-// --------- PLAN DETAILS ---------
+// ───────── PLAN DETAILS ─────────
 const PLANS = {
   A: {
-    name: 'Plan A - AE Standard',
+    name: 'Plan A — AE Standard',
     type: 'Quarterly',
     quota: 125000,
     annualQuota: 500000,
@@ -54,7 +54,7 @@ const PLANS = {
     description: '8% base rate on Net New ARR with accelerators at quota milestones',
   },
   B: {
-    name: 'Plan B - AE with Dead Zone',
+    name: 'Plan B — AE with Dead Zone',
     type: 'Quarterly',
     quota: 125000,
     annualQuota: 500000,
@@ -69,7 +69,7 @@ const PLANS = {
     description: 'No commission until $42K dead zone cleared, then 6% base rate',
   },
   C: {
-    name: 'Plan C - AM Monthly',
+    name: 'Plan C — AM Monthly',
     type: 'Monthly',
     quota: 50000,
     annualQuota: 600000,
@@ -82,7 +82,7 @@ const PLANS = {
     description: '1.7% on Net New ARR up to quota, 10% kicker on overages',
   },
   D: {
-    name: 'Plan D - SME ARR Collected',
+    name: 'Plan D — SME ARR Collected',
     type: 'Monthly',
     quota: 50000,
     annualQuota: 600000,
@@ -249,7 +249,7 @@ const YTD = {
   deals: 905, gross: 2130203, netNew: 1128984, commission: 51109, earnings: 502770,
 };
 
-// --------- RUN RATE PROJECTION ---------
+// ───────── RUN RATE PROJECTION ─────────
 // Calculate monthly run rate and project next month
 const calcRunRate = () => {
   const commissions = MONTHLY.map(m => m.commission);
@@ -271,7 +271,7 @@ const calcRunRate = () => {
   const recentNetNew = (netNewArr[2] + netNewArr[3]) / 2;
   const projectedNetNew = Math.round(recentNetNew * 0.6 + avgNetNew * 0.4);
 
-  // Confidence range: +/-15%
+  // Confidence range: ±15%
   const projLow = Math.round(projectedCommission * 0.85);
   const projHigh = Math.round(projectedCommission * 1.15);
 
@@ -301,7 +301,7 @@ const MAY = {
   trendPct: PROJECTION.trendPct,
 };
 
-// --------- HELPERS ---------
+// ───────── HELPERS ─────────
 const fmtMoney = (v, opts = {}) => {
   const { full = false } = opts;
   if (full) return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -310,28 +310,7 @@ const fmtMoney = (v, opts = {}) => {
 };
 const initials = (name) => name.split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase();
 
-// Calculate commission for a rep based on plan rules
-const calcCommission = (rep, netNew) => {
-  const plan = PLANS[rep.plan];
-  if (!plan || rep.plan === 'Inactive') return 0;
-
-  // Plan B: Dead zone logic - no commission until dead zone cleared
-  if (rep.plan === 'B') {
-    const deadZone = plan.deadZone || 0;
-    if (netNew <= deadZone) return 0;
-    return Math.round((netNew - deadZone) * 0.06);
-  }
-
-  // Plan C & D: 1.7% rate
-  if (rep.plan === 'C' || rep.plan === 'D') {
-    return Math.round(netNew * 0.017);
-  }
-
-  // Plan A: 8% rate
-  return Math.round(netNew * 0.08);
-};
-
-// --------- ICONS ---------
+// ───────── ICONS ─────────
 const Icon = {
   Dashboard: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>,
   Reps: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15 14.5c2.5 0 6 1.7 6 5"/></svg>,
@@ -362,7 +341,7 @@ const Icon = {
   Wallet: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M22 10H18a2 2 0 0 0 0 4h4"/><path d="M18 12h.01"/><path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>,
 };
 
-// --------- PERIOD SELECTOR ---------
+// ───────── PERIOD SELECTOR ─────────
 function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
   return (
     <div className="popover-wrap">
@@ -376,7 +355,7 @@ function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
           {PERIOD_OPTIONS.map(p => (
             <div key={p} className={'popover-item' + (period === p ? ' active' : '')} onClick={() => { setPeriod(p); setPeriodOpen(false); }}>
               <span>{p}</span>
-              <span className="check">[ok]</span>
+              <span className="check">✓</span>
             </div>
           ))}
         </div>
@@ -385,7 +364,7 @@ function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
   );
 }
 
-// --------- SPARKLINE ---------
+// ───────── SPARKLINE ─────────
 function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled = true, glow = true }) {
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -413,7 +392,7 @@ function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled =
   );
 }
 
-// --------- ORBITAL / FORECAST VIZ ---------
+// ───────── ORBITAL / FORECAST VIZ ─────────
 function ForecastViz() {
   // Use actual commission data from MONTHLY and run rate projection
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
@@ -508,8 +487,8 @@ function ForecastViz() {
   );
 }
 
-// --------- MINI BAR CHART ---------
-// --------- YTD NET NEW ARR CHART ---------
+// ───────── MINI BAR CHART ─────────
+// ───────── YTD NET NEW ARR CHART ─────────
 function YTDNetNewChart() {
   const data = MONTHLY.map(m => ({ label: m.m, value: m.netNew, goal: m.goal }));
   const max = Math.max(...data.map(d => d.value));
@@ -643,7 +622,7 @@ function MiniBars({ data }) {
   );
 }
 
-// --------- BAR TILE ---------
+// ───────── BAR TILE ─────────
 function BarTile({ value, label, pct, color = 'normal' }) {
   const heightPct = Math.max(8, Math.min(100, pct));
   return (
@@ -660,7 +639,7 @@ function BarTile({ value, label, pct, color = 'normal' }) {
   );
 }
 
-// --------- ATTAINMENT BARS (SEGMENT VIZ) ---------
+// ───────── ATTAINMENT BARS (SEGMENT VIZ) ─────────
 function AttainBars({ pct }) {
   // 5 segments, fill based on % to goal (cap 110%)
   const segments = 5;
@@ -680,7 +659,7 @@ function AttainBars({ pct }) {
   );
 }
 
-// --------- DRAWER ---------
+// ───────── DRAWER ─────────
 function RepDrawer({ rep, onClose }) {
   if (!rep) return null;
   const monthlyEarn = [
@@ -688,7 +667,7 @@ function RepDrawer({ rep, onClose }) {
     { label: 'Feb', v: rep.earnings * 0.92, projected: false },
     { label: 'Mar', v: rep.earnings * 1.18, projected: false },
     { label: 'Apr', v: rep.earnings, projected: false },
-    { label: 'May ^', v: rep.earnings * 1.08, projected: true },
+    { label: 'May ▴', v: rep.earnings * 1.08, projected: true },
   ];
   // commission breakdown from actual data
   const basePay = rep.basePay || 0;
@@ -711,7 +690,7 @@ function RepDrawer({ rep, onClose }) {
         </div>
 
         <div className="drawer-section">
-          <h4>{CURRENT_MONTH.name} Pacing * Day {CURRENT_MONTH.dayOfMonth} of {CURRENT_MONTH.daysInMonth}</h4>
+          <h4>{CURRENT_MONTH.name} Pacing · Day {CURRENT_MONTH.dayOfMonth} of {CURRENT_MONTH.daysInMonth}</h4>
           <div className="pacing-card">
             <div className="pacing-row">
               <div className="pacing-metric">
@@ -744,10 +723,10 @@ function RepDrawer({ rep, onClose }) {
               <span className={'dot ' + getStatusInfo(getRepStatus(rep.goal)).dotClass} style={{ width: 10, height: 10 }}/>
               <span style={{ color: getStatusInfo(getRepStatus(rep.goal)).color, fontWeight: 600 }}>{getStatusInfo(getRepStatus(rep.goal)).label}</span>
               <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
-                {getRepStatus(rep.goal) === 'on-track' && '- Meeting or exceeding expected pace'}
-                {getRepStatus(rep.goal) === 'at-risk' && '- Within 10% of expected pace'}
-                {getRepStatus(rep.goal) === 'behind' && '- More than 10% below expected pace'}
-                {getRepStatus(rep.goal) === 'inactive' && '- No quota assigned this month'}
+                {getRepStatus(rep.goal) === 'on-track' && '— Meeting or exceeding expected pace'}
+                {getRepStatus(rep.goal) === 'at-risk' && '— Within 10% of expected pace'}
+                {getRepStatus(rep.goal) === 'behind' && '— More than 10% below expected pace'}
+                {getRepStatus(rep.goal) === 'inactive' && '— No quota assigned this month'}
               </span>
             </div>
           </div>
@@ -842,7 +821,7 @@ function RepDrawer({ rep, onClose }) {
   );
 }
 
-// --------- SIDEBAR ---------
+// ───────── SIDEBAR ─────────
 function Sidebar({ activeTab, setActiveTab }) {
   const items = [
     ['Dashboard', Icon.Dashboard],
@@ -885,7 +864,7 @@ function Sidebar({ activeTab, setActiveTab }) {
   );
 }
 
-// --------- COMPARE VIEW ---------
+// ───────── COMPARE VIEW ─────────
 function CompareView({ reps, onExit }) {
   const rep1 = reps[0];
   const rep2 = reps[1];
@@ -918,7 +897,7 @@ function CompareView({ reps, onExit }) {
             <h2>{rep.name}</h2>
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <span className="role-chip">{rep.role}</span>
-              <span className="plan-chip">{plan.name.split('-')[0].trim()}</span>
+              <span className="plan-chip">{plan.name.split('—')[0].trim()}</span>
             </div>
           </div>
         </div>
@@ -1028,7 +1007,7 @@ function CompareView({ reps, onExit }) {
   );
 }
 
-// --------- REPS VIEW ---------
+// ───────── REPS VIEW ─────────
 function RepsView({ onSelectRep, period, setPeriod }) {
   const [selectedRep, setSelectedRep] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1079,7 +1058,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
         <div>
           <h1 className="page-title">Sales Reps</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${REPS.length} reps * ${REPS.filter(r => r.plan !== 'Inactive').length} active`}
+            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${REPS.length} reps · ${REPS.filter(r => r.plan !== 'Inactive').length} active`}
           </div>
         </div>
         <div className="topbar-actions">
@@ -1122,7 +1101,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                     <div className="rep-card-name">{rep.name}</div>
                     <div className="rep-card-role">
                       <span className="role-chip">{rep.role}</span>
-                      <span className="plan-chip">{plan.name.split('-')[0].trim()}</span>
+                      <span className="plan-chip">{plan.name.split('—')[0].trim()}</span>
                     </div>
                   </div>
                 </div>
@@ -1137,7 +1116,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                   </div>
                   <div className="rep-card-stat">
                     <span className="stat-value tab" style={{ color: rep.commission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
-                      {fmtMoney(monthIdx !== undefined ? calcCommission(rep, rep.spark[monthIdx]) : rep.commission)}
+                      {fmtMoney(monthIdx !== undefined ? Math.round(rep.spark[monthIdx] * (rep.plan === 'C' || rep.plan === 'D' ? 0.017 : 0.08)) : rep.commission)}
                     </span>
                     <span className="stat-label">{period.split(' ')[0]} Commission</span>
                   </div>
@@ -1163,7 +1142,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
   );
 }
 
-// --------- REP DETAIL PANEL ---------
+// ───────── REP DETAIL PANEL ─────────
 function RepDetailPanel({ rep }) {
   const plan = PLANS[rep.plan] || PLANS.Inactive;
   const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
@@ -1254,7 +1233,7 @@ function RepDetailPanel({ rep }) {
             <div key={m} className="monthly-row">
               <span className="month-label">{m}</span>
               <span className="month-value tab">{fmtMoney(rep.spark[i], { full: true })}</span>
-              <span className="month-deals tab">{rep.monthlyDeals ? rep.monthlyDeals[i] : '-'}</span>
+              <span className="month-deals tab">{rep.monthlyDeals ? rep.monthlyDeals[i] : '—'}</span>
             </div>
           ))}
         </div>
@@ -1294,7 +1273,7 @@ function RepDetailPanel({ rep }) {
   );
 }
 
-// --------- COMMISSIONS VIEW (FOR LORI) ---------
+// ───────── COMMISSIONS VIEW (FOR LORI) ─────────
 function CommissionsView({ period, setPeriod }) {
   const [payoutStatus, setPayoutStatus] = useState({});
   const [periodOpen, setPeriodOpen] = useState(false);
@@ -1306,20 +1285,23 @@ function CommissionsView({ period, setPeriod }) {
   // Calculate totals based on selected period
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
 
-  // Get commission for selected month using shared calculation
+  // Get commission for selected month (simplified - using stored commission for now)
   const getRepCommission = (rep) => {
     if (monthIdx !== undefined && rep.spark) {
-      return calcCommission(rep, rep.spark[monthIdx] || 0);
+      // Calculate commission based on that month's net new
+      const netNew = rep.spark[monthIdx] || 0;
+      const rate = rep.plan === 'C' || rep.plan === 'D' ? 0.017 : 0.08;
+      return Math.round(netNew * rate);
     }
     return rep.commission;
   };
 
   const getRepEarnings = (rep) => rep.basePay + getRepCommission(rep);
 
-  const totalBase = activeReps.reduce((sum, r) => sum + r.basePay, 0);
-  const totalCommission = activeReps.reduce((sum, r) => sum + getRepCommission(r), 0);
+  const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
+  const totalCommissions = activeReps.reduce((sum, r) => sum + getRepCommission(r), 0);
   const totalEarnings = activeReps.reduce((sum, r) => sum + getRepEarnings(r), 0);
-  const midMonthPayout = totalBase / 2; // 50% advance
+  const midMonthPayout = totalBasePay / 2; // 50% advance
 
   const toggleStatus = (repName) => {
     setPayoutStatus(prev => ({
@@ -1369,7 +1351,7 @@ function CommissionsView({ period, setPeriod }) {
           <div class="header">
             <div>
               <div class="logo">Amazing Life Foundation</div>
-              <div class="title">Commission Payout Report - ${period}</div>
+              <div class="title">Commission Payout Report — ${period}</div>
             </div>
             <div class="meta">
               <div>Generated ${new Date().toLocaleString()}</div>
@@ -1421,13 +1403,13 @@ function CommissionsView({ period, setPeriod }) {
                   <td class="mono">${fmtMoney(commission, { full: true })}</td>
                   <td class="mono">${fmtMoney(rep.basePay, { full: true })}</td>
                   <td class="mono" style="font-weight: 600">${fmtMoney(total, { full: true })}</td>
-                  <td class="${status}">${status === 'approved' ? '[ok] Approved' : 'o Pending'}</td>
+                  <td class="${status}">${status === 'approved' ? '✓ Approved' : '○ Pending'}</td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
           <div class="footer">
-            Amazing Life Foundation * RevOps Dashboard * Confidential
+            Amazing Life Foundation · RevOps Dashboard · Confidential
           </div>
         </body>
         </html>
@@ -1449,7 +1431,7 @@ function CommissionsView({ period, setPeriod }) {
         <div>
           <h1 className="page-title">Commission Payouts</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {period} * {activeReps.length} active reps * awaiting approval
+            {period} · {activeReps.length} active reps · awaiting approval
           </div>
         </div>
         <div className="topbar-actions">
@@ -1486,7 +1468,7 @@ function CommissionsView({ period, setPeriod }) {
             <Icon.Spark />
           </div>
           <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(totalCommission, { full: true })}</div>
+            <div className="payout-value tab">{fmtMoney(totalCommissions, { full: true })}</div>
             <div className="payout-label">Total Commissions</div>
           </div>
         </div>
@@ -1495,7 +1477,7 @@ function CommissionsView({ period, setPeriod }) {
             <Icon.Reps />
           </div>
           <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(totalBase, { full: true })}</div>
+            <div className="payout-value tab">{fmtMoney(totalBasePay, { full: true })}</div>
             <div className="payout-label">Total Base Salary</div>
           </div>
         </div>
@@ -1549,7 +1531,7 @@ function CommissionsView({ period, setPeriod }) {
                     </div>
                   </td>
                   <td><span className="role-chip">{rep.role}</span></td>
-                  <td><span className="plan-chip-sm">{plan.name.split('-')[0].trim()}</span></td>
+                  <td><span className="plan-chip-sm">{plan.name.split('—')[0].trim()}</span></td>
                   <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(rep.basePay, { full: true })}</td>
                   <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(commission, { full: true })}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600 }} className="tab">{fmtMoney(earnings, { full: true })}</td>
@@ -1568,8 +1550,8 @@ function CommissionsView({ period, setPeriod }) {
           <tfoot>
             <tr>
               <td colSpan="3"><strong>TOTALS</strong></td>
-              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalBase, { full: true })}</strong></td>
-              <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommission, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalBasePay, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommissions, { full: true })}</strong></td>
               <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalEarnings, { full: true })}</strong></td>
               <td colSpan="2"></td>
             </tr>
@@ -1620,7 +1602,7 @@ function CommissionsView({ period, setPeriod }) {
             const plan = PLANS[planKey];
             const repsOnPlan = activeReps.filter(r => r.plan === planKey);
             if (repsOnPlan.length === 0) return null;
-            const planCommissions = repsOnPlan.reduce((sum, r) => sum + getRepCommission(r), 0);
+            const planCommissions = repsOnPlan.reduce((sum, r) => sum + r.commission, 0);
             return (
               <div key={planKey} className="plan-breakdown-card">
                 <div className="plan-breakdown-header">
@@ -1631,12 +1613,12 @@ function CommissionsView({ period, setPeriod }) {
                   {repsOnPlan.map(r => (
                     <div key={r.name} className="plan-rep-row">
                       <span>{r.name}</span>
-                      <span className="tab">{fmtMoney(getRepCommission(r), { full: true })}</span>
+                      <span className="tab">{fmtMoney(r.commission, { full: true })}</span>
                     </div>
                   ))}
                 </div>
                 <div className="plan-breakdown-meta">
-                  {plan.type} * {repsOnPlan.length} rep{repsOnPlan.length > 1 ? 's' : ''} * Base rate {(plan.baseRate * 100).toFixed(1)}%
+                  {plan.type} · {repsOnPlan.length} rep{repsOnPlan.length > 1 ? 's' : ''} · Base rate {(plan.baseRate * 100).toFixed(1)}%
                 </div>
               </div>
             );
@@ -1647,7 +1629,7 @@ function CommissionsView({ period, setPeriod }) {
   );
 }
 
-// --------- REPORTS VIEW ---------
+// ───────── REPORTS VIEW ─────────
 function ReportsView({ period, setPeriod }) {
   const [periodOpen, setPeriodOpen] = useState(false);
   const [activeReport, setActiveReport] = useState('executive');
@@ -1668,13 +1650,8 @@ function ReportsView({ period, setPeriod }) {
   const totalDeals = monthIdx !== undefined
     ? REPS.reduce((sum, r) => sum + (r.monthlyDeals[monthIdx] || 0), 0)
     : YTD.deals;
-  // Calculate commission dynamically for consistency across all tabs
-  const activeReps = REPS.filter(r => r.plan !== 'Inactive');
-  const totalCommission = monthIdx !== undefined
-    ? activeReps.reduce((sum, r) => sum + calcCommission(r, r.spark[monthIdx] || 0), 0)
-    : [0,1,2,3,4].reduce((sum, i) => sum + activeReps.reduce((s, r) => s + calcCommission(r, r.spark[i] || 0), 0), 0);
-  const totalBase = activeReps.reduce((sum, r) => sum + r.basePay, 0);
-  const totalEarnings = totalCommission + totalBase;
+  const totalCommission = currentMonthData?.commission || 0;
+  const totalEarnings = currentMonthData?.earnings || 0;
 
   // Calculate month-over-month changes
   const netNewChange = prevMonthData ? ((currentMonthData.netNew - prevMonthData.netNew) / prevMonthData.netNew * 100) : 0;
@@ -1784,7 +1761,7 @@ function ReportsView({ period, setPeriod }) {
           <body>
             ${printContent.innerHTML}
             <div class="footer">
-              Generated ${new Date().toLocaleString()} * Amazing Life Foundation RevOps * Confidential
+              Generated ${new Date().toLocaleString()} · Amazing Life Foundation RevOps · Confidential
             </div>
           </body>
           </html>
@@ -1820,7 +1797,7 @@ function ReportsView({ period, setPeriod }) {
       <div className="report-header">
         <div>
           <div className="report-logo">Amazing Life Foundation</div>
-          <div className="report-title">Executive Summary - {period}</div>
+          <div className="report-title">Executive Summary — {period}</div>
         </div>
         <div className="report-meta">
           <div>RevOps Dashboard</div>
@@ -1834,7 +1811,7 @@ function ReportsView({ period, setPeriod }) {
           <div className="metric-value">{fmtMoney(totalNetNew, { full: true })}</div>
           {prevMonthData && (
             <div className={`metric-change ${netNewChange >= 0 ? 'positive' : 'negative'}`}>
-              {netNewChange >= 0 ? '+' : '-'} {Math.abs(netNewChange).toFixed(1)}% vs prior month
+              {netNewChange >= 0 ? '↑' : '↓'} {Math.abs(netNewChange).toFixed(1)}% vs prior month
             </div>
           )}
         </div>
@@ -1843,7 +1820,7 @@ function ReportsView({ period, setPeriod }) {
           <div className="metric-value">{totalDeals}</div>
           {prevMonthData && (
             <div className={`metric-change ${dealsChange >= 0 ? 'positive' : 'negative'}`}>
-              {dealsChange >= 0 ? '+' : '-'} {Math.abs(dealsChange).toFixed(1)}% vs prior month
+              {dealsChange >= 0 ? '↑' : '↓'} {Math.abs(dealsChange).toFixed(1)}% vs prior month
             </div>
           )}
         </div>
@@ -1925,10 +1902,10 @@ function ReportsView({ period, setPeriod }) {
       <div className="data-needed">
         <div className="data-needed-title">Additional Data Needed for Full Executive Report</div>
         <ul className="data-needed-list">
-          <li>Net Revenue Retention (NRR) - requires cohort-level MRR data</li>
-          <li>Gross Revenue Retention (GRR) - requires churn and contraction data</li>
-          <li>Logo Churn Rate - requires customer count by month</li>
-          <li>Pipeline Coverage - requires opportunity stage data</li>
+          <li>Net Revenue Retention (NRR) — requires cohort-level MRR data</li>
+          <li>Gross Revenue Retention (GRR) — requires churn and contraction data</li>
+          <li>Logo Churn Rate — requires customer count by month</li>
+          <li>Pipeline Coverage — requires opportunity stage data</li>
         </ul>
       </div>
     </div>
@@ -1950,7 +1927,7 @@ function ReportsView({ period, setPeriod }) {
         <div className="report-header">
           <div>
             <div className="report-logo">Amazing Life Foundation</div>
-            <div className="report-title">ARR Movement (Bridge) - {period}</div>
+            <div className="report-title">ARR Movement (Bridge) — {period}</div>
           </div>
           <div className="report-meta">
             <div>RevOps Dashboard</div>
@@ -1958,7 +1935,7 @@ function ReportsView({ period, setPeriod }) {
           </div>
         </div>
 
-        <div className="section-title">ARR Bridge - Available Data</div>
+        <div className="section-title">ARR Bridge — Available Data</div>
         <table>
           <thead>
             <tr>
@@ -1980,17 +1957,17 @@ function ReportsView({ period, setPeriod }) {
             </tr>
             <tr style={{ background: '#fef3c7' }}>
               <td style={{ fontWeight: 500, color: '#92400e' }}>+ Expansion</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>-</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>—</td>
               <td style={{ color: '#92400e', fontSize: 12 }}>Data needed: Upgrade/upsell amounts</td>
             </tr>
             <tr style={{ background: '#fee2e2' }}>
-              <td style={{ fontWeight: 500, color: '#991b1b' }}>- Contraction</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>-</td>
+              <td style={{ fontWeight: 500, color: '#991b1b' }}>− Contraction</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
               <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Downgrade amounts</td>
             </tr>
             <tr style={{ background: '#fee2e2' }}>
-              <td style={{ fontWeight: 500, color: '#991b1b' }}>- Churn</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>-</td>
+              <td style={{ fontWeight: 500, color: '#991b1b' }}>− Churn</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
               <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Churned ARR amounts</td>
             </tr>
             <tr style={{ background: '#e0e7ff' }}>
@@ -2023,7 +2000,7 @@ function ReportsView({ period, setPeriod }) {
                   <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{m.deals}</td>
                   <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(m.gross, { full: true })}</td>
                   <td style={{ fontFamily: 'JetBrains Mono, monospace', color: change >= 0 ? '#065f46' : '#991b1b' }}>
-                    {i > 0 ? `${change >= 0 ? '+' : ''}${change.toFixed(1)}%` : '-'}
+                    {i > 0 ? `${change >= 0 ? '+' : ''}${change.toFixed(1)}%` : '—'}
                   </td>
                 </tr>
               );
@@ -2071,7 +2048,7 @@ function ReportsView({ period, setPeriod }) {
         <div className="report-header">
           <div>
             <div className="report-logo">Amazing Life Foundation</div>
-            <div className="report-title">Product Performance - {period}</div>
+            <div className="report-title">Product Performance — {period}</div>
           </div>
           <div className="report-meta">
             <div>RevOps Dashboard</div>
@@ -2131,7 +2108,7 @@ function ReportsView({ period, setPeriod }) {
       <div className="report-header">
         <div>
           <div className="report-logo">Amazing Life Foundation</div>
-          <div className="report-title">{report.name} - Data Required</div>
+          <div className="report-title">{report.name} — Data Required</div>
         </div>
         <div className="report-meta">
           <div>RevOps Dashboard</div>
@@ -2248,7 +2225,7 @@ function ReportsView({ period, setPeriod }) {
   );
 }
 
-// --------- MAIN APP ---------
+// ───────── MAIN APP ─────────
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
@@ -2286,7 +2263,7 @@ function App() {
     setReportLoading(true);
     setTimeout(() => {
       setReportLoading(false);
-      pushToast('Payout report generated', `${period} * ${REPS.filter(r => r.earnings > 0).length} reps * ${fmtMoney(periodData.earnings, { full: true })} * sent to elijah.diaz@amazinglife.com`);
+      pushToast('Payout report generated', `${period} · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(periodData.earnings, { full: true })} · sent to elijah.diaz@amazinglife.com`);
     }, 1100);
   };
 
@@ -2295,25 +2272,14 @@ function App() {
   const periodData = MONTHLY.find(m => m.m === periodMonth) || MAY_DATA;
   const isYTD = period === 'YTD 2026';
   const isQ1 = period === 'Q1 2026';
-
-  // Calculate commission dynamically from rep data for consistency
-  const activeReps = REPS.filter(r => r.plan !== 'Inactive');
-  const calcPeriodCommission = (monthIdx) => activeReps.reduce((sum, r) => sum + calcCommission(r, r.spark[monthIdx] || 0), 0);
-
-  const activeData = isYTD ? {
-    ...YTD,
-    commission: [0,1,2,3,4].reduce((sum, i) => sum + calcPeriodCommission(i), 0),
-  } : isQ1 ? {
+  const activeData = isYTD ? YTD : isQ1 ? {
     deals: MONTHLY.slice(0,3).reduce((s,m)=>s+m.deals,0),
     gross: MONTHLY.slice(0,3).reduce((s,m)=>s+m.gross,0),
     netNew: MONTHLY.slice(0,3).reduce((s,m)=>s+m.netNew,0),
-    commission: [0,1,2].reduce((sum, i) => sum + calcPeriodCommission(i), 0),
-  } : {
-    ...periodData,
-    commission: calcPeriodCommission(MONTH_INDEX[period]),
-  };
+    commission: MONTHLY.slice(0,3).reduce((s,m)=>s+m.commission,0),
+  } : periodData;
 
-  // KPI bar percents - bar height relative to YTD peak across months
+  // KPI bar percents — bar height relative to YTD peak across months
   const peakDeals = 260, peakGross = 524590, peakNetNew = 305149, peakComm = isYTD ? YTD.commission : 13253;
   const tiles = [
     { value: activeData.deals, label: 'Deals closed', pct: (activeData.deals / (isYTD ? YTD.deals : peakDeals)) * 100, color: 'normal' },
@@ -2394,7 +2360,7 @@ function App() {
     if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
     else { setSortKey(key); setSortDir('desc'); }
   };
-  const sortInd = (key) => sortKey === key ? <span className="sort-ind">{sortDir === 'desc' ? 'v' : '^'}</span> : null;
+  const sortInd = (key) => sortKey === key ? <span className="sort-ind">{sortDir === 'desc' ? '▼' : '▲'}</span> : null;
 
   const avgAttain = REPS.reduce((s, r) => s + getRepGoal(r), 0) / REPS.length;
   const avgDeal = activeData.netNew / activeData.deals;
@@ -2420,7 +2386,7 @@ function App() {
           <div>
             <h1 className="page-title">Commissions</h1>
             <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-              Q2 2026 * finalized May 26 * awaiting payout approval
+              Q2 2026 · finalized May 26 · awaiting payout approval
             </div>
           </div>
           <div className="topbar-actions">
@@ -2435,15 +2401,12 @@ function App() {
                   {periodOptions.map(p => (
                     <div key={p} className={'popover-item' + (period === p ? ' active' : '')} onClick={() => { setPeriod(p); setPeriodOpen(false); }}>
                       <span>{p}</span>
-                      <span className="check">[ok]</span>
+                      <span className="check">✓</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <button className="data-dict-btn" onClick={() => setShowMethodology(true)} title="Data Dictionary & Methodology">
-              <Icon.Info /> Data Dictionary
-            </button>
             <div className="search">
               <Icon.Search/>
               <input
@@ -2464,7 +2427,7 @@ function App() {
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
-                <div className="card-sub">All reps * {period}</div>
+                <div className="card-sub">All reps · {period}</div>
               </div>
             </div>
             <div className="card-body">
@@ -2494,7 +2457,7 @@ function App() {
                   <div className="metric-icon"><Icon.Commission/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{fmtMoney(activeData.commission)}</div>
-                    <div className="metric-label">Commissions <span className="info-btn" onClick={() => setShowMethodology(true)} title="View calculation methodology"><Icon.Info/></span></div>
+                    <div className="metric-label">Commissions</div>
                   </div>
                 </div>
               </div>
@@ -2567,7 +2530,7 @@ function App() {
               <div className="forecast-meta-left">
                 <div className="forecast-label tab">Run Rate: {fmtMoney(MAY.projectedCommission)}</div>
                 <div className="forecast-sub">
-                  {MAY.trendPct >= 0 ? '+' : '-'} {Math.abs(MAY.trendPct).toFixed(0)}% vs prior months * Range: {fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}
+                  {MAY.trendPct >= 0 ? '↑' : '↓'} {Math.abs(MAY.trendPct).toFixed(0)}% vs prior months · Range: {fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}
                 </div>
               </div>
               <div className="popover-wrap">
@@ -2577,7 +2540,7 @@ function App() {
                     {forecastOptions.map(f => (
                       <div key={f} className={'popover-item' + (forecastMonth === f ? ' active' : '')} onClick={() => { setForecastMonth(f); setForecastOpen(false); }}>
                         <span>{f}</span>
-                        <span className="check">[ok]</span>
+                        <span className="check">✓</span>
                       </div>
                     ))}
                   </div>
@@ -2585,7 +2548,7 @@ function App() {
               </div>
             </div>
             <div className="mini-chart">
-              <div className="mini-chart-label">Commission * YTD + Projection</div>
+              <div className="mini-chart-label">Commission · YTD + Projection</div>
               <MiniBars data={[
                 { label: 'Jan', v: MONTHLY[0].commission, projected: false },
                 { label: 'Feb', v: MONTHLY[1].commission, projected: false },
@@ -2594,7 +2557,7 @@ function App() {
                 { label: 'May', v: MAY.projectedCommission, projected: true },
               ]}/>
               <button className="cta-pill" onClick={handleGenerateReport} disabled={reportLoading}>
-                {reportLoading ? 'Generating...' : 'Generate payout report'}
+                {reportLoading ? 'Generating…' : 'Generate payout report'}
               </button>
             </div>
           </section>
@@ -2625,11 +2588,11 @@ function App() {
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Best Month</div>
-                <div className="ytd-stat-value tab">Jan * $305K</div>
+                <div className="ytd-stat-value tab">Jan · $305K</div>
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Trend</div>
-                <div className="ytd-stat-value" style={{ color: 'var(--rose)' }}>- Declining</div>
+                <div className="ytd-stat-value" style={{ color: 'var(--rose)' }}>↓ Declining</div>
               </div>
             </div>
           </div>
@@ -2639,10 +2602,10 @@ function App() {
         <section className="card leaderboard">
           <div className="lb-head">
             <div>
-              <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>* {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
-              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'deals' : 'value'} * click a row to view scorecard</div>
+              <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>· {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
+              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'deals' : 'value'} · click a row to view scorecard</div>
             </div>
-            <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster...')}>See all reps -></a>
+            <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster…')}>See all reps →</a>
           </div>
 
           <table className="lb-table">
@@ -2704,189 +2667,84 @@ function App() {
 
       <RepDrawer rep={activeRep} onClose={() => setActiveRep(null)}/>
 
-      {/* Data Dictionary & Methodology Modal */}
+      {/* Methodology Modal */}
       {showMethodology && (
         <>
           <div className="modal-scrim" onClick={() => setShowMethodology(false)} />
-          <div className="modal modal-large">
+          <div className="modal">
             <div className="modal-header">
-              <h3>Data Dictionary & Methodology</h3>
+              <h3>Run Rate Projection Methodology</h3>
               <div className="modal-close" onClick={() => setShowMethodology(false)}><Icon.X /></div>
             </div>
             <div className="modal-body">
-              {/* Data Sources */}
               <div className="method-section">
-                <h4>Data Sources</h4>
-                <table className="data-dict-table">
-                  <thead>
-                    <tr><th>Source</th><th>Location</th><th>Update Frequency</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Primary Workbook</strong></td>
-                      <td><code>Commissions Workbook - Elijah's Copy for Payouts for Lori.xlsx</code></td>
-                      <td>Manual sync or daily 5pm auto-sync</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Rep Performance</strong></td>
-                      <td>Individual rep sheets (e.g., "Cameron Grissom", "Brian Carl")</td>
-                      <td>Row 15 = Deals, Row 16 = Net New ARR</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Settings & Roster</strong></td>
-                      <td>Settings sheet, Rows 15-30</td>
-                      <td>Name, Role, Quota, Base Pay</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Dashboard Totals</strong></td>
-                      <td>Dashboard sheet</td>
-                      <td>Aggregated monthly totals</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <h4>What is Run Rate?</h4>
+                <p>Run rate projects future performance based on historical trends. We use a weighted average that emphasizes recent performance while accounting for overall patterns.</p>
               </div>
 
-              {/* Metric Definitions */}
               <div className="method-section">
-                <h4>Metric Definitions</h4>
-                <table className="data-dict-table">
-                  <thead>
-                    <tr><th>Metric</th><th>Definition</th><th>Formula / Source</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Net New ARR</strong></td>
-                      <td>New annual recurring revenue from new and existing customers</td>
-                      <td><code>Sum of rep.spark[monthIndex]</code> for all active reps</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Deals Closed</strong></td>
-                      <td>Count of closed-won opportunities</td>
-                      <td><code>Sum of rep.monthlyDeals[monthIndex]</code></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Gross Revenue</strong></td>
-                      <td>Total contract value of closed deals</td>
-                      <td>From Excel Dashboard sheet</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Commission</strong></td>
-                      <td>Variable compensation based on Net New ARR and plan</td>
-                      <td><code>calcCommission(rep, netNew)</code> - see rates below</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Base Pay</strong></td>
-                      <td>Fixed monthly salary component</td>
-                      <td>From Settings sheet Column E</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Total Earnings</strong></td>
-                      <td>Total monthly compensation</td>
-                      <td><code>Commission + Base Pay</code></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Goal %</strong></td>
-                      <td>Progress toward monthly quota</td>
-                      <td><code>(Net New ARR / Monthly Quota) x 100</code></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Commission Plans */}
-              <div className="method-section">
-                <h4>Commission Plan Rates</h4>
-                <table className="data-dict-table">
-                  <thead>
-                    <tr><th>Plan</th><th>Role</th><th>Base Rate</th><th>Special Rules</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Plan A</strong></td>
-                      <td>AE Standard</td>
-                      <td>8%</td>
-                      <td>Accelerators at 100%, 125%, 150% of quota</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Plan B</strong></td>
-                      <td>AE with Dead Zone</td>
-                      <td>6%</td>
-                      <td><strong>$0 commission until $42,367 cleared</strong>, then 6% on amount above</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Plan C</strong></td>
-                      <td>AM Monthly</td>
-                      <td>1.7%</td>
-                      <td>10% kicker on amounts over $50K quota</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Plan D</strong></td>
-                      <td>SME ARR Collected</td>
-                      <td>1.7%</td>
-                      <td>Flat rate on ARR Collected (no tiers)</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div className="formula-box" style={{ marginTop: 12 }}>
-                  <code>
-                    Plan A: commission = netNew * 0.08<br/>
-                    Plan B: commission = (netNew {'>'} $42,367) ? (netNew - $42,367) * 0.06 : $0<br/>
-                    Plan C/D: commission = netNew * 0.017
-                  </code>
+                <h4>Calculation Formula</h4>
+                <div className="formula-box">
+                  <code>Projected = (Recent Avg × 60%) + (Overall Avg × 40%)</code>
                 </div>
+                <ul>
+                  <li><strong>Recent Avg:</strong> Average of last 2 months (Mar + Apr)</li>
+                  <li><strong>Overall Avg:</strong> Average of all 4 months (Jan-Apr)</li>
+                  <li><strong>Weighting:</strong> 60/40 split favors recent trends</li>
+                </ul>
               </div>
 
-              {/* Current Period Values */}
               <div className="method-section">
-                <h4>Current Period: {period}</h4>
+                <h4>Current Values</h4>
                 <div className="method-grid">
                   <div className="method-stat">
-                    <span className="method-label">Net New ARR</span>
-                    <span className="method-value tab">{fmtMoney(activeData.netNew, { full: true })}</span>
+                    <span className="method-label">Jan Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[0].commission, { full: true })}</span>
                   </div>
                   <div className="method-stat">
-                    <span className="method-label">Deals Closed</span>
-                    <span className="method-value tab">{activeData.deals}</span>
+                    <span className="method-label">Feb Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[1].commission, { full: true })}</span>
                   </div>
                   <div className="method-stat">
-                    <span className="method-label">Total Commission</span>
-                    <span className="method-value tab">{fmtMoney(activeData.commission, { full: true })}</span>
+                    <span className="method-label">Mar Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[2].commission, { full: true })}</span>
                   </div>
                   <div className="method-stat">
-                    <span className="method-label">Active Reps</span>
-                    <span className="method-value tab">{activeReps.length}</span>
+                    <span className="method-label">Apr Commission</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY[3].commission, { full: true })}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Run Rate Methodology */}
               <div className="method-section">
-                <h4>Run Rate Projection</h4>
-                <p>Projects future performance using weighted historical average:</p>
-                <div className="formula-box">
-                  <code>Projected = (Recent 2-Month Avg x 60%) + (Overall Avg x 40%)</code>
-                </div>
-                <div className="method-grid" style={{ marginTop: 12 }}>
+                <h4>Projection Result</h4>
+                <div className="method-grid">
                   <div className="method-stat highlight">
                     <span className="method-label">Recent Avg (Mar+Apr)</span>
                     <span className="method-value tab">{fmtMoney((MONTHLY[2].commission + MONTHLY[3].commission) / 2, { full: true })}</span>
                   </div>
+                  <div className="method-stat highlight">
+                    <span className="method-label">Overall Avg</span>
+                    <span className="method-value tab">{fmtMoney(MONTHLY.reduce((s, m) => s + m.commission, 0) / 4, { full: true })}</span>
+                  </div>
                   <div className="method-stat accent">
-                    <span className="method-label">Projected Commission</span>
+                    <span className="method-label">May Projection</span>
                     <span className="method-value tab">{fmtMoney(MAY.projectedCommission, { full: true })}</span>
+                  </div>
+                  <div className="method-stat">
+                    <span className="method-label">Confidence Range (±15%)</span>
+                    <span className="method-value tab">{fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Audit Trail */}
               <div className="method-section">
-                <h4>Audit Trail</h4>
-                <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
-                  All values can be traced back to the source Excel workbook. The sync script logs every update to <code>sync_log.txt</code>.
-                  Commission calculations use the shared <code>calcCommission()</code> function ensuring consistency across all dashboard tabs.
-                </p>
-                <p style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 8 }}>
-                  Last sync: Check <code>/Users/elijah/Desktop/Sales Dash Automation/sync_log.txt</code>
+                <h4>Trend Analysis</h4>
+                <p>Comparing recent months to earlier months: <strong style={{ color: MAY.trendPct >= 0 ? 'var(--green)' : 'var(--rose)' }}>{MAY.trendPct >= 0 ? '+' : ''}{MAY.trendPct.toFixed(1)}%</strong></p>
+                <p style={{ color: 'var(--text-3)', fontSize: '12px', marginTop: '8px' }}>
+                  {MAY.trendPct >= 0
+                    ? 'Commission payouts are trending upward compared to earlier in the year.'
+                    : 'Commission payouts are trending downward compared to earlier in the year.'}
                 </p>
               </div>
             </div>
