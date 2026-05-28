@@ -1268,6 +1268,7 @@ function RepDetailPanel({ rep }) {
 function CommissionsView({ period, setPeriod }) {
   const [payoutStatus, setPayoutStatus] = useState({});
   const [periodOpen, setPeriodOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const monthIdx = MONTH_INDEX[period];
   const monthName = period.split(' ')[0]; // "Apr" from "Apr 2026"
@@ -1306,6 +1307,113 @@ function CommissionsView({ period, setPeriod }) {
     setPayoutStatus(allApproved);
   };
 
+  const handleExportPayouts = () => {
+    setExportLoading(true);
+    setTimeout(() => {
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Commission Payouts - ${period}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Plus Jakarta Sans', sans-serif; padding: 40px; color: #1a1a1a; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #112025; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: 700; color: #112025; }
+            .title { font-size: 18px; font-weight: 600; margin-top: 4px; }
+            .meta { font-size: 12px; color: #666; text-align: right; }
+            .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+            .summary-card { background: #f8faf9; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
+            .summary-label { font-size: 11px; color: #666; text-transform: uppercase; }
+            .summary-value { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; padding: 12px; background: #112025; color: white; font-size: 10px; text-transform: uppercase; }
+            td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+            tr:nth-child(even) { background: #f9fafb; }
+            .mono { font-family: 'JetBrains Mono', monospace; }
+            .approved { color: #10b981; }
+            .pending { color: #f59e0b; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #666; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">Amazing Life Foundation</div>
+              <div class="title">Commission Payout Report — ${period}</div>
+            </div>
+            <div class="meta">
+              <div>Generated ${new Date().toLocaleString()}</div>
+              <div>Confidential</div>
+            </div>
+          </div>
+          <div class="summary">
+            <div class="summary-card">
+              <div class="summary-label">Total Payroll</div>
+              <div class="summary-value">${fmtMoney(totalEarnings, { full: true })}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Commission</div>
+              <div class="summary-value">${fmtMoney(totalCommission, { full: true })}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Base Salary</div>
+              <div class="summary-value">${fmtMoney(totalBase, { full: true })}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Active Reps</div>
+              <div class="summary-value">${activeReps.length}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Rep</th>
+                <th>Role</th>
+                <th>Plan</th>
+                <th>Net New</th>
+                <th>Commission</th>
+                <th>Base</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${activeReps.map(rep => {
+                const commission = getRepCommission(rep);
+                const total = commission + rep.basePay;
+                const netNew = monthIdx !== undefined ? rep.spark[monthIdx] : rep.netNew;
+                const status = payoutStatus[rep.name] || 'pending';
+                return `<tr>
+                  <td style="font-weight: 500">${rep.name}</td>
+                  <td>${rep.role}</td>
+                  <td>Plan ${rep.plan}</td>
+                  <td class="mono">${fmtMoney(netNew, { full: true })}</td>
+                  <td class="mono">${fmtMoney(commission, { full: true })}</td>
+                  <td class="mono">${fmtMoney(rep.basePay, { full: true })}</td>
+                  <td class="mono" style="font-weight: 600">${fmtMoney(total, { full: true })}</td>
+                  <td class="${status}">${status === 'approved' ? '✓ Approved' : '○ Pending'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          <div class="footer">
+            Amazing Life Foundation · RevOps Dashboard · Confidential
+          </div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        setExportLoading(false);
+      }, 250);
+    }, 300);
+  };
+
   const getStatus = (repName) => payoutStatus[repName] || 'pending';
 
   return (
@@ -1322,8 +1430,15 @@ function CommissionsView({ period, setPeriod }) {
           <button className="approve-all-btn" onClick={approveAll}>
             <Icon.Target /> Approve All
           </button>
-          <button className="export-btn">
-            <Icon.Reports /> Export to PDF
+          <button className="export-btn" onClick={handleExportPayouts} disabled={exportLoading}>
+            {exportLoading ? (
+              <>
+                <span className="loading-spinner" style={{ width: 14, height: 14, border: '2px solid var(--text-3)', borderTopColor: 'var(--accent)', borderRadius: '50%', display: 'inline-block', marginRight: 8 }}></span>
+                Generating...
+              </>
+            ) : (
+              <><Icon.Reports /> Export to PDF</>
+            )}
           </button>
         </div>
       </div>
@@ -1505,6 +1620,602 @@ function CommissionsView({ period, setPeriod }) {
   );
 }
 
+// ───────── REPORTS VIEW ─────────
+function ReportsView({ period, setPeriod }) {
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [activeReport, setActiveReport] = useState('executive');
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState(null);
+
+  // Get period data
+  const periodMonth = { 'Jan 2026': 'Jan', 'Feb 2026': 'Feb', 'Mar 2026': 'Mar', 'Apr 2026': 'Apr', 'May 2026': 'May' }[period];
+  const monthIdx = MONTH_INDEX[period];
+  const currentMonthData = MONTHLY.find(m => m.m === periodMonth) || MONTHLY[MONTHLY.length - 1];
+  const prevMonthData = monthIdx > 0 ? MONTHLY[monthIdx - 1] : null;
+
+  // Calculate available metrics from existing data
+  const activeReps = REPS.filter(r => r.plan !== 'Inactive');
+  const totalNetNew = monthIdx !== undefined
+    ? REPS.reduce((sum, r) => sum + (r.spark[monthIdx] || 0), 0)
+    : YTD.netNew;
+  const totalDeals = monthIdx !== undefined
+    ? REPS.reduce((sum, r) => sum + (r.monthlyDeals[monthIdx] || 0), 0)
+    : YTD.deals;
+  const totalCommission = currentMonthData?.commission || 0;
+  const totalEarnings = currentMonthData?.earnings || 0;
+
+  // Calculate month-over-month changes
+  const netNewChange = prevMonthData ? ((currentMonthData.netNew - prevMonthData.netNew) / prevMonthData.netNew * 100) : 0;
+  const dealsChange = prevMonthData ? ((currentMonthData.deals - prevMonthData.deals) / prevMonthData.deals * 100) : 0;
+
+  // PDF Export handler
+  const handleExportPDF = (reportType) => {
+    setExportLoading(true);
+    setExportError(null);
+
+    setTimeout(() => {
+      try {
+        // Use browser print for PDF generation
+        const printContent = document.getElementById('report-content');
+        if (!printContent) {
+          throw new Error('Report content not found');
+        }
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>ALF RevOps Report - ${reportType} - ${period}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+            <style>
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                padding: 40px;
+                color: #1a1a1a;
+                line-height: 1.5;
+              }
+              .report-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 2px solid #112025;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .report-logo { font-size: 24px; font-weight: 700; color: #112025; }
+              .report-title { font-size: 20px; font-weight: 600; margin-top: 4px; }
+              .report-meta { font-size: 12px; color: #666; text-align: right; }
+              .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+              .metric-card {
+                background: #f8faf9;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 16px;
+              }
+              .metric-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+              .metric-value { font-size: 24px; font-weight: 700; color: #112025; font-family: 'JetBrains Mono', monospace; }
+              .metric-change { font-size: 12px; margin-top: 4px; }
+              .metric-change.positive { color: #10b981; }
+              .metric-change.negative { color: #ef4444; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+              th {
+                text-align: left;
+                padding: 12px 16px;
+                background: #112025;
+                color: white;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              td {
+                padding: 12px 16px;
+                border-bottom: 1px solid #e5e7eb;
+                font-size: 13px;
+              }
+              tr:nth-child(even) { background: #f8faf9; }
+              .section-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #112025;
+                margin: 30px 0 16px 0;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #e5e7eb;
+              }
+              .data-needed {
+                background: #fef3c7;
+                border: 1px solid #f59e0b;
+                border-radius: 8px;
+                padding: 16px;
+                margin: 20px 0;
+              }
+              .data-needed-title { font-weight: 600; color: #92400e; margin-bottom: 8px; }
+              .data-needed-list { color: #92400e; font-size: 13px; padding-left: 20px; }
+              .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #e5e7eb;
+                font-size: 11px;
+                color: #666;
+                text-align: center;
+              }
+              @media print {
+                body { padding: 20px; }
+                .metric-grid { page-break-inside: avoid; }
+                table { page-break-inside: auto; }
+                tr { page-break-inside: avoid; }
+                thead { display: table-header-group; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent.innerHTML}
+            <div class="footer">
+              Generated ${new Date().toLocaleString()} · Amazing Life Foundation RevOps · Confidential
+            </div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          setExportLoading(false);
+        }, 250);
+      } catch (err) {
+        setExportError(err.message);
+        setExportLoading(false);
+      }
+    }, 300);
+  };
+
+  // Report definitions
+  const reports = [
+    { id: 'executive', name: 'Executive Summary', icon: '📊', available: true },
+    { id: 'arr-bridge', name: 'ARR Movement', icon: '🌉', available: true },
+    { id: 'retention', name: 'Revenue Retention', icon: '🔄', available: false, needs: ['Cohort data by signup month', 'Monthly recurring revenue by customer', 'Churn dates'] },
+    { id: 'renewals', name: 'Renewal Forecast', icon: '📅', available: false, needs: ['Renewal dates by account', 'Contract values', 'Risk scoring data'] },
+    { id: 'pipeline', name: 'Pipeline & Win Rate', icon: '🎯', available: false, needs: ['Opportunity stage data', 'Created/closed dates', 'Deal amounts by stage'] },
+    { id: 'regional', name: 'Regional Performance', icon: '🌎', available: false, needs: ['Region assignment per account', 'LATAM vs US revenue split'] },
+    { id: 'product', name: 'Product Performance', icon: '📦', available: true },
+    { id: 'deferred', name: 'Deferred Revenue', icon: '💰', available: false, needs: ['Billing dates', 'Revenue recognition schedule', 'Deferred balance by month'] },
+  ];
+
+  // Render Executive Summary
+  const renderExecutiveSummary = () => (
+    <div id="report-content">
+      <div className="report-header">
+        <div>
+          <div className="report-logo">Amazing Life Foundation</div>
+          <div className="report-title">Executive Summary — {period}</div>
+        </div>
+        <div className="report-meta">
+          <div>RevOps Dashboard</div>
+          <div>Generated {new Date().toLocaleDateString()}</div>
+        </div>
+      </div>
+
+      <div className="metric-grid">
+        <div className="metric-card">
+          <div className="metric-label">Net New ARR</div>
+          <div className="metric-value">{fmtMoney(totalNetNew, { full: true })}</div>
+          {prevMonthData && (
+            <div className={`metric-change ${netNewChange >= 0 ? 'positive' : 'negative'}`}>
+              {netNewChange >= 0 ? '↑' : '↓'} {Math.abs(netNewChange).toFixed(1)}% vs prior month
+            </div>
+          )}
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Deals Closed</div>
+          <div className="metric-value">{totalDeals}</div>
+          {prevMonthData && (
+            <div className={`metric-change ${dealsChange >= 0 ? 'positive' : 'negative'}`}>
+              {dealsChange >= 0 ? '↑' : '↓'} {Math.abs(dealsChange).toFixed(1)}% vs prior month
+            </div>
+          )}
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Gross Revenue</div>
+          <div className="metric-value">{fmtMoney(currentMonthData?.gross || 0, { full: true })}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Commission Payout</div>
+          <div className="metric-value">{fmtMoney(totalCommission, { full: true })}</div>
+        </div>
+      </div>
+
+      <div className="section-title">Team Performance</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Rep</th>
+            <th>Role</th>
+            <th>Deals</th>
+            <th>Net New ARR</th>
+            <th>Goal %</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {activeReps.map(rep => {
+            const repNetNew = monthIdx !== undefined ? rep.spark[monthIdx] : rep.spark.reduce((a,b) => a+b, 0);
+            const repDeals = monthIdx !== undefined ? rep.monthlyDeals[monthIdx] : rep.monthlyDeals.reduce((a,b) => a+b, 0);
+            const goalPct = rep.plan === 'D'
+              ? (repNetNew / 50000) * 100
+              : (repNetNew / (PLANS[rep.plan]?.quota || 50000)) * 100;
+            return (
+              <tr key={rep.name}>
+                <td style={{ fontWeight: 500 }}>{rep.name}</td>
+                <td>{rep.role}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{repDeals}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(repNetNew, { full: true })}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{goalPct.toFixed(1)}%</td>
+                <td>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    background: goalPct >= 100 ? '#d1fae5' : goalPct >= 80 ? '#fef3c7' : '#fee2e2',
+                    color: goalPct >= 100 ? '#065f46' : goalPct >= 80 ? '#92400e' : '#991b1b'
+                  }}>
+                    {goalPct >= 100 ? 'On Track' : goalPct >= 80 ? 'At Risk' : 'Behind'}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div className="section-title">YTD Summary</div>
+      <div className="metric-grid">
+        <div className="metric-card">
+          <div className="metric-label">YTD Net New ARR</div>
+          <div className="metric-value">{fmtMoney(YTD.netNew, { full: true })}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">YTD Deals</div>
+          <div className="metric-value">{YTD.deals}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">YTD Gross Revenue</div>
+          <div className="metric-value">{fmtMoney(YTD.gross, { full: true })}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">YTD Commissions</div>
+          <div className="metric-value">{fmtMoney(YTD.commission, { full: true })}</div>
+        </div>
+      </div>
+
+      <div className="data-needed">
+        <div className="data-needed-title">Additional Data Needed for Full Executive Report</div>
+        <ul className="data-needed-list">
+          <li>Net Revenue Retention (NRR) — requires cohort-level MRR data</li>
+          <li>Gross Revenue Retention (GRR) — requires churn and contraction data</li>
+          <li>Logo Churn Rate — requires customer count by month</li>
+          <li>Pipeline Coverage — requires opportunity stage data</li>
+        </ul>
+      </div>
+    </div>
+  );
+
+  // Render ARR Bridge
+  const renderARRBridge = () => {
+    // Calculate bridge components from available data
+    const months = period === 'YTD 2026' ? MONTHLY : (monthIdx !== undefined ? [MONTHLY[monthIdx]] : [MONTHLY[MONTHLY.length - 1]]);
+
+    // For single month, show the flow
+    const openingARR = monthIdx > 0 ? MONTHLY.slice(0, monthIdx).reduce((sum, m) => sum + m.netNew, 0) : 0;
+    const newARR = totalNetNew;
+    // Note: We don't have expansion/contraction/churn data - showing what we have
+    const closingARR = openingARR + newARR;
+
+    return (
+      <div id="report-content">
+        <div className="report-header">
+          <div>
+            <div className="report-logo">Amazing Life Foundation</div>
+            <div className="report-title">ARR Movement (Bridge) — {period}</div>
+          </div>
+          <div className="report-meta">
+            <div>RevOps Dashboard</div>
+            <div>Generated {new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+
+        <div className="section-title">ARR Bridge — Available Data</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Amount</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 500 }}>Opening ARR (Prior Months)</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(openingARR, { full: true })}</td>
+              <td style={{ color: '#666', fontSize: 12 }}>Sum of Net New ARR from prior months in 2026</td>
+            </tr>
+            <tr style={{ background: '#d1fae5' }}>
+              <td style={{ fontWeight: 500, color: '#065f46' }}>+ New ARR</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#065f46' }}>{fmtMoney(newARR, { full: true })}</td>
+              <td style={{ color: '#065f46', fontSize: 12 }}>Net new ARR from new and existing customers</td>
+            </tr>
+            <tr style={{ background: '#fef3c7' }}>
+              <td style={{ fontWeight: 500, color: '#92400e' }}>+ Expansion</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>—</td>
+              <td style={{ color: '#92400e', fontSize: 12 }}>Data needed: Upgrade/upsell amounts</td>
+            </tr>
+            <tr style={{ background: '#fee2e2' }}>
+              <td style={{ fontWeight: 500, color: '#991b1b' }}>− Contraction</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
+              <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Downgrade amounts</td>
+            </tr>
+            <tr style={{ background: '#fee2e2' }}>
+              <td style={{ fontWeight: 500, color: '#991b1b' }}>− Churn</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
+              <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Churned ARR amounts</td>
+            </tr>
+            <tr style={{ background: '#e0e7ff' }}>
+              <td style={{ fontWeight: 600 }}>= Closing ARR</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{fmtMoney(closingARR, { full: true })}</td>
+              <td style={{ fontSize: 12 }}>Partial: Missing expansion/contraction/churn</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="section-title">Monthly Net New ARR Trend</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Net New ARR</th>
+              <th>Deals</th>
+              <th>Gross Revenue</th>
+              <th>MoM Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MONTHLY.map((m, i) => {
+              const prevMonth = i > 0 ? MONTHLY[i - 1] : null;
+              const change = prevMonth ? ((m.netNew - prevMonth.netNew) / prevMonth.netNew * 100) : 0;
+              return (
+                <tr key={m.m}>
+                  <td style={{ fontWeight: 500 }}>{m.m} 2026</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(m.netNew, { full: true })}</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{m.deals}</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(m.gross, { full: true })}</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', color: change >= 0 ? '#065f46' : '#991b1b' }}>
+                    {i > 0 ? `${change >= 0 ? '+' : ''}${change.toFixed(1)}%` : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <div className="data-needed">
+          <div className="data-needed-title">Data Needed for Complete ARR Bridge</div>
+          <ul className="data-needed-list">
+            <li><strong>Expansion ARR:</strong> Upsell and upgrade amounts by customer and month</li>
+            <li><strong>Contraction ARR:</strong> Downgrade amounts by customer and month</li>
+            <li><strong>Churned ARR:</strong> Lost revenue from canceled accounts by month</li>
+            <li><strong>Opening ARR:</strong> Starting ARR balance (if not starting from zero)</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
+  // Render Product Performance
+  const renderProductPerformance = () => {
+    // Aggregate product data from deals
+    const productData = {};
+    REPS.forEach(rep => {
+      (rep.dealsList || []).forEach(deal => {
+        const product = deal.product || 'Other';
+        if (!productData[product]) {
+          productData[product] = { deals: 0, arr: 0, netNew: 0 };
+        }
+        productData[product].deals++;
+        productData[product].arr += deal.arr || 0;
+        productData[product].netNew += deal.netNew || 0;
+      });
+    });
+
+    const products = Object.entries(productData)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.netNew - a.netNew);
+
+    const totalProductARR = products.reduce((sum, p) => sum + p.netNew, 0);
+
+    return (
+      <div id="report-content">
+        <div className="report-header">
+          <div>
+            <div className="report-logo">Amazing Life Foundation</div>
+            <div className="report-title">Product Performance — {period}</div>
+          </div>
+          <div className="report-meta">
+            <div>RevOps Dashboard</div>
+            <div>Generated {new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+
+        <div className="section-title">Product Line Performance</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Deals</th>
+              <th>Total ARR</th>
+              <th>Net New ARR</th>
+              <th>% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map(product => (
+              <tr key={product.name}>
+                <td style={{ fontWeight: 500 }}>{product.name}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{product.deals}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(product.arr, { full: true })}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(product.netNew, { full: true })}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                  {totalProductARR > 0 ? ((product.netNew / totalProductARR) * 100).toFixed(1) : 0}%
+                </td>
+              </tr>
+            ))}
+            <tr style={{ background: '#e0e7ff', fontWeight: 600 }}>
+              <td>Total</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{products.reduce((s, p) => s + p.deals, 0)}</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(products.reduce((s, p) => s + p.arr, 0), { full: true })}</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmtMoney(totalProductARR, { full: true })}</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>100%</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="data-needed">
+          <div className="data-needed-title">Data Needed for Full Product Analysis</div>
+          <ul className="data-needed-list">
+            <li><strong>Product Categories:</strong> Mapping of products to lines (Core Curriculum, Amazing+, VBS Seasonal)</li>
+            <li><strong>Seasonality Data:</strong> Historical monthly data to show VBS seasonal patterns</li>
+            <li><strong>Multi-Year Deals:</strong> Contract length and ramp deal information</li>
+            <li><strong>Renewal Rates:</strong> Product-level retention and churn rates</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
+  // Render placeholder for unavailable reports
+  const renderDataNeeded = (report) => (
+    <div id="report-content">
+      <div className="report-header">
+        <div>
+          <div className="report-logo">Amazing Life Foundation</div>
+          <div className="report-title">{report.name} — Data Required</div>
+        </div>
+        <div className="report-meta">
+          <div>RevOps Dashboard</div>
+          <div>{new Date().toLocaleDateString()}</div>
+        </div>
+      </div>
+
+      <div className="data-needed" style={{ marginTop: 30 }}>
+        <div className="data-needed-title">This Report Requires Additional Data</div>
+        <p style={{ marginBottom: 16, color: '#92400e' }}>
+          The following data sources are needed to generate the {report.name} report:
+        </p>
+        <ul className="data-needed-list">
+          {report.needs.map((need, i) => (
+            <li key={i}>{need}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div style={{ marginTop: 30, padding: 20, background: '#f0fdf4', border: '1px solid #10b981', borderRadius: 8 }}>
+        <div style={{ fontWeight: 600, color: '#065f46', marginBottom: 8 }}>How to Add This Data</div>
+        <ol style={{ paddingLeft: 20, color: '#065f46', fontSize: 13 }}>
+          <li>Export the required data from your source system (Salesforce, Zuora, etc.)</li>
+          <li>Add to the Excel workbook in the appropriate sheet</li>
+          <li>Run the sync script to update the dashboard</li>
+          <li>This report will automatically populate once data is available</li>
+        </ol>
+      </div>
+    </div>
+  );
+
+  // Get current report content
+  const getReportContent = () => {
+    const report = reports.find(r => r.id === activeReport);
+    if (!report) return null;
+
+    if (!report.available) {
+      return renderDataNeeded(report);
+    }
+
+    switch (activeReport) {
+      case 'executive': return renderExecutiveSummary();
+      case 'arr-bridge': return renderARRBridge();
+      case 'product': return renderProductPerformance();
+      default: return renderDataNeeded(report);
+    }
+  };
+
+  const currentReport = reports.find(r => r.id === activeReport);
+
+  return (
+    <main className="main reports-view">
+      {/* Topbar */}
+      <div className="topbar">
+        <div>
+          <h1 className="page-title">Reports</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+            Generate and export RevOps reports
+          </div>
+        </div>
+        <div className="topbar-actions">
+          <PeriodSelector period={period} setPeriod={setPeriod} periodOpen={periodOpen} setPeriodOpen={setPeriodOpen} />
+          <button
+            className="export-btn"
+            onClick={() => handleExportPDF(activeReport)}
+            disabled={exportLoading || !currentReport?.available}
+            style={{ opacity: (!currentReport?.available) ? 0.5 : 1 }}
+          >
+            {exportLoading ? (
+              <>
+                <span className="loading-spinner" style={{ width: 14, height: 14, border: '2px solid var(--text-3)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }}></span>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Icon.Reports /> Export to PDF
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {exportError && (
+        <div style={{ background: 'var(--red)', color: 'white', padding: '12px 20px', borderRadius: 8, margin: '0 0 20px 0', fontSize: 13 }}>
+          Export failed: {exportError}
+        </div>
+      )}
+
+      <div className="reports-layout">
+        {/* Report Selector Sidebar */}
+        <div className="reports-sidebar">
+          <div className="reports-sidebar-title">Report Type</div>
+          {reports.map(report => (
+            <div
+              key={report.id}
+              className={`report-nav-item ${activeReport === report.id ? 'active' : ''} ${!report.available ? 'unavailable' : ''}`}
+              onClick={() => setActiveReport(report.id)}
+            >
+              <span className="report-nav-icon">{report.icon}</span>
+              <span className="report-nav-name">{report.name}</span>
+              {!report.available && <span className="report-nav-badge">Data Needed</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* Report Content */}
+        <div className="reports-content">
+          <div className="report-preview">
+            {getReportContent()}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 // ───────── MAIN APP ─────────
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -1657,6 +2368,8 @@ function App() {
         <RepsView onSelectRep={setActiveRep} period={period} setPeriod={setPeriod} />
       ) : activeTab === 'Commissions' ? (
         <CommissionsView period={period} setPeriod={setPeriod} />
+      ) : activeTab === 'Reports' ? (
+        <ReportsView period={period} setPeriod={setPeriod} />
       ) : (
       <main className="main">
         {/* Topbar */}
