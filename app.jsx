@@ -2716,7 +2716,7 @@ function App() {
             <div className="modal-body">
               {/* Data Sources */}
               <div className="method-section">
-                <h4>📁 Data Sources</h4>
+                <h4>Data Sources</h4>
                 <table className="data-dict-table">
                   <thead>
                     <tr><th>Source</th><th>Location</th><th>Update Frequency</th></tr>
@@ -2748,7 +2748,7 @@ function App() {
 
               {/* Metric Definitions */}
               <div className="method-section">
-                <h4>📊 Metric Definitions</h4>
+                <h4>Metric Definitions</h4>
                 <table className="data-dict-table">
                   <thead>
                     <tr><th>Metric</th><th>Definition</th><th>Formula / Source</th></tr>
@@ -2795,7 +2795,7 @@ function App() {
 
               {/* Commission Plans */}
               <div className="method-section">
-                <h4>💰 Commission Plan Rates</h4>
+                <h4>Commission Plan Rates</h4>
                 <table className="data-dict-table">
                   <thead>
                     <tr><th>Plan</th><th>Role</th><th>Base Rate</th><th>Special Rules</th></tr>
@@ -2829,16 +2829,16 @@ function App() {
                 </table>
                 <div className="formula-box" style={{ marginTop: 12 }}>
                   <code>
-                    Plan A: commission = netNew × 0.08<br/>
-                    Plan B: commission = (netNew {'>'} $42,367) ? (netNew - $42,367) × 0.06 : $0<br/>
-                    Plan C/D: commission = netNew × 0.017
+                    Plan A: commission = netNew * 0.08<br/>
+                    Plan B: commission = (netNew {'>'} $42,367) ? (netNew - $42,367) * 0.06 : $0<br/>
+                    Plan C/D: commission = netNew * 0.017
                   </code>
                 </div>
               </div>
 
               {/* Current Period Values */}
               <div className="method-section">
-                <h4>📈 Current Period: {period}</h4>
+                <h4>Current Period: {period}</h4>
                 <div className="method-grid">
                   <div className="method-stat">
                     <span className="method-label">Net New ARR</span>
@@ -2861,7 +2861,7 @@ function App() {
 
               {/* Run Rate Methodology */}
               <div className="method-section">
-                <h4>🔮 Run Rate Projection</h4>
+                <h4>Run Rate Projection</h4>
                 <p>Projects future performance using weighted historical average:</p>
                 <div className="formula-box">
                   <code>Projected = (Recent 2-Month Avg × 60%) + (Overall Avg × 40%)</code>
@@ -2880,7 +2880,7 @@ function App() {
 
               {/* Audit Trail */}
               <div className="method-section">
-                <h4>🔍 Audit Trail</h4>
+                <h4>Audit Trail</h4>
                 <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
                   All values can be traced back to the source Excel workbook. The sync script logs every update to <code>sync_log.txt</code>.
                   Commission calculations use the shared <code>calcCommission()</code> function ensuring consistency across all dashboard tabs.
