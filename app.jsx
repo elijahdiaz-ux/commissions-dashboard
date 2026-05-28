@@ -310,6 +310,27 @@ const fmtMoney = (v, opts = {}) => {
 };
 const initials = (name) => name.split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase();
 
+// Calculate commission for a rep based on plan rules
+const calcCommission = (rep, netNew) => {
+  const plan = PLANS[rep.plan];
+  if (!plan || rep.plan === 'Inactive') return 0;
+
+  // Plan B: Dead zone logic - no commission until dead zone cleared
+  if (rep.plan === 'B') {
+    const deadZone = plan.deadZone || 0;
+    if (netNew <= deadZone) return 0;
+    return Math.round((netNew - deadZone) * 0.06);
+  }
+
+  // Plan C & D: 1.7% rate
+  if (rep.plan === 'C' || rep.plan === 'D') {
+    return Math.round(netNew * 0.017);
+  }
+
+  // Plan A: 8% rate
+  return Math.round(netNew * 0.08);
+};
+
 // ───────── ICONS ─────────
 const Icon = {
   Dashboard: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>,
@@ -1116,7 +1137,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                   </div>
                   <div className="rep-card-stat">
                     <span className="stat-value tab" style={{ color: rep.commission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
-                      {fmtMoney(monthIdx !== undefined ? Math.round(rep.spark[monthIdx] * (rep.plan === 'C' || rep.plan === 'D' ? 0.017 : 0.08)) : rep.commission)}
+                      {fmtMoney(monthIdx !== undefined ? calcCommission(rep, rep.spark[monthIdx]) : rep.commission)}
                     </span>
                     <span className="stat-label">{period.split(' ')[0]} Commission</span>
                   </div>
@@ -1285,23 +1306,20 @@ function CommissionsView({ period, setPeriod }) {
   // Calculate totals based on selected period
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
 
-  // Get commission for selected month (simplified - using stored commission for now)
+  // Get commission for selected month using shared calculation
   const getRepCommission = (rep) => {
     if (monthIdx !== undefined && rep.spark) {
-      // Calculate commission based on that month's net new
-      const netNew = rep.spark[monthIdx] || 0;
-      const rate = rep.plan === 'C' || rep.plan === 'D' ? 0.017 : 0.08;
-      return Math.round(netNew * rate);
+      return calcCommission(rep, rep.spark[monthIdx] || 0);
     }
     return rep.commission;
   };
 
   const getRepEarnings = (rep) => rep.basePay + getRepCommission(rep);
 
-  const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
-  const totalCommissions = activeReps.reduce((sum, r) => sum + getRepCommission(r), 0);
+  const totalBase = activeReps.reduce((sum, r) => sum + r.basePay, 0);
+  const totalCommission = activeReps.reduce((sum, r) => sum + getRepCommission(r), 0);
   const totalEarnings = activeReps.reduce((sum, r) => sum + getRepEarnings(r), 0);
-  const midMonthPayout = totalBasePay / 2; // 50% advance
+  const midMonthPayout = totalBase / 2; // 50% advance
 
   const toggleStatus = (repName) => {
     setPayoutStatus(prev => ({
@@ -1468,7 +1486,7 @@ function CommissionsView({ period, setPeriod }) {
             <Icon.Spark />
           </div>
           <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(totalCommissions, { full: true })}</div>
+            <div className="payout-value tab">{fmtMoney(totalCommission, { full: true })}</div>
             <div className="payout-label">Total Commissions</div>
           </div>
         </div>
@@ -1477,7 +1495,7 @@ function CommissionsView({ period, setPeriod }) {
             <Icon.Reps />
           </div>
           <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(totalBasePay, { full: true })}</div>
+            <div className="payout-value tab">{fmtMoney(totalBase, { full: true })}</div>
             <div className="payout-label">Total Base Salary</div>
           </div>
         </div>
@@ -1550,8 +1568,8 @@ function CommissionsView({ period, setPeriod }) {
           <tfoot>
             <tr>
               <td colSpan="3"><strong>TOTALS</strong></td>
-              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalBasePay, { full: true })}</strong></td>
-              <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommissions, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalBase, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommission, { full: true })}</strong></td>
               <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalEarnings, { full: true })}</strong></td>
               <td colSpan="2"></td>
             </tr>
@@ -1602,7 +1620,7 @@ function CommissionsView({ period, setPeriod }) {
             const plan = PLANS[planKey];
             const repsOnPlan = activeReps.filter(r => r.plan === planKey);
             if (repsOnPlan.length === 0) return null;
-            const planCommissions = repsOnPlan.reduce((sum, r) => sum + r.commission, 0);
+            const planCommissions = repsOnPlan.reduce((sum, r) => sum + getRepCommission(r), 0);
             return (
               <div key={planKey} className="plan-breakdown-card">
                 <div className="plan-breakdown-header">
@@ -1613,7 +1631,7 @@ function CommissionsView({ period, setPeriod }) {
                   {repsOnPlan.map(r => (
                     <div key={r.name} className="plan-rep-row">
                       <span>{r.name}</span>
-                      <span className="tab">{fmtMoney(r.commission, { full: true })}</span>
+                      <span className="tab">{fmtMoney(getRepCommission(r), { full: true })}</span>
                     </div>
                   ))}
                 </div>
