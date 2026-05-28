@@ -1668,8 +1668,13 @@ function ReportsView({ period, setPeriod }) {
   const totalDeals = monthIdx !== undefined
     ? REPS.reduce((sum, r) => sum + (r.monthlyDeals[monthIdx] || 0), 0)
     : YTD.deals;
-  const totalCommission = currentMonthData?.commission || 0;
-  const totalEarnings = currentMonthData?.earnings || 0;
+  // Calculate commission dynamically for consistency across all tabs
+  const activeReps = REPS.filter(r => r.plan !== 'Inactive');
+  const totalCommission = monthIdx !== undefined
+    ? activeReps.reduce((sum, r) => sum + calcCommission(r, r.spark[monthIdx] || 0), 0)
+    : [0,1,2,3,4].reduce((sum, i) => sum + activeReps.reduce((s, r) => s + calcCommission(r, r.spark[i] || 0), 0), 0);
+  const totalBase = activeReps.reduce((sum, r) => sum + r.basePay, 0);
+  const totalEarnings = totalCommission + totalBase;
 
   // Calculate month-over-month changes
   const netNewChange = prevMonthData ? ((currentMonthData.netNew - prevMonthData.netNew) / prevMonthData.netNew * 100) : 0;
@@ -2290,12 +2295,23 @@ function App() {
   const periodData = MONTHLY.find(m => m.m === periodMonth) || MAY_DATA;
   const isYTD = period === 'YTD 2026';
   const isQ1 = period === 'Q1 2026';
-  const activeData = isYTD ? YTD : isQ1 ? {
+
+  // Calculate commission dynamically from rep data for consistency
+  const activeReps = REPS.filter(r => r.plan !== 'Inactive');
+  const calcPeriodCommission = (monthIdx) => activeReps.reduce((sum, r) => sum + calcCommission(r, r.spark[monthIdx] || 0), 0);
+
+  const activeData = isYTD ? {
+    ...YTD,
+    commission: [0,1,2,3,4].reduce((sum, i) => sum + calcPeriodCommission(i), 0),
+  } : isQ1 ? {
     deals: MONTHLY.slice(0,3).reduce((s,m)=>s+m.deals,0),
     gross: MONTHLY.slice(0,3).reduce((s,m)=>s+m.gross,0),
     netNew: MONTHLY.slice(0,3).reduce((s,m)=>s+m.netNew,0),
-    commission: MONTHLY.slice(0,3).reduce((s,m)=>s+m.commission,0),
-  } : periodData;
+    commission: [0,1,2].reduce((sum, i) => sum + calcPeriodCommission(i), 0),
+  } : {
+    ...periodData,
+    commission: calcPeriodCommission(MONTH_INDEX[period]),
+  };
 
   // KPI bar percents — bar height relative to YTD peak across months
   const peakDeals = 260, peakGross = 524590, peakNetNew = 305149, peakComm = isYTD ? YTD.commission : 13253;
