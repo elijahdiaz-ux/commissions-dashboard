@@ -848,7 +848,7 @@ function Sidebar({ activeTab, setActiveTab }) {
         <div className="profile-avatar">ED</div>
         <div className="profile-meta">
           <div className="profile-name">Elijah Diaz</div>
-          <div className="profile-email">finance@oneflow.com</div>
+          <div className="profile-email">elijah.diaz@amazinglife.com</div>
         </div>
       </div>
     </aside>
@@ -2254,7 +2254,7 @@ function App() {
     setReportLoading(true);
     setTimeout(() => {
       setReportLoading(false);
-      pushToast('Payout report generated', `${period} · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(periodData.earnings, { full: true })} · sent to finance@oneflow.com`);
+      pushToast('Payout report generated', `${period} · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(periodData.earnings, { full: true })} · sent to elijah.diaz@amazinglife.com`);
     }, 1100);
   };
 
