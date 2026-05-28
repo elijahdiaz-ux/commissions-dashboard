@@ -1137,14 +1137,9 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                     <span className="stat-label">{monthIdx !== undefined ? period.split(' ')[0] + ' Deals' : 'YTD Deals'}</span>
                   </div>
                   <div className="rep-card-stat">
-                    {(() => {
-                      const periodCommission = monthIdx !== undefined ? calcCommission(rep, rep.spark[monthIdx]) : calcCommission(rep, rep.netNew);
-                      return (
-                        <span className="stat-value tab" style={{ color: periodCommission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
-                          {fmtMoney(periodCommission)}
-                        </span>
-                      );
-                    })()}
+                    <span className="stat-value tab" style={{ color: rep.commission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
+                      {fmtMoney(monthIdx !== undefined ? calcCommission(rep, rep.spark[monthIdx]) : calcCommission(rep, rep.netNew))}
+                    </span>
                     <span className="stat-label">{period.split(' ')[0]} Commission</span>
                   </div>
                 </div>
@@ -2320,20 +2315,10 @@ function App() {
   // Helper to get rep data for selected period
   const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4, 'Jun 2026': 5 }[period];
   const getRepNetNew = (rep) => {
-    if (monthIndex !== undefined) return rep.spark[monthIndex] || 0;
-    if (period === 'Q1 2026') return (rep.spark[0] || 0) + (rep.spark[1] || 0) + (rep.spark[2] || 0);
-    if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + (b || 0), 0);
+    if (monthIndex !== undefined) return rep.spark[monthIndex];
+    if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
+    if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + b, 0);
     return rep.netNew;
-  };
-  const getRepDeals = (rep) => {
-    if (monthIndex !== undefined && rep.monthlyDeals) return rep.monthlyDeals[monthIndex] || 0;
-    if (period === 'Q1 2026' && rep.monthlyDeals) return (rep.monthlyDeals[0] || 0) + (rep.monthlyDeals[1] || 0) + (rep.monthlyDeals[2] || 0);
-    if (period === 'YTD 2026' && rep.monthlyDeals) return rep.monthlyDeals.reduce((a, b) => a + (b || 0), 0);
-    return rep.deals;
-  };
-  const getRepPeriodCommission = (rep) => {
-    const netNew = getRepNetNew(rep);
-    return calcCommission(rep, netNew);
   };
   // Get basis for goal calculation (ARR Collected for Plan D, Net New for others)
   const getRepBasis = (rep) => {
@@ -2682,12 +2667,12 @@ function App() {
                     </div>
                   </td>
                   <td className="row-money tab money-col">{fmtMoney(getRepNetNew(rep), { full: true })}</td>
-                  <td className="tab">{getRepDeals(rep)}</td>
+                  <td className="tab">{rep.deals}</td>
                   <td className="spark-cell">
                     <Sparkline data={rep.spark} color={rep.color} width={110} height={32}/>
                   </td>
-                  <td className="row-money tab money-col" style={{ color: getRepPeriodCommission(rep) > 0 ? 'var(--text)' : 'var(--text-3)' }}>
-                    {fmtMoney(getRepPeriodCommission(rep), { full: true })}
+                  <td className="row-money tab money-col" style={{ color: rep.commission > 0 ? 'var(--text)' : 'var(--text-3)' }}>
+                    {fmtMoney(rep.commission, { full: true })}
                   </td>
                   <td>
                     <span className="status-pill">
