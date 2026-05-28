@@ -2258,7 +2258,11 @@ function ReportsView({ period, setPeriod }) {
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
-  const [period, setPeriod] = useState(PERIOD_OPTIONS[0]);
+  const [period, setPeriod] = useState(() => {
+    // Default to the latest month that actually has data (skips empty future months)
+    const withData = MONTHLY.filter(m => m.netNew > 0);
+    return withData.length ? `${withData[withData.length - 1].m} 2026` : PERIOD_OPTIONS[0];
+  });
   const [periodOpen, setPeriodOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [view, setView] = useState('By metric');
