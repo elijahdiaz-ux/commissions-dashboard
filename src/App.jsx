@@ -2353,6 +2353,7 @@ function App() {
     if (isAE) {
       // AEs are measured quarterly - $125K quota per quarter
       const quarterlyQuota = 125000;
+
       if (period === 'Q1 2026') {
         // Q1 had ramp quota (50%)
         return (basis / (quarterlyQuota * 0.5)) * 100;
@@ -2361,16 +2362,25 @@ function App() {
         // Q1 (ramp) + Q2 start
         return (basis / (quarterlyQuota * 0.5 + quarterlyQuota)) * 100;
       }
-      // For monthly view, show quarterly attainment (Apr is Q2)
-      if (monthIndex === 3) return (basis / quarterlyQuota) * 100;
-      // Q1 months use Q1 cumulative
-      const q1Total = rep.spark[0] + rep.spark[1] + rep.spark[2];
-      return (q1Total / (quarterlyQuota * 0.5)) * 100;
+
+      // Q1 months (Jan=0, Feb=1, Mar=2) - use Q1 cumulative vs ramp quota
+      if (monthIndex !== undefined && monthIndex <= 2) {
+        const q1Total = (rep.spark[0] || 0) + (rep.spark[1] || 0) + (rep.spark[2] || 0);
+        return (q1Total / (quarterlyQuota * 0.5)) * 100;
+      }
+
+      // Q2 months (Apr=3, May=4, Jun=5) - show that month's % of Q2 quota
+      if (monthIndex !== undefined && monthIndex >= 3) {
+        return (basis / quarterlyQuota) * 100;
+      }
+
+      // Fallback
+      return (basis / quarterlyQuota) * 100;
     } else {
       // AMs (including SM AM) have monthly quota $50K
       const monthlyQuota = 50000;
       if (period === 'Q1 2026') return (basis / (monthlyQuota * 3)) * 100;
-      if (period === 'YTD 2026') return (basis / (monthlyQuota * 4)) * 100;
+      if (period === 'YTD 2026') return (basis / (monthlyQuota * 5)) * 100; // 5 months Jan-May
       return (basis / monthlyQuota) * 100;
     }
   };
