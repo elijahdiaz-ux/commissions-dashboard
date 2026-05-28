@@ -1509,11 +1509,11 @@ function CommissionsView({ period, setPeriod }) {
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
-  const [period, setPeriod] = useState('Apr 2026');
+  const [period, setPeriod] = useState(PERIOD_OPTIONS[0]);
   const [periodOpen, setPeriodOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [view, setView] = useState('By metric');
-  const [forecastMonth, setForecastMonth] = useState('May');
+  const [forecastMonth, setForecastMonth] = useState('Jun');
   const [forecastOpen, setForecastOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState('goal');
