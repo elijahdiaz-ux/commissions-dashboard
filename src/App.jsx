@@ -105,7 +105,7 @@ const PLANS = {
 };
 
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 0, netNew: 0, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 20377, 55323, 32882, 0], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 26, 0],
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 0, netNew: 0, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 20377, 55323, 32882, 0], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 26, 0], commissionByMonth: [4845, 1484, 346, 1382, 559, 0],
     dealsList: [
       { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
       { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
@@ -130,7 +130,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 0, netNew: 0, goal: 60.8,  gross: 30403, commission: 517,  basePay: 4167, earnings: 4684, status: 'on-track', spark: [14877, 44955, 54195, 49690, 30403, 0], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690, 30403], monthlyDeals: [14, 35, 30, 26, 14, 0],
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 0, netNew: 0, goal: 60.8,  gross: 30403, commission: 517,  basePay: 4167, earnings: 4684, status: 'on-track', spark: [14877, 44955, 54195, 49690, 30403, 0], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690, 30403], monthlyDeals: [14, 35, 30, 26, 14, 0], commissionByMonth: [253, 764, 921, 845, 517, 0],
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
@@ -150,7 +150,7 @@ const REPS = [
       { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
     ]
   },
-  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0],
+  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0],
     dealsList: [
       { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
       { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
@@ -165,7 +165,7 @@ const REPS = [
       { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
     ]
   },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 0, netNew: 0, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 21784, 0], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 9, 0],
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 0, netNew: 0, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 21784, 0], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 9, 0], commissionByMonth: [126, 1434, 1743, 2761, 1743, 0],
     dealsList: [
       { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
       { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
@@ -183,7 +183,7 @@ const REPS = [
       { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
     ]
   },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 0,  netNew: 0, goal: 92.2,  gross: 63760, commission: 3073, basePay: 5000, earnings: 8073, status: 'on-track',   spark: [32535, 30412, 66096, 25713, 41834, 0], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6, 10, 0],
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 0,  netNew: 0, goal: 92.2,  gross: 63760, commission: 3073, basePay: 5000, earnings: 8073, status: 'on-track',   spark: [32535, 30412, 66096, 25713, 41834, 0], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6, 10, 0], commissionByMonth: [2603, 2433, 5288, 2057, 3347, 0],
     dealsList: [
       { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
       { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
@@ -192,7 +192,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 0, netNew: 0, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 30117, 25598, 20524, 0], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 9, 0], commissionByMonth: [253, 764, 921, 845, 517, 0],
+  { name: 'Brian Carl',       role: 'AE',    deals: 0, netNew: 0, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 30117, 25598, 20524, 0], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 9, 0], commissionByMonth: [4678, 1953, 2409, 2048, 1642, 0],
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -207,7 +207,7 @@ const REPS = [
       { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
     ]
   },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 0,  netNew: 0,  goal: 26.5,  gross: 22013, commission: 225,  basePay: 4167, earnings: 4392, status: 'behind',   spark: [44074, 35159, 16829, 9990, 13261, 0],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7, 7, 0],
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 0,  netNew: 0,  goal: 26.5,  gross: 22013, commission: 225,  basePay: 4167, earnings: 4392, status: 'behind',   spark: [44074, 35159, 16829, 9990, 13261, 0],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7, 7, 0], commissionByMonth: [749, 598, 286, 170, 225, 0],
     dealsList: [
       { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: 0 },
       { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: 1125 },
@@ -218,7 +218,7 @@ const REPS = [
       { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
     ]
   },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 0, netNew: 0,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903, 9696, 0],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13, 0], commissionByMonth: [749, 598, 286, 170, 225, 0],
+  { name: "Connor O'Brien",   role: 'AE',    deals: 0, netNew: 0,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903, 9696, 0],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13, 0], commissionByMonth: [0, 405, 903, 0, 0, 0],
     dealsList: [
       { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
       { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
