@@ -237,17 +237,17 @@ const REPS = [
 ];
 
 const MONTHLY = [
-  { m: 'Jan', deals: 250, gross: 446601, netNew: 269037, goal: 85.0, commission: 12143, earnings: 63826 },
-  { m: 'Feb', deals: 305, gross: 383052, netNew: 230754, goal: 72.9, commission: 9864, earnings: 61547 },
-  { m: 'Mar', deals: 226, gross: 372565, netNew: 224437, goal: 70.9, commission: 12195, earnings: 63878 },
-  { m: 'Apr', deals: 143, gross: 341518, netNew: 205734, goal: 65.0, commission: 9213, earnings: 60896 },
-  { m: 'May', deals: 88, gross: 282837, netNew: 170384, goal: 53.8, commission: 8809, earnings: 60492 },
+  { m: 'Jan', deals: 221, gross: 524590, netNew: 305149, goal: 96.4, commission: 13253, earnings: 64936 },
+  { m: 'Feb', deals: 260, gross: 497579, netNew: 246289, goal: 77.8, commission: 9071, earnings: 60754 },
+  { m: 'Mar', deals: 202, gross: 479383, netNew: 198461, goal: 62.7, commission: 11896, earnings: 71375 },
+  { m: 'Apr', deals: 134, gross: 361935, netNew: 218390, goal: 69.0, commission: 9263, earnings: 60946 },
+  { m: 'May', deals: 93, gross: 283107, netNew: 185352, goal: 58.6, commission: 8033, earnings: 59716 },
   { m: 'Jun', deals: 0, gross: 0, netNew: 0, goal: 0.0, commission: 0, earnings: 51683 },
 ];
 
 const MAY_DATA = MONTHLY[4];
 const YTD = {
-  deals: 1012, gross: 1826573, netNew: 1100346, commission: 52224, earnings: 362322,
+  deals: 910, gross: 2146594, netNew: 1153641, commission: 51516, earnings: 369410,
 };
 
 // ───────── RUN RATE PROJECTION ─────────
@@ -1669,16 +1669,16 @@ function ReportsView({ period, setPeriod }) {
 
   // Calculate available metrics from existing data
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
-  const totalNetNew = monthIdx !== undefined
+  // Team totals come from the Excel Dashboard sheet (MONTHLY/YTD), which includes
+  // all reps/deals — NOT just the reps with individual tabs. The per-rep leaderboard
+  // below only covers tabbed reps, so its sum is slightly lower (see repNetNew).
+  const totalNetNew = monthIdx !== undefined ? currentMonthData.netNew : YTD.netNew;
+  const totalDeals = monthIdx !== undefined ? currentMonthData.deals : YTD.deals;
+  const totalCommission = monthIdx !== undefined ? currentMonthData.commission : YTD.commission;
+  // Sum of the tabbed reps shown in the leaderboard (for reconciliation display)
+  const repNetNew = monthIdx !== undefined
     ? REPS.reduce((sum, r) => sum + (r.spark[monthIdx] || 0), 0)
-    : YTD.netNew;
-  const totalDeals = monthIdx !== undefined
-    ? REPS.reduce((sum, r) => sum + (r.monthlyDeals[monthIdx] || 0), 0)
-    : YTD.deals;
-  // Calculate commission dynamically for consistency
-  const totalCommission = monthIdx !== undefined
-    ? activeReps.reduce((sum, r) => sum + calcCommission(r, r.spark[monthIdx] || 0), 0)
-    : activeReps.reduce((sum, r) => sum + calcCommission(r, r.netNew), 0);
+    : REPS.reduce((sum, r) => sum + r.spark.reduce((a, b) => a + b, 0), 0);
   const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
   const totalEarnings = totalCommission + totalBasePay;
 
@@ -1841,6 +1841,11 @@ function ReportsView({ period, setPeriod }) {
           {prevMonthData && (
             <div className={`metric-change ${netNewChange >= 0 ? 'positive' : 'negative'}`}>
               {netNewChange >= 0 ? '↑' : '↓'} {Math.abs(netNewChange).toFixed(1)}% vs prior month
+            </div>
+          )}
+          {Math.round(repNetNew) !== Math.round(totalNetNew) && (
+            <div className="metric-sub" style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: 4 }}>
+              {fmtMoney(repNetNew)} tabbed reps + {fmtMoney(totalNetNew - repNetNew)} other
             </div>
           )}
         </div>
