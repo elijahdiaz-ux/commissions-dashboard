@@ -192,7 +192,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 0, netNew: 0, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 30117, 25598, 20524, 0], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 9, 0],
+  { name: 'Brian Carl',       role: 'AE',    deals: 0, netNew: 0, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 30117, 25598, 20524, 0], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 9, 0], commissionByMonth: [253, 764, 921, 845, 517, 0],
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -218,7 +218,7 @@ const REPS = [
       { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
     ]
   },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 0, netNew: 0,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903, 9696, 0],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13, 0],
+  { name: "Connor O'Brien",   role: 'AE',    deals: 0, netNew: 0,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15042, 4903, 9696, 0],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13, 0], commissionByMonth: [749, 598, 286, 170, 225, 0],
     dealsList: [
       { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
       { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
@@ -229,11 +229,11 @@ const REPS = [
       { customer: 'Westminster Chapel', product: 'Manual Charge', arr: 778, netNew: 778 },
     ]
   },
-  { name: 'Jordy Hornbuckle', role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#9F7AEA', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Sean Parr',        role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Carson Santee',    role: 'SM AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Timm Horton',      role: 'Sr AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Jordy Hornbuckle', role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#9F7AEA', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Sean Parr',        role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Carson Santee',    role: 'SM AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Timm Horton',      role: 'Sr AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
 ];
 
 const MONTHLY = [
@@ -323,12 +323,18 @@ const calcCommission = (rep, netNew) => {
     return Math.round((netNew - deadZone) * 0.06);
   }
 
-  // Plan C & D: 1.7% rate
-  if (rep.plan === 'C' || rep.plan === 'D') {
+  // Plan C (AM): 1.7% base on the first $50K + 10% kicker on the excess
+  if (rep.plan === 'C') {
+    const quota = plan.quota || 50000;
+    return Math.round(Math.min(netNew, quota) * 0.017 + Math.max(0, netNew - quota) * 0.10);
+  }
+
+  // Plan D (Small Market AM): flat 1.7%, no kicker
+  if (rep.plan === 'D') {
     return Math.round(netNew * 0.017);
   }
 
-  // Plan A: 8% rate
+  // Plan A (AE): 8% monthly advance rate
   return Math.round(netNew * 0.08);
 };
 
@@ -1138,7 +1144,9 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                   </div>
                   <div className="rep-card-stat">
                     {(() => {
-                      const periodCommission = monthIdx !== undefined ? calcCommission(rep, rep.spark[monthIdx]) : calcCommission(rep, rep.netNew);
+                      const periodCommission = rep.commissionByMonth
+                        ? (monthIdx !== undefined ? (rep.commissionByMonth[monthIdx] || 0) : rep.commissionByMonth.reduce((a, b) => a + (b || 0), 0))
+                        : (monthIdx !== undefined ? calcCommission(rep, rep.spark[monthIdx]) : calcCommission(rep, rep.netNew));
                       return (
                         <span className="stat-value tab" style={{ color: periodCommission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>
                           {fmtMoney(periodCommission)}
@@ -1314,10 +1322,14 @@ function CommissionsView({ period, setPeriod }) {
 
   // Get commission for selected month using shared calcCommission function
   const getRepCommission = (rep) => {
-    if (monthIdx !== undefined && rep.spark) {
-      const netNew = rep.spark[monthIdx] || 0;
-      return calcCommission(rep, netNew);
+    // Prefer actual commission from Excel (commissionByMonth); fall back to formula
+    const cm = rep.commissionByMonth;
+    if (cm) {
+      if (monthIdx !== undefined) return cm[monthIdx] || 0;
+      if (period === 'Q1 2026') return (cm[0] || 0) + (cm[1] || 0) + (cm[2] || 0);
+      return cm.reduce((a, b) => a + (b || 0), 0); // YTD / default
     }
+    if (monthIdx !== undefined && rep.spark) return calcCommission(rep, rep.spark[monthIdx] || 0);
     return calcCommission(rep, rep.netNew);
   };
 
@@ -2341,8 +2353,13 @@ function App() {
     return rep.deals;
   };
   const getRepPeriodCommission = (rep) => {
-    const netNew = getRepNetNew(rep);
-    return calcCommission(rep, netNew);
+    const cm = rep.commissionByMonth;
+    if (cm) {
+      if (monthIndex !== undefined) return cm[monthIndex] || 0;
+      if (period === 'Q1 2026') return (cm[0] || 0) + (cm[1] || 0) + (cm[2] || 0);
+      return cm.reduce((a, b) => a + (b || 0), 0); // YTD / default
+    }
+    return calcCommission(rep, getRepNetNew(rep));
   };
   // Get basis for goal calculation (ARR Collected for Plan D, Net New for others)
   const getRepBasis = (rep) => {
