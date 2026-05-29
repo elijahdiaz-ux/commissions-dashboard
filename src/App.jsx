@@ -2272,6 +2272,59 @@ function ReportsView({ period, setPeriod }) {
 }
 
 // ───────── MAIN APP ─────────
+// ───────── METRIC GLOSSARY ─────────
+// Definitions shown when a user clicks a metric, so anyone in the dashboard can
+// understand what each number means and how it is calculated.
+const METRIC_INFO = {
+  netNew: {
+    title: 'Net New ARR',
+    definition: 'The net change in Annual Recurring Revenue won during the period — new subscriptions plus expansions (upsells), net of contraction (downgrades). It is the primary measure of how much new recurring revenue the team added, and what reps carry quota against.',
+    formula: 'Net New ARR  =  New ARR  +  Expansion ARR  −  Contraction ARR',
+    notes: [
+      'Sourced directly from the Excel "Dashboard" sheet (row 13) — the company source of truth.',
+      'Counts all reps and deal types, including reps without an individual scorecard tab.',
+      'Differs from Gross Revenue, which does not subtract downgrades or churn.',
+    ],
+  },
+  deals: {
+    title: 'Deals Closed',
+    definition: 'The number of closed-won subscriptions booked in the period, pulled from Zuora. One customer can contribute several deals when they buy multiple products.',
+    formula: 'Deals Closed  =  count of closed-won subscriptions in the period',
+    notes: [
+      'Sourced from the Excel "Dashboard" sheet (row 11).',
+      'Includes new, expansion, and renewal deal types.',
+    ],
+  },
+  gross: {
+    title: 'Gross Revenue',
+    definition: 'Total contract value (gross ARR) booked in the period before netting out downgrades and cancellations. It is always greater than or equal to Net New ARR.',
+    formula: 'Gross Revenue  =  sum of gross ARR across all closed deals',
+    notes: [
+      'Sourced from the Excel "Dashboard" sheet (row 12).',
+      'Use Net New ARR — not Gross — when measuring quota attainment.',
+    ],
+  },
+  commission: {
+    title: 'Commissions',
+    definition: 'Total commission earned by the team for the period under each rep’s compensation plan. Each rep’s figure comes from their own Excel scorecard, so plan-specific rules (kickers, dead zones, quarterly true-ups) are already applied.',
+    formula: 'AM (Plan C):  1.7% × first $50K  +  10% × amount over $50K\nSmall-Market AM (Plan D):  flat 1.7%\nAE (Plan A / B):  8% / 6% monthly advance, trued-up to tiers at quarter end',
+    notes: [
+      'Team total matches the Excel "Dashboard" sheet (row 20).',
+      'AE plans pay a monthly advance and reconcile to quarterly tiered commission (paid Mar & Jun).',
+      'Plan B (dead zone): no commission until $42,367 of quarterly ARR is cleared.',
+    ],
+  },
+  attainment: {
+    title: 'Attainment',
+    definition: 'How much of quota a rep (or the team) achieved in the period, measured on Net New ARR (ARR Collected for Small-Market AMs).',
+    formula: 'Attainment %  =  Net New ARR  ÷  Quota',
+    notes: [
+      'AM monthly quota = $50,000; AE quarterly quota = $125,000 (Q1 ramped to 50%).',
+      'Team monthly quota = $529,167.',
+    ],
+  },
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
@@ -2291,6 +2344,7 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
   const [showMethodology, setShowMethodology] = useState(false);
+  const [infoMetric, setInfoMetric] = useState(null);
 
   // Close popovers on outside click
   useEffect(() => {
@@ -2525,39 +2579,39 @@ function App() {
             </div>
             <div className="card-body">
               <div className="metrics-grid">
-                <div className="metric-tile">
+                <div className="metric-tile" onClick={() => setInfoMetric('deals')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
                   <div className="metric-icon"><Icon.Target/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{activeData.deals}</div>
-                    <div className="metric-label">Deals Closed</div>
+                    <div className="metric-label">Deals Closed <span style={{ opacity: 0.5 }}>ⓘ</span></div>
                   </div>
                 </div>
-                <div className="metric-tile">
+                <div className="metric-tile" onClick={() => setInfoMetric('gross')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
                   <div className="metric-icon"><Icon.Coin/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{fmtMoney(activeData.gross)}</div>
-                    <div className="metric-label">Gross Revenue</div>
+                    <div className="metric-label">Gross Revenue <span style={{ opacity: 0.5 }}>ⓘ</span></div>
                   </div>
                 </div>
-                <div className="metric-tile highlight">
+                <div className="metric-tile highlight" onClick={() => setInfoMetric('netNew')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
                   <div className="metric-icon"><Icon.Spark/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{fmtMoney(activeData.netNew)}</div>
-                    <div className="metric-label">Net New ARR</div>
+                    <div className="metric-label">Net New ARR <span style={{ opacity: 0.5 }}>ⓘ</span></div>
                   </div>
                 </div>
-                <div className="metric-tile">
+                <div className="metric-tile" onClick={() => setInfoMetric('commission')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
                   <div className="metric-icon"><Icon.Commission/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{fmtMoney(activeData.commission)}</div>
-                    <div className="metric-label">Commissions</div>
+                    <div className="metric-label">Commissions <span style={{ opacity: 0.5 }}>ⓘ</span></div>
                   </div>
                 </div>
               </div>
               <div className="metrics-secondary">
-                <div className="metric-secondary-item">
+                <div className="metric-secondary-item" onClick={() => setInfoMetric('attainment')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
                   <span className="metric-secondary-value tab">{avgAttain.toFixed(1)}%</span>
-                  <span className="metric-secondary-label">Avg Attainment</span>
+                  <span className="metric-secondary-label">Avg Attainment ⓘ</span>
                 </div>
                 <div className="metric-secondary-item">
                   <span className="metric-secondary-value tab">{fmtMoney(avgDeal)}</span>
@@ -2844,6 +2898,51 @@ function App() {
           </div>
         </>
       )}
+
+      {/* Metric definition glossary */}
+      {infoMetric && METRIC_INFO[infoMetric] && (() => {
+        const info = METRIC_INFO[infoMetric];
+        const valueMap = {
+          deals: String(activeData.deals),
+          gross: fmtMoney(activeData.gross, { full: true }),
+          netNew: fmtMoney(activeData.netNew, { full: true }),
+          commission: fmtMoney(activeData.commission, { full: true }),
+          attainment: avgAttain.toFixed(1) + '%',
+        };
+        return (
+          <>
+            <div className="modal-scrim" onClick={() => setInfoMetric(null)} />
+            <div className="modal">
+              <div className="modal-header">
+                <h3>{info.title}</h3>
+                <div className="modal-close" onClick={() => setInfoMetric(null)}><Icon.X /></div>
+              </div>
+              <div className="modal-body">
+                <div className="method-section">
+                  <h4>{period} value</h4>
+                  <div className="method-stat highlight">
+                    <span className="method-label">{info.title}</span>
+                    <span className="method-value tab">{valueMap[infoMetric]}</span>
+                  </div>
+                </div>
+                <div className="method-section">
+                  <h4>What it means</h4>
+                  <p>{info.definition}</p>
+                </div>
+                <div className="method-section">
+                  <h4>How it’s calculated</h4>
+                  <div className="formula-box">
+                    {info.formula.split('\n').map((line, i) => <code key={i} style={{ display: 'block' }}>{line}</code>)}
+                  </div>
+                  <ul>
+                    {info.notes.map((n, i) => <li key={i}>{n}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Toasts */}
       <div className="toast-wrap">
