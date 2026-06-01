@@ -2,3 +2,6 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Sync backup written by sync_dashboard.py on each run (not source)
+src/App.jsx.backup
