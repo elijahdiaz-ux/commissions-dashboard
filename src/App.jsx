@@ -338,6 +338,45 @@ const calcCommission = (rep, netNew) => {
   return Math.round(netNew * 0.08);
 };
 
+// ───────── ATTAINMENT — single source of truth for "% to goal" across ALL views ─────────
+// AE quota is quarterly ($125K, Q1 ramped to 50%). In a monthly view the basis is one
+// month, so it is compared to the MONTHLY SHARE (quota / 3) so AEs read like AMs.
+// AMs use a $50K monthly quota. Plan D (Small Market AM) is measured on ARR Collected.
+const repAttainmentBasis = (rep, period) => {
+  const mi = MONTH_INDEX[period];
+  const series = (rep.plan === 'D' && rep.arrCollected) ? rep.arrCollected : rep.spark;
+  if (mi !== undefined) return series[mi] || 0;
+  if (period === 'Q1 2026') return (series[0] || 0) + (series[1] || 0) + (series[2] || 0);
+  if (period === 'YTD 2026') return series.reduce((a, b) => a + (b || 0), 0);
+  return rep.plan === 'D' ? (rep.gross || 0) : (rep.netNew || 0);
+};
+
+const repAttainment = (rep, period) => {
+  if (!rep || rep.plan === 'Inactive') return 0;
+  const basis = repAttainmentBasis(rep, period);
+  const mi = MONTH_INDEX[period];
+  const monthsWithData = rep.spark ? rep.spark.filter(v => v !== undefined && v !== null).length : 0;
+  const qQuota = (q) => q === 1 ? 125000 * 0.5 : 125000; // quarterly quota, Q1 ramped
+  if (rep.role === 'AE') {
+    if (period === 'Q1 2026') return (basis / qQuota(1)) * 100;
+    if (period === 'YTD 2026') {
+      const cq = Math.ceil(monthsWithData / 3);
+      let q = 0;
+      for (let i = 1; i <= cq; i++) q += qQuota(i);
+      return (basis / q) * 100;
+    }
+    if (mi !== undefined) { // monthly: compare to the month's share of the quarter
+      const quarter = Math.floor(mi / 3) + 1;
+      return (basis / (qQuota(quarter) / 3)) * 100;
+    }
+    return (basis / 125000) * 100;
+  }
+  const mQuota = 50000; // AMs: monthly quota
+  if (period === 'Q1 2026') return (basis / (mQuota * 3)) * 100;
+  if (period === 'YTD 2026') return (basis / (mQuota * Math.max(1, monthsWithData))) * 100;
+  return (basis / mQuota) * 100;
+};
+
 // ───────── ICONS ─────────
 const Icon = {
   Dashboard: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>,
@@ -688,8 +727,9 @@ function AttainBars({ pct }) {
 }
 
 // ───────── DRAWER ─────────
-function RepDrawer({ rep, onClose }) {
+function RepDrawer({ rep, onClose, period }) {
   if (!rep) return null;
+  const goalPct = repAttainment(rep, period); // period-aware attainment (matches leaderboard)
   const monthlyEarn = [
     { label: 'Jan', v: rep.earnings * 1.05, projected: false },
     { label: 'Feb', v: rep.earnings * 0.92, projected: false },
@@ -711,7 +751,7 @@ function RepDrawer({ rep, onClose }) {
             <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>{rep.name}</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
               <span className="role-chip" style={{ marginRight: 8 }}>{rep.role}</span>
-              {getStatusInfo(getRepStatus(rep.goal)).label}
+              {getStatusInfo(getRepStatus(goalPct)).label}
             </div>
           </div>
           <div className="drawer-close" onClick={onClose}><Icon.X/></div>
@@ -727,19 +767,19 @@ function RepDrawer({ rep, onClose }) {
               </div>
               <div className="pacing-metric">
                 <div className="pacing-label">Actual Attainment</div>
-                <div className="pacing-value tab" style={{ color: rep.goal >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}>{rep.goal.toFixed(1)}%</div>
+                <div className="pacing-value tab" style={{ color: goalPct >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}>{goalPct.toFixed(1)}%</div>
               </div>
               <div className="pacing-metric">
                 <div className="pacing-label">Variance</div>
-                <div className="pacing-value tab" style={{ color: rep.goal >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}>
-                  {rep.goal >= EXPECTED_PACING ? '+' : ''}{(rep.goal - EXPECTED_PACING).toFixed(1)}%
+                <div className="pacing-value tab" style={{ color: goalPct >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}>
+                  {goalPct >= EXPECTED_PACING ? '+' : ''}{(goalPct - EXPECTED_PACING).toFixed(1)}%
                 </div>
               </div>
             </div>
             <div className="pacing-bar-container">
               <div className="pacing-bar-track">
                 <div className="pacing-bar-expected" style={{ width: Math.min(100, EXPECTED_PACING) + '%' }}/>
-                <div className="pacing-bar-actual" style={{ width: Math.min(100, rep.goal) + '%', background: rep.goal >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}/>
+                <div className="pacing-bar-actual" style={{ width: Math.min(100, goalPct) + '%', background: goalPct >= EXPECTED_PACING ? 'var(--green)' : 'var(--rose)' }}/>
               </div>
               <div className="pacing-bar-labels">
                 <span>0%</span>
@@ -747,14 +787,14 @@ function RepDrawer({ rep, onClose }) {
                 <span>100%</span>
               </div>
             </div>
-            <div className="pacing-status" style={{ background: getStatusInfo(getRepStatus(rep.goal)).color + '20', borderColor: getStatusInfo(getRepStatus(rep.goal)).color }}>
-              <span className={'dot ' + getStatusInfo(getRepStatus(rep.goal)).dotClass} style={{ width: 10, height: 10 }}/>
-              <span style={{ color: getStatusInfo(getRepStatus(rep.goal)).color, fontWeight: 600 }}>{getStatusInfo(getRepStatus(rep.goal)).label}</span>
+            <div className="pacing-status" style={{ background: getStatusInfo(getRepStatus(goalPct)).color + '20', borderColor: getStatusInfo(getRepStatus(goalPct)).color }}>
+              <span className={'dot ' + getStatusInfo(getRepStatus(goalPct)).dotClass} style={{ width: 10, height: 10 }}/>
+              <span style={{ color: getStatusInfo(getRepStatus(goalPct)).color, fontWeight: 600 }}>{getStatusInfo(getRepStatus(goalPct)).label}</span>
               <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
-                {getRepStatus(rep.goal) === 'on-track' && '— Meeting or exceeding expected pace'}
-                {getRepStatus(rep.goal) === 'at-risk' && '— Within 10% of expected pace'}
-                {getRepStatus(rep.goal) === 'behind' && '— More than 10% below expected pace'}
-                {getRepStatus(rep.goal) === 'inactive' && '— No quota assigned this month'}
+                {getRepStatus(goalPct) === 'on-track' && '— Meeting or exceeding expected pace'}
+                {getRepStatus(goalPct) === 'at-risk' && '— Within 10% of expected pace'}
+                {getRepStatus(goalPct) === 'behind' && '— More than 10% below expected pace'}
+                {getRepStatus(goalPct) === 'inactive' && '— No quota assigned this month'}
               </span>
             </div>
           </div>
@@ -764,14 +804,14 @@ function RepDrawer({ rep, onClose }) {
           <h4>April Scorecard</h4>
           <div className="scorecard-grid">
             <div className="scorecard-cell">
-              <div className="lbl">Deals closed</div>
+              <div className="lbl">Subscriptions</div>
               <div className="val tab">{rep.deals}</div>
               <div className="sub">{(rep.netNew / Math.max(1, rep.deals)).toFixed(0).toLocaleString()} avg ARR</div>
             </div>
             <div className="scorecard-cell">
               <div className="lbl">Net new ARR</div>
               <div className="val tab">{fmtMoney(rep.netNew, { full: true })}</div>
-              <div className="sub">{rep.goal.toFixed(1)}% to goal</div>
+              <div className="sub">{goalPct.toFixed(1)}% to goal</div>
             </div>
             <div className="scorecard-cell">
               <div className="lbl">Gross revenue</div>
@@ -816,7 +856,7 @@ function RepDrawer({ rep, onClose }) {
         </div>
 
         <div className="drawer-section">
-          <h4>April Deals ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h4>
+          <h4>April Subscriptions ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h4>
           <div className="deals-list">
             {rep.dealsList && rep.dealsList.length > 0 ? (
               <table className="deals-table">
@@ -840,7 +880,7 @@ function RepDrawer({ rep, onClose }) {
                 </tbody>
               </table>
             ) : (
-              <div style={{ color: 'var(--text-3)', fontStyle: 'italic', padding: '12px 0' }}>No deals this month</div>
+              <div style={{ color: 'var(--text-3)', fontStyle: 'italic', padding: '12px 0' }}>No subscriptions this month</div>
             )}
           </div>
         </div>
@@ -937,7 +977,7 @@ function CompareView({ reps, onExit }) {
           </div>
           <div className={'compare-metric' + (ytd.ytdDeals > otherYtd.ytdDeals ? ' winning' : '')}>
             <div className="metric-value tab">{ytd.ytdDeals}</div>
-            <div className="metric-label">YTD Deals</div>
+            <div className="metric-label">YTD Subscriptions</div>
           </div>
           <div className={'compare-metric' + (ytd.ytdAvg > otherYtd.ytdAvg ? ' winning' : '')}>
             <div className="metric-value tab">{fmtMoney(ytd.ytdAvg)}</div>
@@ -1140,7 +1180,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                   </div>
                   <div className="rep-card-stat">
                     <span className="stat-value tab">{monthIdx !== undefined && rep.monthlyDeals ? rep.monthlyDeals[monthIdx] : ytd.ytdDeals}</span>
-                    <span className="stat-label">{monthIdx !== undefined ? period.split(' ')[0] + ' Deals' : 'YTD Deals'}</span>
+                    <span className="stat-label">{monthIdx !== undefined ? period.split(' ')[0] + ' Subscriptions' : 'YTD Subscriptions'}</span>
                   </div>
                   <div className="rep-card-stat">
                     {(() => {
@@ -1245,7 +1285,7 @@ function RepDetailPanel({ rep }) {
           </div>
           <div className="ytd-card">
             <div className="ytd-value tab">{ytdDeals}</div>
-            <div className="ytd-label">Total Deals</div>
+            <div className="ytd-label">Total Subscriptions</div>
           </div>
           <div className="ytd-card">
             <div className="ytd-value tab">{fmtMoney(ytdNetNew / 4, { full: true })}</div>
@@ -1262,7 +1302,7 @@ function RepDetailPanel({ rep }) {
           <div className="monthly-header">
             <span>Month</span>
             <span>Net New ARR</span>
-            <span>Deals</span>
+            <span>Subscriptions</span>
           </div>
           {months.map((m, i) => (
             <div key={m} className="monthly-row">
@@ -1276,7 +1316,7 @@ function RepDetailPanel({ rep }) {
 
       {/* April Deals */}
       <div className="detail-section">
-        <h3>April Deals ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h3>
+        <h3>April Subscriptions ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h3>
         <div className="deals-list">
           {rep.dealsList && rep.dealsList.length > 0 ? (
             <table className="deals-table">
@@ -1300,7 +1340,7 @@ function RepDetailPanel({ rep }) {
               </tbody>
             </table>
           ) : (
-            <div style={{ color: 'var(--text-3)', fontStyle: 'italic', padding: '12px 0' }}>No deals this month</div>
+            <div style={{ color: 'var(--text-3)', fontStyle: 'italic', padding: '12px 0' }}>No subscriptions this month</div>
           )}
         </div>
       </div>
@@ -1862,7 +1902,7 @@ function ReportsView({ period, setPeriod }) {
           )}
         </div>
         <div className="metric-card">
-          <div className="metric-label">Deals Closed</div>
+          <div className="metric-label">Subscriptions</div>
           <div className="metric-value">{totalDeals}</div>
           {prevMonthData && (
             <div className={`metric-change ${dealsChange >= 0 ? 'positive' : 'negative'}`}>
@@ -1886,7 +1926,7 @@ function ReportsView({ period, setPeriod }) {
           <tr>
             <th>Rep</th>
             <th>Role</th>
-            <th>Deals</th>
+            <th>Subscriptions</th>
             <th>Net New ARR</th>
             <th>Goal %</th>
             <th>Status</th>
@@ -1896,13 +1936,7 @@ function ReportsView({ period, setPeriod }) {
           {activeReps.map(rep => {
             const repNetNew = monthIdx !== undefined ? rep.spark[monthIdx] : rep.spark.reduce((a,b) => a+b, 0);
             const repDeals = monthIdx !== undefined ? rep.monthlyDeals[monthIdx] : rep.monthlyDeals.reduce((a,b) => a+b, 0);
-            // AE quotas are quarterly ($125K). In a monthly view, compare the
-            // month to its monthly share (quota / 3) so AEs read like AMs.
-            const isAE = rep.plan === 'A' || rep.plan === 'B';
-            const repQuota = rep.plan === 'D' ? 50000
-              : isAE ? (monthIdx !== undefined ? 125000 / 3 : 125000)
-              : (PLANS[rep.plan]?.quota || 50000);
-            const goalPct = (repNetNew / repQuota) * 100;
+            const goalPct = repAttainment(rep, period); // shared attainment, all tabs match
             return (
               <tr key={rep.name}>
                 <td style={{ fontWeight: 500 }}>{rep.name}</td>
@@ -1936,7 +1970,7 @@ function ReportsView({ period, setPeriod }) {
           <div className="metric-value">{fmtMoney(YTD.netNew, { full: true })}</div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">YTD Deals</div>
+          <div className="metric-label">YTD Subscriptions</div>
           <div className="metric-value">{YTD.deals}</div>
         </div>
         <div className="metric-card">
@@ -2034,7 +2068,7 @@ function ReportsView({ period, setPeriod }) {
             <tr>
               <th>Month</th>
               <th>Net New ARR</th>
-              <th>Deals</th>
+              <th>Subscriptions</th>
               <th>Gross Revenue</th>
               <th>MoM Change</th>
             </tr>
@@ -2111,7 +2145,7 @@ function ReportsView({ period, setPeriod }) {
           <thead>
             <tr>
               <th>Product</th>
-              <th>Deals</th>
+              <th>Subscriptions</th>
               <th>Total ARR</th>
               <th>Net New ARR</th>
               <th>% of Total</th>
@@ -2291,12 +2325,12 @@ const METRIC_INFO = {
     ],
   },
   deals: {
-    title: 'Deals Closed',
-    definition: 'The number of closed-won subscriptions booked in the period, pulled from Zuora. One customer can contribute several deals when they buy multiple products.',
-    formula: 'Deals Closed  =  count of closed-won subscriptions in the period',
+    title: 'Subscriptions',
+    definition: 'The number of individual subscriptions booked in the period, pulled from Zuora. One customer can contribute several subscriptions when they buy multiple products.',
+    formula: 'Subscriptions  =  count of individual subscriptions booked in the period',
     notes: [
       'Sourced from the Excel "Dashboard" sheet (row 11).',
-      'Includes new, expansion, and renewal deal types.',
+      'Includes new, expansion, and renewal subscriptions.',
     ],
   },
   gross: {
@@ -2420,74 +2454,8 @@ function App() {
     return calcCommission(rep, getRepNetNew(rep));
   };
   // Get basis for goal calculation (ARR Collected for Plan D, Net New for others)
-  const getRepBasis = (rep) => {
-    if (rep.plan === 'D' && rep.arrCollected) {
-      if (monthIndex !== undefined) return rep.arrCollected[monthIndex];
-      if (period === 'Q1 2026') return rep.arrCollected[0] + rep.arrCollected[1] + rep.arrCollected[2];
-      if (period === 'YTD 2026') return rep.arrCollected.reduce((a, b) => a + b, 0);
-      return rep.gross;
-    }
-    return getRepNetNew(rep);
-  };
-  // Quota logic: AMs have monthly quota $50K, AEs have quarterly quota $125K
-  // Full year support: Q1 (ramp 50%), Q2-Q4 (full quota)
-  const getRepGoal = (rep) => {
-    const basis = getRepBasis(rep);
-    const isAE = rep.role === 'AE';
-    const quarterlyQuota = 125000;
-    const monthlyQuota = 50000;
-
-    // Helper: get quarter from month index (0-11)
-    const getQuarter = (idx) => Math.floor(idx / 3) + 1; // Q1=1, Q2=2, Q3=3, Q4=4
-
-    // Helper: get quarterly quota (Q1 is ramp at 50%)
-    const getQuarterlyQuota = (q) => q === 1 ? quarterlyQuota * 0.5 : quarterlyQuota;
-
-    // Helper: count months with data
-    const monthsWithData = rep.spark ? rep.spark.filter(v => v !== undefined && v !== null).length : 0;
-
-    if (isAE) {
-      // Handle quarterly period selections
-      if (period === 'Q1 2026') return (basis / getQuarterlyQuota(1)) * 100;
-      if (period === 'Q2 2026') return (basis / getQuarterlyQuota(2)) * 100;
-      if (period === 'Q3 2026') return (basis / getQuarterlyQuota(3)) * 100;
-      if (period === 'Q4 2026') return (basis / getQuarterlyQuota(4)) * 100;
-
-      // YTD: Sum of quarterly quotas for completed quarters + current quarter
-      if (period === 'YTD 2026') {
-        const currentQuarter = Math.ceil(monthsWithData / 3);
-        let ytdQuota = 0;
-        for (let q = 1; q <= currentQuarter; q++) {
-          ytdQuota += getQuarterlyQuota(q);
-        }
-        return (basis / ytdQuota) * 100;
-      }
-
-      // Monthly view: compare the month's net new to its MONTHLY SHARE of the
-      // quarterly quota (quota / 3), so AE monthly attainment reads on the same
-      // basis as AMs instead of dividing one month by a whole quarter.
-      if (monthIndex !== undefined) {
-        const quarter = getQuarter(monthIndex);
-        return (basis / (getQuarterlyQuota(quarter) / 3)) * 100;
-      }
-
-      return (basis / quarterlyQuota) * 100;
-    } else {
-      // AMs: monthly quota throughout the year
-      if (period === 'Q1 2026') return (basis / (monthlyQuota * 3)) * 100;
-      if (period === 'Q2 2026') return (basis / (monthlyQuota * 3)) * 100;
-      if (period === 'Q3 2026') return (basis / (monthlyQuota * 3)) * 100;
-      if (period === 'Q4 2026') return (basis / (monthlyQuota * 3)) * 100;
-
-      // YTD: based on actual months with data
-      if (period === 'YTD 2026') {
-        return (basis / (monthlyQuota * Math.max(1, monthsWithData))) * 100;
-      }
-
-      // Monthly view
-      return (basis / monthlyQuota) * 100;
-    }
-  };
+  // Attainment uses the shared module-level repAttainment() so every tab matches.
+  const getRepGoal = (rep) => repAttainment(rep, period);
 
   // Filter + sort leaderboard
   const ranked = useMemo(() => {
@@ -2563,7 +2531,7 @@ function App() {
             <div className="search">
               <Icon.Search/>
               <input
-                placeholder="Search reps, deals, accounts..."
+                placeholder="Search reps, subscriptions, accounts..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />
@@ -2589,7 +2557,7 @@ function App() {
                   <div className="metric-icon"><Icon.Target/></div>
                   <div className="metric-content">
                     <div className="metric-value tab">{activeData.deals}</div>
-                    <div className="metric-label">Deals Closed <span style={{ opacity: 0.5 }}>ⓘ</span></div>
+                    <div className="metric-label">Subscriptions <span style={{ opacity: 0.5 }}>ⓘ</span></div>
                   </div>
                 </div>
                 <div className="metric-tile" onClick={() => setInfoMetric('gross')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
@@ -2621,7 +2589,7 @@ function App() {
                 </div>
                 <div className="metric-secondary-item">
                   <span className="metric-secondary-value tab">{fmtMoney(avgDeal)}</span>
-                  <span className="metric-secondary-label">Avg Deal Size</span>
+                  <span className="metric-secondary-label">Avg Subscription Size</span>
                 </div>
                 <div className="metric-secondary-item">
                   <span className="metric-secondary-value tab">7/8</span>
@@ -2756,7 +2724,7 @@ function App() {
           <div className="lb-head">
             <div>
               <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>· {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
-              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'deals' : 'value'} · click a row to view scorecard</div>
+              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'subscriptions' : 'value'} · click a row to view scorecard</div>
             </div>
             <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster…')}>See all reps →</a>
           </div>
@@ -2769,7 +2737,7 @@ function App() {
                 <th>Role</th>
                 <th className="sortable" onClick={() => handleSort('goal')}>Attainment{sortInd('goal')}</th>
                 <th className="sortable" onClick={() => handleSort('netNew')}>Net new ARR{sortInd('netNew')}</th>
-                <th className="sortable" onClick={() => handleSort('deals')}>Deals{sortInd('deals')}</th>
+                <th className="sortable" onClick={() => handleSort('deals')}>Subscriptions{sortInd('deals')}</th>
                 <th>4-mo trend</th>
                 <th className="sortable" onClick={() => handleSort('commission')}>Commission{sortInd('commission')}</th>
                 <th>Status</th>
@@ -2818,7 +2786,7 @@ function App() {
       </main>
       )}
 
-      <RepDrawer rep={activeRep} onClose={() => setActiveRep(null)}/>
+      <RepDrawer rep={activeRep} onClose={() => setActiveRep(null)} period={period}/>
 
       {/* Methodology Modal */}
       {showMethodology && (
