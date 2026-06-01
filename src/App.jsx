@@ -1896,9 +1896,13 @@ function ReportsView({ period, setPeriod }) {
           {activeReps.map(rep => {
             const repNetNew = monthIdx !== undefined ? rep.spark[monthIdx] : rep.spark.reduce((a,b) => a+b, 0);
             const repDeals = monthIdx !== undefined ? rep.monthlyDeals[monthIdx] : rep.monthlyDeals.reduce((a,b) => a+b, 0);
-            const goalPct = rep.plan === 'D'
-              ? (repNetNew / 50000) * 100
-              : (repNetNew / (PLANS[rep.plan]?.quota || 50000)) * 100;
+            // AE quotas are quarterly ($125K). In a monthly view, compare the
+            // month to its monthly share (quota / 3) so AEs read like AMs.
+            const isAE = rep.plan === 'A' || rep.plan === 'B';
+            const repQuota = rep.plan === 'D' ? 50000
+              : isAE ? (monthIdx !== undefined ? 125000 / 3 : 125000)
+              : (PLANS[rep.plan]?.quota || 50000);
+            const goalPct = (repNetNew / repQuota) * 100;
             return (
               <tr key={rep.name}>
                 <td style={{ fontWeight: 500 }}>{rep.name}</td>
@@ -2459,10 +2463,12 @@ function App() {
         return (basis / ytdQuota) * 100;
       }
 
-      // Monthly view: show that month's contribution to its quarterly quota
+      // Monthly view: compare the month's net new to its MONTHLY SHARE of the
+      // quarterly quota (quota / 3), so AE monthly attainment reads on the same
+      // basis as AMs instead of dividing one month by a whole quarter.
       if (monthIndex !== undefined) {
         const quarter = getQuarter(monthIndex);
-        return (basis / getQuarterlyQuota(quarter)) * 100;
+        return (basis / (getQuarterlyQuota(quarter) / 3)) * 100;
       }
 
       return (basis / quarterlyQuota) * 100;
