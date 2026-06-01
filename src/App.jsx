@@ -730,17 +730,22 @@ function AttainBars({ pct }) {
 function RepDrawer({ rep, onClose, period }) {
   if (!rep) return null;
   const goalPct = repAttainment(rep, period); // period-aware attainment (matches leaderboard)
-  const monthlyEarn = [
-    { label: 'Jan', v: rep.earnings * 1.05, projected: false },
-    { label: 'Feb', v: rep.earnings * 0.92, projected: false },
-    { label: 'Mar', v: rep.earnings * 1.18, projected: false },
-    { label: 'Apr', v: rep.earnings, projected: false },
-    { label: 'May ▴', v: rep.earnings * 1.08, projected: true },
-  ];
-  // commission breakdown from actual data
+  const mi = MONTH_INDEX[period];
+  const periodLabel = period ? period.split(' ')[0] : 'Period'; // 'May', 'Q1', 'YTD'
+  const sumArr = (arr) => (arr ? arr.reduce((a, b) => a + (b || 0), 0) : 0);
+  // Period-aware values: selected month, or the aggregate for Q1 / YTD
+  const periodDeals  = mi !== undefined ? (rep.monthlyDeals?.[mi] ?? 0) : (rep.monthlyDeals ? sumArr(rep.monthlyDeals) : rep.deals);
+  const periodNetNew = mi !== undefined ? (rep.spark?.[mi] ?? 0)        : (rep.spark ? sumArr(rep.spark) : rep.netNew);
   const basePay = rep.basePay || 0;
-  const commissionEarned = rep.commission || 0;
-  const apr = rep.earnings;
+  const commissionEarned = mi !== undefined ? (rep.commissionByMonth?.[mi] ?? 0) : sumArr(rep.commissionByMonth);
+  const periodEarn = basePay + commissionEarned;
+  // Real earnings trend = base pay + actual commission per month (no fabricated multipliers)
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const monthlyEarn = (rep.commissionByMonth || []).map((c, i) => ({
+    label: MONTHS[i] + (i === mi ? ' ▴' : ''),
+    v: basePay + (c || 0),
+    projected: false,
+  }));
   return (
     <>
       <div className={'drawer-scrim' + (rep ? ' open' : '')} onClick={onClose}/>
@@ -758,7 +763,7 @@ function RepDrawer({ rep, onClose, period }) {
         </div>
 
         <div className="drawer-section">
-          <h4>{CURRENT_MONTH.name} Pacing · Day {CURRENT_MONTH.dayOfMonth} of {CURRENT_MONTH.daysInMonth}</h4>
+          <h4>{periodLabel} Pace vs Quota</h4>
           <div className="pacing-card">
             <div className="pacing-row">
               <div className="pacing-metric">
@@ -801,27 +806,27 @@ function RepDrawer({ rep, onClose, period }) {
         </div>
 
         <div className="drawer-section">
-          <h4>April Scorecard</h4>
+          <h4>{periodLabel} Scorecard</h4>
           <div className="scorecard-grid">
             <div className="scorecard-cell">
               <div className="lbl">Subscriptions</div>
-              <div className="val tab">{rep.deals}</div>
-              <div className="sub">{(rep.netNew / Math.max(1, rep.deals)).toFixed(0).toLocaleString()} avg ARR</div>
+              <div className="val tab">{periodDeals}</div>
+              <div className="sub">{fmtMoney(periodNetNew / Math.max(1, periodDeals))} avg ARR</div>
             </div>
             <div className="scorecard-cell">
               <div className="lbl">Net new ARR</div>
-              <div className="val tab">{fmtMoney(rep.netNew, { full: true })}</div>
+              <div className="val tab">{fmtMoney(periodNetNew, { full: true })}</div>
               <div className="sub">{goalPct.toFixed(1)}% to goal</div>
             </div>
             <div className="scorecard-cell">
-              <div className="lbl">Gross revenue</div>
-              <div className="val tab">{fmtMoney(rep.gross, { full: true })}</div>
-              <div className="sub">includes renewals</div>
+              <div className="lbl">Commission</div>
+              <div className="val tab">{fmtMoney(commissionEarned, { full: true })}</div>
+              <div className="sub">earned this period</div>
             </div>
             <div className="scorecard-cell">
-              <div className="lbl">April earnings</div>
-              <div className="val tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(rep.earnings, { full: true })}</div>
-              <div className="sub">{rep.earnings > 0 ? 'commission + bonus' : 'no payout'}</div>
+              <div className="lbl">{periodLabel} earnings</div>
+              <div className="val tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(periodEarn, { full: true })}</div>
+              <div className="sub">{periodEarn > 0 ? 'base + commission' : 'no payout'}</div>
             </div>
           </div>
         </div>
@@ -834,7 +839,7 @@ function RepDrawer({ rep, onClose, period }) {
         </div>
 
         <div className="drawer-section">
-          <h4>April Payout Breakdown</h4>
+          <h4>{periodLabel} Payout Breakdown</h4>
           <div>
             <div className="pay-strip">
               <span className="key">Base Pay</span>
@@ -846,7 +851,7 @@ function RepDrawer({ rep, onClose, period }) {
             </div>
             <div className="pay-strip total">
               <span className="key">Total Earnings</span>
-              <span className="val tab">{fmtMoney(apr, { full: true })}</span>
+              <span className="val tab">{fmtMoney(periodEarn, { full: true })}</span>
             </div>
             <div className="pay-strip">
               <span className="key">Spiff</span>
@@ -856,7 +861,7 @@ function RepDrawer({ rep, onClose, period }) {
         </div>
 
         <div className="drawer-section">
-          <h4>April Subscriptions ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h4>
+          <h4>Subscription Detail <span style={{ color: 'var(--text-3)', fontWeight: 400, fontSize: 12 }}>(latest snapshot)</span></h4>
           <div className="deals-list">
             {rep.dealsList && rep.dealsList.length > 0 ? (
               <table className="deals-table">
@@ -933,17 +938,22 @@ function Sidebar({ activeTab, setActiveTab }) {
 }
 
 // ───────── COMPARE VIEW ─────────
-function CompareView({ reps, onExit }) {
+function CompareView({ reps, onExit, period }) {
   const rep1 = reps[0];
   const rep2 = reps[1];
   const plan1 = PLANS[rep1.plan] || PLANS.Inactive;
   const plan2 = PLANS[rep2.plan] || PLANS.Inactive;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const mi = MONTH_INDEX[period];
+  const periodLabel = period ? period.split(' ')[0] : 'Period';
+  const nn = (r) => mi !== undefined ? (r.spark?.[mi] || 0) : (r.spark ? r.spark.reduce((a, b) => a + (b || 0), 0) : r.netNew);
+  const cm = (r) => mi !== undefined ? (r.commissionByMonth?.[mi] || 0) : (r.commissionByMonth ? r.commissionByMonth.reduce((a, b) => a + (b || 0), 0) : 0);
 
   const getYTD = (rep) => {
     const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
     const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
-    const ytdAvg = ytdNetNew / 4;
+    const monthsActive = rep.spark.reduce((mx, v, i) => (v ? i + 1 : mx), 0);
+    const ytdAvg = ytdNetNew / Math.max(1, monthsActive);
     return { ytdNetNew, ytdDeals, ytdAvg };
   };
 
@@ -983,9 +993,9 @@ function CompareView({ reps, onExit }) {
             <div className="metric-value tab">{fmtMoney(ytd.ytdAvg)}</div>
             <div className="metric-label">Monthly Avg</div>
           </div>
-          <div className={'compare-metric' + (rep.netNew > otherRep.netNew ? ' winning' : '')}>
-            <div className="metric-value tab">{fmtMoney(rep.netNew)}</div>
-            <div className="metric-label">April Net New</div>
+          <div className={'compare-metric' + (nn(rep) > nn(otherRep) ? ' winning' : '')}>
+            <div className="metric-value tab">{fmtMoney(nn(rep))}</div>
+            <div className="metric-label">{periodLabel} Net New</div>
           </div>
         </div>
 
@@ -995,7 +1005,7 @@ function CompareView({ reps, onExit }) {
             <div className="plan-row"><span>Plan</span><span>{plan.name}</span></div>
             <div className="plan-row"><span>Quota</span><span className="tab">{fmtMoney(plan.quota)} / {plan.type === 'Monthly' ? 'mo' : 'qtr'}</span></div>
             <div className="plan-row"><span>Base Pay</span><span className="tab">{fmtMoney(rep.basePay)} / mo</span></div>
-            <div className="plan-row"><span>April Comm.</span><span className="tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(rep.commission)}</span></div>
+            <div className="plan-row"><span>{periodLabel} Comm.</span><span className="tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(cm(rep))}</span></div>
           </div>
         </div>
 
@@ -1117,7 +1127,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
 
   // Show compare view when 2 reps selected
   if (compareReps.length === 2) {
-    return <CompareView reps={compareReps} onExit={() => { setCompareMode(false); setCompareReps([]); }} />;
+    return <CompareView reps={compareReps} onExit={() => { setCompareMode(false); setCompareReps([]); }} period={period} />;
   }
 
   return (
@@ -1204,7 +1214,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
         {/* Rep Detail Panel */}
         <div className="rep-detail">
           {selectedRep ? (
-            <RepDetailPanel rep={selectedRep} />
+            <RepDetailPanel rep={selectedRep} period={period} />
           ) : (
             <div className="rep-detail-empty">
               <Icon.Reps />
@@ -1218,11 +1228,15 @@ function RepsView({ onSelectRep, period, setPeriod }) {
 }
 
 // ───────── REP DETAIL PANEL ─────────
-function RepDetailPanel({ rep }) {
+function RepDetailPanel({ rep, period }) {
   const plan = PLANS[rep.plan] || PLANS.Inactive;
+  const periodLabel = period ? period.split(' ')[0] : 'Period';
   const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
   const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const monthsActive = rep.spark ? rep.spark.reduce((mx, v, i) => (v ? i + 1 : mx), 0) : 0;
+  const ytdComm = rep.commissionByMonth ? rep.commissionByMonth.reduce((a, b) => a + (b || 0), 0) : 0;
+  const ytdEarnings = (rep.basePay || 0) * Math.max(1, monthsActive) + ytdComm;
 
   return (
     <div className="rep-detail-content">
@@ -1288,12 +1302,12 @@ function RepDetailPanel({ rep }) {
             <div className="ytd-label">Total Subscriptions</div>
           </div>
           <div className="ytd-card">
-            <div className="ytd-value tab">{fmtMoney(ytdNetNew / 4, { full: true })}</div>
+            <div className="ytd-value tab">{fmtMoney(ytdNetNew / Math.max(1, monthsActive), { full: true })}</div>
             <div className="ytd-label">Monthly Avg</div>
           </div>
           <div className="ytd-card accent">
-            <div className="ytd-value tab">{fmtMoney(rep.earnings * 4, { full: true })}</div>
-            <div className="ytd-label">Est. YTD Earnings</div>
+            <div className="ytd-value tab">{fmtMoney(ytdEarnings, { full: true })}</div>
+            <div className="ytd-label">YTD Earnings</div>
           </div>
         </div>
 
@@ -1314,9 +1328,9 @@ function RepDetailPanel({ rep }) {
         </div>
       </div>
 
-      {/* April Deals */}
+      {/* Subscription detail (static snapshot) */}
       <div className="detail-section">
-        <h3>April Subscriptions ({rep.monthlyDeals ? rep.monthlyDeals[3] : rep.deals})</h3>
+        <h3>Subscription Detail <span style={{ color: 'var(--text-3)', fontWeight: 400, fontSize: 13 }}>(latest snapshot)</span></h3>
         <div className="deals-list">
           {rep.dealsList && rep.dealsList.length > 0 ? (
             <table className="deals-table">
@@ -1645,7 +1659,7 @@ function CommissionsView({ period, setPeriod }) {
           <div className="schedule-card">
             <div className="schedule-date">
               <span className="day">15</span>
-              <span className="month">Apr</span>
+              <span className="month">{monthName}</span>
             </div>
             <div className="schedule-info">
               <div className="schedule-title">Mid-Month Advance</div>
@@ -1657,7 +1671,7 @@ function CommissionsView({ period, setPeriod }) {
           <div className="schedule-card">
             <div className="schedule-date">
               <span className="day">30</span>
-              <span className="month">Apr</span>
+              <span className="month">{monthName}</span>
             </div>
             <div className="schedule-info">
               <div className="schedule-title">End of Month Payout</div>
