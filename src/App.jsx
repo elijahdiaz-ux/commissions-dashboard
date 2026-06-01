@@ -245,7 +245,8 @@ const MONTHLY = [
   { m: 'Jun', deals: 0, gross: 0, netNew: 0, goal: 0.0, commission: 0, earnings: 51683 },
 ];
 
-const MAY_DATA = MONTHLY[4];
+// Latest month with actual data (fallback default for period lookups)
+const MAY_DATA = MONTHLY[MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0)];
 const YTD = {
   deals: 910, gross: 2146594, netNew: 1153641, commission: 51516, earnings: 369410,
 };
@@ -256,20 +257,23 @@ const calcRunRate = () => {
   const commissions = MONTHLY.map(m => m.commission);
   const netNewArr = MONTHLY.map(m => m.netNew);
 
-  // Average monthly commission (run rate)
-  const avgCommission = commissions.reduce((a, b) => a + b, 0) / commissions.length;
+  // Last month WITH data; the forecast rolls forward automatically as months fill in.
+  const LA = MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0);
+  const NEXT = LA + 1;
+  const n = LA + 1; // count of actual months
 
-  // Trend: compare recent months to earlier months
-  const recentAvg = (commissions[2] + commissions[3]) / 2; // Mar + Apr
-  const earlierAvg = (commissions[0] + commissions[1]) / 2; // Jan + Feb
-  const trendPct = ((recentAvg - earlierAvg) / earlierAvg) * 100;
+  // Run-rate averages over ACTUAL months only (ignore empty future months)
+  const avgCommission = commissions.slice(0, n).reduce((a, b) => a + b, 0) / n;
+  const avgNetNew = netNewArr.slice(0, n).reduce((a, b) => a + b, 0) / n;
+
+  // Recent = last 2 actual months; earlier = the 2 before them
+  const recentAvg = LA >= 1 ? (commissions[LA - 1] + commissions[LA]) / 2 : commissions[LA];
+  const earlierAvg = LA >= 3 ? (commissions[LA - 3] + commissions[LA - 2]) / 2 : avgCommission;
+  const trendPct = earlierAvg ? ((recentAvg - earlierAvg) / earlierAvg) * 100 : 0;
 
   // Weighted projection: 60% recent average + 40% overall average
   const projectedCommission = Math.round(recentAvg * 0.6 + avgCommission * 0.4);
-
-  // Net New ARR projection using same method
-  const avgNetNew = netNewArr.reduce((a, b) => a + b, 0) / netNewArr.length;
-  const recentNetNew = (netNewArr[2] + netNewArr[3]) / 2;
+  const recentNetNew = LA >= 1 ? (netNewArr[LA - 1] + netNewArr[LA]) / 2 : netNewArr[LA];
   const projectedNetNew = Math.round(recentNetNew * 0.6 + avgNetNew * 0.4);
 
   // Confidence range: ±15%
@@ -277,7 +281,14 @@ const calcRunRate = () => {
   const projHigh = Math.round(projectedCommission * 1.15);
 
   return {
+    lastActual: LA,
+    nextIndex: NEXT,
+    nextMonthName: (MONTHLY[NEXT] && MONTHLY[NEXT].m) || 'Next',
+    recentMonths: [MONTHLY[LA - 1] && MONTHLY[LA - 1].m, MONTHLY[LA] && MONTHLY[LA].m].filter(Boolean),
+    recentAvg,
+    earlierAvg,
     avgCommission,
+    actualCount: n,
     projectedCommission,
     projLow,
     projHigh,
@@ -289,17 +300,9 @@ const calcRunRate = () => {
 
 const PROJECTION = calcRunRate();
 
-// May pacing config (for mid-month projections)
+// Projection config for the next month (rolls forward off the latest actual month)
 const MAY = {
-  dayOfMonth: 26,
-  daysInMonth: 31,
-  // If we had current month data, we'd calculate:
-  // projectedCommission = (currentCommission / dayOfMonth) * daysInMonth
-  projectedCommission: PROJECTION.projectedCommission,
-  projectedNetNew: PROJECTION.projectedNetNew,
-  projLow: PROJECTION.projLow,
-  projHigh: PROJECTION.projHigh,
-  trendPct: PROJECTION.trendPct,
+  ...PROJECTION,
 };
 
 // ───────── HELPERS ─────────
@@ -461,9 +464,11 @@ function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled =
 
 // ───────── ORBITAL / FORECAST VIZ ─────────
 function ForecastViz() {
-  // Use actual commission data from MONTHLY and run rate projection
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-  const actual = MONTHLY.map(m => m.commission); // [13253, 9071, 11896, 9263]
+  // Actual commission through the last month with data, then the projected next month
+  const LA = MAY.lastActual;   // last actual index (e.g. May = 4)
+  const projIdx = LA + 1;      // x-slot of the projected month
+  const actual = MONTHLY.slice(0, LA + 1).map(m => m.commission);
+  const months = [...MONTHLY.slice(0, LA + 1).map(m => m.m), MAY.nextMonthName];
   const projLow = MAY.projLow;
   const projMid = MAY.projectedCommission;
   const projHigh = MAY.projHigh;
@@ -475,8 +480,8 @@ function ForecastViz() {
   const xFor = (i) => padX + (i * (W - padX * 2)) / (months.length - 1);
   const yFor = (v) => padTop + (H - padTop - padBot) * (1 - (v - minV) / (maxV - minV));
   const actualPath = actual.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)} ${yFor(v)}`).join(' ');
-  const projPath = `M ${xFor(3)} ${yFor(actual[3])} L ${xFor(4)} ${yFor(projMid)}`;
-  const conePath = `M ${xFor(3)} ${yFor(actual[3])} L ${xFor(4)} ${yFor(projHigh)} L ${xFor(4)} ${yFor(projLow)} Z`;
+  const projPath = `M ${xFor(LA)} ${yFor(actual[LA])} L ${xFor(projIdx)} ${yFor(projMid)}`;
+  const conePath = `M ${xFor(LA)} ${yFor(actual[LA])} L ${xFor(projIdx)} ${yFor(projHigh)} L ${xFor(projIdx)} ${yFor(projLow)} Z`;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
@@ -492,7 +497,7 @@ function ForecastViz() {
         </linearGradient>
       </defs>
       {/* Concentric orbital rings behind the May forecast dot */}
-      <g transform={`translate(${xFor(4)} ${yFor(projMid)})`} opacity="0.7">
+      <g transform={`translate(${xFor(projIdx)} ${yFor(projMid)})`} opacity="0.7">
         <circle r="58" fill="url(#orb-glow)" />
         <ellipse rx="50" ry="14" fill="none" stroke="rgba(52, 211, 153,0.18)" strokeWidth="1"/>
         <ellipse rx="42" ry="11" fill="none" stroke="rgba(52, 211, 153,0.22)" strokeWidth="1" transform="rotate(-25)"/>
@@ -537,16 +542,16 @@ function ForecastViz() {
         </g>
       ))}
       {/* May ghost dot */}
-      <circle cx={xFor(4)} cy={yFor(projMid)} r="6" fill="#6EE7B7" style={{ filter: 'drop-shadow(0 0 10px #6EE7B7)' }}/>
-      <circle cx={xFor(4)} cy={yFor(projMid)} r="11" fill="none" stroke="#6EE7B7" strokeWidth="1" opacity="0.4"/>
+      <circle cx={xFor(projIdx)} cy={yFor(projMid)} r="6" fill="#6EE7B7" style={{ filter: 'drop-shadow(0 0 10px #6EE7B7)' }}/>
+      <circle cx={xFor(projIdx)} cy={yFor(projMid)} r="11" fill="none" stroke="#6EE7B7" strokeWidth="1" opacity="0.4"/>
 
       {/* X-axis labels */}
       {months.map((m, i) => (
-        <text key={m} x={xFor(i)} y={H - 10} fontSize="10.5" fill={i === 4 ? '#6EE7B7' : '#6B6F8C'} textAnchor="middle" fontWeight="500" fontFamily="Plus Jakarta Sans">{m}</text>
+        <text key={m} x={xFor(i)} y={H - 10} fontSize="10.5" fill={i === projIdx ? '#6EE7B7' : '#6B6F8C'} textAnchor="middle" fontWeight="500" fontFamily="Plus Jakarta Sans">{m}</text>
       ))}
 
       {/* May value label */}
-      <g transform={`translate(${xFor(4)} ${yFor(projMid) - 16})`}>
+      <g transform={`translate(${xFor(projIdx)} ${yFor(projMid) - 16})`}>
         <rect x="-30" y="-13" width="60" height="18" rx="5" fill="#1E2238" stroke="rgba(52, 211, 153,0.4)"/>
         <text x="0" y="-1" fontSize="10.5" fontWeight="600" fill="#6EE7B7" textAnchor="middle" fontFamily="JetBrains Mono">${(projMid / 1000).toFixed(1)}K</text>
       </g>
@@ -2653,7 +2658,7 @@ function App() {
           {/* Forecast panel */}
           <section className="card forecast">
             <div className="forecast-head">
-              <div className="forecast-title">May <span className="accent">Projection</span></div>
+              <div className="forecast-title">{MAY.nextMonthName} <span className="accent">Projection</span></div>
               <div className="info-btn" onClick={() => setShowMethodology(true)} title="How is this calculated?">
                 <Icon.Info />
               </div>
@@ -2685,11 +2690,8 @@ function App() {
             <div className="mini-chart">
               <div className="mini-chart-label">Commission · YTD + Projection</div>
               <MiniBars data={[
-                { label: 'Jan', v: MONTHLY[0].commission, projected: false },
-                { label: 'Feb', v: MONTHLY[1].commission, projected: false },
-                { label: 'Mar', v: MONTHLY[2].commission, projected: false },
-                { label: 'Apr', v: MONTHLY[3].commission, projected: false },
-                { label: 'May', v: MAY.projectedCommission, projected: true },
+                ...MONTHLY.slice(0, MAY.lastActual + 1).map(m => ({ label: m.m, v: m.commission, projected: false })),
+                { label: MAY.nextMonthName, v: MAY.projectedCommission, projected: true },
               ]}/>
               <button className="cta-pill" onClick={handleGenerateReport} disabled={reportLoading}>
                 {reportLoading ? 'Generating…' : 'Generate payout report'}
@@ -2823,8 +2825,8 @@ function App() {
                   <code>Projected = (Recent Avg × 60%) + (Overall Avg × 40%)</code>
                 </div>
                 <ul>
-                  <li><strong>Recent Avg:</strong> Average of last 2 months (Mar + Apr)</li>
-                  <li><strong>Overall Avg:</strong> Average of all 4 months (Jan-Apr)</li>
+                  <li><strong>Recent Avg:</strong> Average of the last 2 actual months ({MAY.recentMonths.join(' + ')})</li>
+                  <li><strong>Overall Avg:</strong> Average of all {MAY.actualCount} actual months</li>
                   <li><strong>Weighting:</strong> 60/40 split favors recent trends</li>
                 </ul>
               </div>
@@ -2832,22 +2834,12 @@ function App() {
               <div className="method-section">
                 <h4>Current Values</h4>
                 <div className="method-grid">
-                  <div className="method-stat">
-                    <span className="method-label">Jan Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[0].commission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Feb Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[1].commission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Mar Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[2].commission, { full: true })}</span>
-                  </div>
-                  <div className="method-stat">
-                    <span className="method-label">Apr Commission</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY[3].commission, { full: true })}</span>
-                  </div>
+                  {MONTHLY.slice(0, MAY.actualCount).map(m => (
+                    <div className="method-stat" key={m.m}>
+                      <span className="method-label">{m.m} Commission</span>
+                      <span className="method-value tab">{fmtMoney(m.commission, { full: true })}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2855,15 +2847,15 @@ function App() {
                 <h4>Projection Result</h4>
                 <div className="method-grid">
                   <div className="method-stat highlight">
-                    <span className="method-label">Recent Avg (Mar+Apr)</span>
-                    <span className="method-value tab">{fmtMoney((MONTHLY[2].commission + MONTHLY[3].commission) / 2, { full: true })}</span>
+                    <span className="method-label">Recent Avg ({MAY.recentMonths.join('+')})</span>
+                    <span className="method-value tab">{fmtMoney(MAY.recentAvg, { full: true })}</span>
                   </div>
                   <div className="method-stat highlight">
                     <span className="method-label">Overall Avg</span>
-                    <span className="method-value tab">{fmtMoney(MONTHLY.reduce((s, m) => s + m.commission, 0) / 4, { full: true })}</span>
+                    <span className="method-value tab">{fmtMoney(MAY.avgCommission, { full: true })}</span>
                   </div>
                   <div className="method-stat accent">
-                    <span className="method-label">May Projection</span>
+                    <span className="method-label">{MAY.nextMonthName} Projection</span>
                     <span className="method-value tab">{fmtMoney(MAY.projectedCommission, { full: true })}</span>
                   </div>
                   <div className="method-stat">
