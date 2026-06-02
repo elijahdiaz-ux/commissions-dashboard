@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import qaData from './qaData.json';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -906,6 +907,7 @@ function Sidebar({ activeTab, setActiveTab }) {
     ['Reps', Icon.Reps],
     ['Commissions', Icon.Commission],
     ['Reports', Icon.Reports],
+    ['Data', Icon.ChartBar],
     ['Notifications', Icon.Notify],
   ];
   return (
@@ -2382,6 +2384,138 @@ const METRIC_INFO = {
   },
 };
 
+// ───────── DATA QA TAB ─────────
+// Renders the cleaned Zuora data (rep rows only) + data-quality findings.
+// Data comes from qaData.json, generated from the 'Cleaned Zuora DATA' tab.
+function DataQAView() {
+  const { columns, rows, findings, perRep, summary, source } = qaData;
+  const moneyCols = new Set(qaData.moneyCols || []);
+  const repIdx = columns.indexOf('Sales Rep');
+  const [q, setQ] = useState('');
+  const [repFilter, setRepFilter] = useState('All');
+
+  const reps = useMemo(
+    () => ['All', ...Array.from(new Set(rows.map(r => String(r[repIdx])))).sort()],
+    [rows, repIdx]);
+  const filtered = useMemo(() => rows.filter(r => {
+    if (repFilter !== 'All' && String(r[repIdx]) !== repFilter) return false;
+    if (q && !r.join(' ').toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  }), [rows, repFilter, q, repIdx]);
+  const shown = filtered.slice(0, 500);
+
+  const sevColor = { HIGH: '#C0392B', MED: '#B8860B', LOW: '#6B7785' };
+  const fmt = (col, v) => (moneyCols.has(col) && typeof v === 'number')
+    ? '$' + v.toLocaleString() : (v === '' || v === null ? '—' : v);
+  const th = { position: 'sticky', top: 0, background: '#0F2A43', color: '#fff',
+    padding: '8px 10px', textAlign: 'left', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 600, zIndex: 1 };
+  const td = { padding: '6px 10px', fontSize: 11.5, borderBottom: '1px solid #E6ECF1', whiteSpace: 'nowrap' };
+  const inputStyle = { padding: '7px 10px', borderRadius: 8, border: '1px solid #CBD5E0', fontSize: 12 };
+
+  return (
+    <main className="main">
+      <div className="topbar">
+        <div>
+          <h1 className="page-title">Data QA</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+            Source: {source}  ·  {summary.rows.toLocaleString()} rep rows  ·  {summary.reps} reps  ·  {summary.excludedNoRep} unassigned rows excluded
+          </div>
+        </div>
+      </div>
+
+      {/* Summary tiles */}
+      <div className="metrics-grid" style={{ marginBottom: 20 }}>
+        {[['Rows', summary.rows.toLocaleString()], ['Reps', summary.reps],
+          ['Accounts', summary.accounts], ['QA Findings', summary.findings]].map(([l, v]) => (
+          <div className="metric-tile" key={l}>
+            <div className="metric-content">
+              <div className="metric-value tab">{v}</div>
+              <div className="metric-label">{l}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Findings */}
+      <section className="card" style={{ marginBottom: 20 }}>
+        <div className="card-head"><div><div className="card-title">Data Quality Findings</div>
+          <div className="card-sub">{findings.length} checks flagged on the cleaned data</div></div></div>
+        <div className="card-body" style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={th}>Severity</th><th style={th}>Check</th><th style={th}>Detail</th></tr></thead>
+            <tbody>
+              {findings.map((f, i) => (
+                <tr key={i}>
+                  <td style={td}><span style={{ color: '#fff', background: sevColor[f.severity] || '#6B7785',
+                    padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700 }}>{f.severity}</span></td>
+                  <td style={{ ...td, fontWeight: 600 }}>{f.check}</td>
+                  <td style={{ ...td, color: '#5B6B77', whiteSpace: 'normal' }}>{f.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Per-rep */}
+      <section className="card" style={{ marginBottom: 20 }}>
+        <div className="card-head"><div className="card-title">By Rep</div></div>
+        <div className="card-body" style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={th}>Rep</th><th style={th}>Role</th>
+              <th style={{ ...th, textAlign: 'right' }}>Rows</th>
+              <th style={{ ...th, textAlign: 'right' }}>Total Subscription Delta</th></tr></thead>
+            <tbody>
+              {perRep.map((p, i) => (
+                <tr key={i}>
+                  <td style={{ ...td, fontWeight: 600 }}>{p.rep}</td>
+                  <td style={td}>{p.role}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{p.rows}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>${p.totalDelta.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Records */}
+      <section className="card">
+        <div className="card-head">
+          <div className="card-title">Records</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <select value={repFilter} onChange={e => setRepFilter(e.target.value)} style={inputStyle}>
+              {reps.map(r => <option key={r} value={r}>{r === 'All' ? 'All reps' : r}</option>)}
+            </select>
+            <input placeholder="Search records…" value={q} onChange={e => setQ(e.target.value)}
+              style={{ ...inputStyle, width: 200 }} />
+          </div>
+        </div>
+        <div style={{ overflow: 'auto', maxHeight: 540, border: '1px solid #E6ECF1', borderRadius: 8 }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <thead><tr>{columns.map(c => <th key={c} style={th}>{c}</th>)}</tr></thead>
+            <tbody>
+              {shown.map((row, ri) => (
+                <tr key={ri} style={{ background: ri % 2 ? '#F6F9FB' : '#fff' }}>
+                  {row.map((v, ci) => (
+                    <td key={ci} style={{ ...td, textAlign: moneyCols.has(columns[ci]) ? 'right' : 'left' }}>
+                      {fmt(columns[ci], v)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ fontSize: 12, color: '#5B6B77', marginTop: 10 }}>
+          Showing {shown.length.toLocaleString()} of {filtered.length.toLocaleString()} rows
+          {filtered.length > shown.length ? ' — filter by rep to narrow the full set.' : '.'}
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [activeRep, setActiveRep] = useState(null);
@@ -2519,6 +2653,8 @@ function App() {
         <CommissionsView period={period} setPeriod={setPeriod} />
       ) : activeTab === 'Reports' ? (
         <ReportsView period={period} setPeriod={setPeriod} />
+      ) : activeTab === 'Data' ? (
+        <DataQAView />
       ) : (
       <main className="main">
         {/* Topbar */}
