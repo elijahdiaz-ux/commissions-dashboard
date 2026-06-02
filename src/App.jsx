@@ -2436,26 +2436,6 @@ function DataQAView() {
         ))}
       </div>
 
-      {/* Findings */}
-      <section className="card" style={{ marginBottom: 20 }}>
-        <div className="card-head"><div><div className="card-title">Data Quality Findings</div>
-          <div className="card-sub">{findings.length} checks flagged on the cleaned data</div></div></div>
-        <div className="card-body" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={th}>Severity</th><th style={th}>Check</th><th style={th}>Detail</th></tr></thead>
-            <tbody>
-              {findings.map((f, i) => (
-                <tr key={i}>
-                  <td style={td}><span style={{ color: '#fff', background: sevColor[f.severity] || '#6B7785',
-                    padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700 }}>{f.severity}</span></td>
-                  <td style={{ ...td, fontWeight: 600 }}>{f.check}</td>
-                  <td style={{ ...td, color: '#5B6B77', whiteSpace: 'normal' }}>{f.detail}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       {/* Per-rep */}
       <section className="card" style={{ marginBottom: 20 }}>
