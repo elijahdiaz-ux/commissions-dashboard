@@ -2716,16 +2716,6 @@ function App() {
                 </div>
               )}
             </div>
-            <div className="search">
-              <Icon.Search/>
-              <input
-                placeholder="Search reps, subscriptions, accounts..."
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-              />
-              {query && <span style={{ cursor: 'pointer', color: 'var(--text-3)', fontSize: 11 }} onClick={() => setQuery('')}>clear</span>}
-            </div>
-            <div className="icon-btn" title="Calendar" onClick={() => pushToast('Calendar view', 'Switch to month-by-month calendar (coming soon)')}><Icon.Cal/></div>
           </div>
         </div>
 
