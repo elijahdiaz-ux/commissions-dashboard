@@ -2388,7 +2388,7 @@ const METRIC_INFO = {
 // Renders the cleaned Zuora data (rep rows only) + data-quality findings.
 // Data comes from qaData.json, generated from the 'Cleaned Zuora DATA' tab.
 function DataQAView() {
-  const { columns, rows, findings, perRep, summary, source } = qaData;
+  const { columns, rows } = qaData;
   const moneyCols = new Set(qaData.moneyCols || []);
   const repIdx = columns.indexOf('Sales Rep');
   const [q, setQ] = useState('');
@@ -2404,92 +2404,90 @@ function DataQAView() {
   }), [rows, repFilter, q, repIdx]);
   const shown = filtered.slice(0, 500);
 
-  const sevColor = { HIGH: '#C0392B', MED: '#B8860B', LOW: '#6B7785' };
   const fmt = (col, v) => (moneyCols.has(col) && typeof v === 'number')
     ? '$' + v.toLocaleString() : (v === '' || v === null ? '—' : v);
-  const th = { position: 'sticky', top: 0, background: '#0F2A43', color: '#fff',
-    padding: '8px 10px', textAlign: 'left', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 600, zIndex: 1 };
-  const td = { padding: '6px 10px', fontSize: 11.5, borderBottom: '1px solid #E6ECF1', whiteSpace: 'nowrap' };
-  const inputStyle = { padding: '7px 10px', borderRadius: 8, border: '1px solid #CBD5E0', fontSize: 12 };
+  // Dark theme to match the dashboard
+  const th = { position: 'sticky', top: 0, background: 'var(--card-3)', color: 'var(--text-2)',
+    padding: '9px 12px', textAlign: 'left', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 600,
+    borderBottom: '1px solid rgba(255,255,255,0.08)', zIndex: 1 };
+  const td = { padding: '7px 12px', fontSize: 12, color: 'var(--text)',
+    borderBottom: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'nowrap' };
+  const ctrl = { padding: '8px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
+    background: 'var(--card-2)', color: 'var(--text)', fontSize: 12, outline: 'none' };
+
+  // Export the (filtered) records to a print-ready PDF, matching the dashboard's export style
+  const exportPDF = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const head = columns.map(c => `<th>${c}</th>`).join('');
+    const rowsHtml = filtered.map(r => '<tr>' + r.map((v, ci) => {
+      const money = moneyCols.has(columns[ci]) && typeof v === 'number';
+      const val = money ? '$' + v.toLocaleString() : (v === '' || v == null ? '' : String(v));
+      return `<td class="${money ? 'num' : ''}">${val}</td>`;
+    }).join('') + '</tr>').join('');
+    w.document.write(`<!DOCTYPE html><html><head><title>Data Records${repFilter !== 'All' ? ' - ' + repFilter : ''}</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:Arial,Helvetica,sans-serif;padding:26px;color:#1a1a1a}
+        .header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0F2A43;padding-bottom:12px;margin-bottom:16px}
+        .logo{font-size:19px;font-weight:700;color:#0F2A43}
+        .title{font-size:13px;font-weight:600;margin-top:3px;color:#333}
+        .meta{font-size:11px;color:#666;text-align:right}
+        table{width:100%;border-collapse:collapse;font-size:8.5px}
+        th{text-align:left;padding:5px 6px;background:#0F2A43;color:#fff;font-size:8px;white-space:nowrap}
+        td{padding:4px 6px;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+        tr:nth-child(even){background:#f4f7f9}
+        .num{text-align:right}
+        @media print{tr{page-break-inside:avoid}thead{display:table-header-group}}
+        @page{size:landscape;margin:11mm}
+      </style></head><body>
+      <div class="header">
+        <div><div class="logo">Amazing Life Foundation</div>
+        <div class="title">Data Records - Cleaned Zuora Data${repFilter !== 'All' ? ' &middot; ' + repFilter : ''}</div></div>
+        <div class="meta"><div>${filtered.length.toLocaleString()} rows</div><div>Generated ${new Date().toLocaleString()}</div></div>
+      </div>
+      <table><thead><tr>${head}</tr></thead><tbody>${rowsHtml}</tbody></table>
+    </body></html>`);
+    w.document.close(); w.focus();
+    setTimeout(() => w.print(), 300);
+  };
 
   return (
     <main className="main">
       <div className="topbar">
-        <div>
-          <h1 className="page-title">Data QA</h1>
-          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            Source: {source}  ·  {summary.rows.toLocaleString()} rep rows  ·  {summary.reps} reps  ·  {summary.excludedNoRep} unassigned rows excluded
-          </div>
+        <div><h1 className="page-title">Data</h1></div>
+        <div className="topbar-actions">
+          <button className="export-btn" onClick={exportPDF}><Icon.Reports/> Export to PDF</button>
         </div>
       </div>
 
-      {/* Summary tiles */}
-      <div className="metrics-grid" style={{ marginBottom: 20 }}>
-        {[['Rows', summary.rows.toLocaleString()], ['Reps', summary.reps],
-          ['Accounts', summary.accounts], ['QA Findings', summary.findings]].map(([l, v]) => (
-          <div className="metric-tile" key={l}>
-            <div className="metric-content">
-              <div className="metric-value tab">{v}</div>
-              <div className="metric-label">{l}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-
-      {/* Per-rep */}
-      <section className="card" style={{ marginBottom: 20 }}>
-        <div className="card-head"><div className="card-title">By Rep</div></div>
-        <div className="card-body" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={th}>Rep</th><th style={th}>Role</th>
-              <th style={{ ...th, textAlign: 'right' }}>Rows</th>
-              <th style={{ ...th, textAlign: 'right' }}>Total Subscription Delta</th></tr></thead>
-            <tbody>
-              {perRep.map((p, i) => (
-                <tr key={i}>
-                  <td style={{ ...td, fontWeight: 600 }}>{p.rep}</td>
-                  <td style={td}>{p.role}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>{p.rows}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>${p.totalDelta.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Records */}
       <section className="card">
         <div className="card-head">
           <div className="card-title">Records</div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <select value={repFilter} onChange={e => setRepFilter(e.target.value)} style={inputStyle}>
-              {reps.map(r => <option key={r} value={r}>{r === 'All' ? 'All reps' : r}</option>)}
+            <select value={repFilter} onChange={e => setRepFilter(e.target.value)} style={ctrl}>
+              {reps.map(r => <option key={r} value={r} style={{ color: '#111' }}>{r === 'All' ? 'All reps' : r}</option>)}
             </select>
-            <input placeholder="Search records…" value={q} onChange={e => setQ(e.target.value)}
-              style={{ ...inputStyle, width: 200 }} />
+            <input placeholder="Search records…" value={q} onChange={e => setQ(e.target.value)} style={{ ...ctrl, width: 200 }} />
           </div>
         </div>
-        <div style={{ overflow: 'auto', maxHeight: 540, border: '1px solid #E6ECF1', borderRadius: 8 }}>
+        <div style={{ overflow: 'auto', maxHeight: 560, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
           <table style={{ borderCollapse: 'collapse', width: '100%' }}>
             <thead><tr>{columns.map(c => <th key={c} style={th}>{c}</th>)}</tr></thead>
             <tbody>
               {shown.map((row, ri) => (
-                <tr key={ri} style={{ background: ri % 2 ? '#F6F9FB' : '#fff' }}>
+                <tr key={ri} style={{ background: ri % 2 ? 'var(--card-2)' : 'transparent' }}>
                   {row.map((v, ci) => (
-                    <td key={ci} style={{ ...td, textAlign: moneyCols.has(columns[ci]) ? 'right' : 'left' }}>
-                      {fmt(columns[ci], v)}
-                    </td>
+                    <td key={ci} style={{ ...td, textAlign: moneyCols.has(columns[ci]) ? 'right' : 'left' }}>{fmt(columns[ci], v)}</td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div style={{ fontSize: 12, color: '#5B6B77', marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 10 }}>
           Showing {shown.length.toLocaleString()} of {filtered.length.toLocaleString()} rows
-          {filtered.length > shown.length ? ' — filter by rep to narrow the full set.' : '.'}
+          {filtered.length > shown.length ? ' — filter by rep to narrow (Export includes all filtered rows).' : '.'}
         </div>
       </section>
     </main>
