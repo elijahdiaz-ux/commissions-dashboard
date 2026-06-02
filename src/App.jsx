@@ -2390,32 +2390,59 @@ const METRIC_INFO = {
 function DataQAView() {
   const { columns, rows } = qaData;
   const moneyCols = new Set(qaData.moneyCols || []);
-  const repIdx = columns.indexOf('Sales Rep');
   const [q, setQ] = useState('');
-  const [repFilter, setRepFilter] = useState('All');
+  const [colFilters, setColFilters] = useState({});
+  const [sortCol, setSortCol] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
 
-  const reps = useMemo(
-    () => ['All', ...Array.from(new Set(rows.map(r => String(r[repIdx])))).sort()],
-    [rows, repIdx]);
-  const filtered = useMemo(() => rows.filter(r => {
-    if (repFilter !== 'All' && String(r[repIdx]) !== repFilter) return false;
-    if (q && !r.join(' ').toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  }), [rows, repFilter, q, repIdx]);
+  const filtered = useMemo(() => {
+    let out = rows.filter(r => {
+      if (q && !r.join(' ').toLowerCase().includes(q.toLowerCase())) return false;
+      for (const ci in colFilters) {
+        const f = (colFilters[ci] || '').trim().toLowerCase();
+        if (f && !String(r[ci] ?? '').toLowerCase().includes(f)) return false;
+      }
+      return true;
+    });
+    if (sortCol != null) {
+      out = [...out].sort((a, b) => {
+        const av = a[sortCol], bv = b[sortCol];
+        if (typeof av === 'number' && typeof bv === 'number') return sortDir === 'asc' ? av - bv : bv - av;
+        const as = String(av ?? ''), bs = String(bv ?? '');
+        return sortDir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as);
+      });
+    }
+    return out;
+  }, [rows, q, colFilters, sortCol, sortDir]);
   const shown = filtered.slice(0, 500);
+  const anyFilter = q || sortCol != null || Object.values(colFilters).some(v => v && v.trim());
+  // Column totals over the filtered set (money columns only)
+  const totals = useMemo(() => columns.map((c, ci) =>
+    moneyCols.has(c) ? filtered.reduce((s, r) => s + (typeof r[ci] === 'number' ? r[ci] : 0), 0) : null
+  ), [filtered, columns]);
+
+  const toggleSort = (ci) => {
+    if (sortCol === ci) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortCol(ci); setSortDir('asc'); }
+  };
+  const clearFilters = () => { setColFilters({}); setQ(''); setSortCol(null); };
 
   const fmt = (col, v) => (moneyCols.has(col) && typeof v === 'number')
     ? '$' + v.toLocaleString() : (v === '' || v === null ? '—' : v);
   // Dark theme to match the dashboard
   const th = { position: 'sticky', top: 0, background: 'var(--card-3)', color: 'var(--text-2)',
-    padding: '9px 12px', textAlign: 'left', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 600,
-    borderBottom: '1px solid rgba(255,255,255,0.08)', zIndex: 1 };
+    padding: '8px 12px', textAlign: 'left', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 600,
+    borderBottom: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', userSelect: 'none', zIndex: 2 };
+  const thFilter = { position: 'sticky', top: 33, background: 'var(--card-2)', padding: '4px 6px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)', zIndex: 2 };
+  const filterInput = { width: '100%', minWidth: 64, padding: '4px 6px', fontSize: 11, borderRadius: 5,
+    border: '1px solid rgba(255,255,255,0.12)', background: 'var(--card-3)', color: 'var(--text)', outline: 'none' };
   const td = { padding: '7px 12px', fontSize: 12, color: 'var(--text)',
     borderBottom: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'nowrap' };
   const ctrl = { padding: '8px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
     background: 'var(--card-2)', color: 'var(--text)', fontSize: 12, outline: 'none' };
 
-  // Export the (filtered) records to a print-ready PDF, matching the dashboard's export style
+  // Export the (filtered + sorted) records to a print-ready PDF
   const exportPDF = () => {
     const w = window.open('', '_blank');
     if (!w) return;
@@ -2425,7 +2452,7 @@ function DataQAView() {
       const val = money ? '$' + v.toLocaleString() : (v === '' || v == null ? '' : String(v));
       return `<td class="${money ? 'num' : ''}">${val}</td>`;
     }).join('') + '</tr>').join('');
-    w.document.write(`<!DOCTYPE html><html><head><title>Data Records${repFilter !== 'All' ? ' - ' + repFilter : ''}</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>Data Records</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:Arial,Helvetica,sans-serif;padding:26px;color:#1a1a1a}
@@ -2443,7 +2470,7 @@ function DataQAView() {
       </style></head><body>
       <div class="header">
         <div><div class="logo">Amazing Life Foundation</div>
-        <div class="title">Data Records - Cleaned Zuora Data${repFilter !== 'All' ? ' &middot; ' + repFilter : ''}</div></div>
+        <div class="title">Data Records - Cleaned Zuora Data</div></div>
         <div class="meta"><div>${filtered.length.toLocaleString()} rows</div><div>Generated ${new Date().toLocaleString()}</div></div>
       </div>
       <table><thead><tr>${head}</tr></thead><tbody>${rowsHtml}</tbody></table>
@@ -2464,16 +2491,31 @@ function DataQAView() {
       <section className="card">
         <div className="card-head">
           <div className="card-title">Records</div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <select value={repFilter} onChange={e => setRepFilter(e.target.value)} style={ctrl}>
-              {reps.map(r => <option key={r} value={r} style={{ color: '#111' }}>{r === 'All' ? 'All reps' : r}</option>)}
-            </select>
-            <input placeholder="Search records…" value={q} onChange={e => setQ(e.target.value)} style={{ ...ctrl, width: 200 }} />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {anyFilter && <button onClick={clearFilters} style={{ ...ctrl, cursor: 'pointer' }}>Clear filters</button>}
+            <input placeholder="Search all columns…" value={q} onChange={e => setQ(e.target.value)} style={{ ...ctrl, width: 200 }} />
           </div>
         </div>
         <div style={{ overflow: 'auto', maxHeight: 560, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
           <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead><tr>{columns.map(c => <th key={c} style={th}>{c}</th>)}</tr></thead>
+            <thead>
+              <tr>
+                {columns.map((c, ci) => (
+                  <th key={c} style={th} onClick={() => toggleSort(ci)} title="Click to sort">
+                    {c}{sortCol === ci ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                  </th>
+                ))}
+              </tr>
+              <tr>
+                {columns.map((c, ci) => (
+                  <th key={c} style={thFilter}>
+                    <input value={colFilters[ci] || ''} placeholder="filter"
+                      onChange={e => setColFilters(f => ({ ...f, [ci]: e.target.value }))}
+                      style={filterInput} />
+                  </th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
               {shown.map((row, ri) => (
                 <tr key={ri} style={{ background: ri % 2 ? 'var(--card-2)' : 'transparent' }}>
@@ -2483,11 +2525,24 @@ function DataQAView() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                {columns.map((c, ci) => (
+                  <td key={c} style={{ position: 'sticky', bottom: 0, background: 'var(--card-3)', color: 'var(--accent)',
+                    fontWeight: 700, fontSize: 12, padding: '9px 12px', borderTop: '2px solid rgba(255,255,255,0.14)',
+                    whiteSpace: 'nowrap', textAlign: moneyCols.has(c) ? 'right' : 'left', zIndex: 1 }}>
+                    {ci === 0 ? `Totals · ${filtered.length.toLocaleString()} rows`
+                      : (totals[ci] != null ? '$' + Math.round(totals[ci]).toLocaleString() : '')}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
           </table>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 10 }}>
           Showing {shown.length.toLocaleString()} of {filtered.length.toLocaleString()} rows
-          {filtered.length > shown.length ? ' — filter by rep to narrow (Export includes all filtered rows).' : '.'}
+          {filtered.length > shown.length ? ' — use the column filters / search to narrow (Export includes all filtered rows).' : '.'}
+          {'  '}Click a header to sort.
         </div>
       </section>
     </main>
