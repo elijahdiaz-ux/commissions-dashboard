@@ -745,14 +745,12 @@ function RepDrawer({ rep, onClose, period }) {
   // Period-aware values: selected month, or the aggregate for Q1 / YTD
   const periodDeals  = mi !== undefined ? (rep.monthlyDeals?.[mi] ?? 0) : (rep.monthlyDeals ? sumArr(rep.monthlyDeals) : rep.deals);
   const periodNetNew = mi !== undefined ? (rep.spark?.[mi] ?? 0)        : (rep.spark ? sumArr(rep.spark) : rep.netNew);
-  const basePay = rep.basePay || 0;
   const commissionEarned = mi !== undefined ? (rep.commissionByMonth?.[mi] ?? 0) : sumArr(rep.commissionByMonth);
-  const periodEarn = basePay + commissionEarned;
-  // Real earnings trend = base pay + actual commission per month (no fabricated multipliers)
+  // Commission per month (actual)
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  const monthlyEarn = (rep.commissionByMonth || []).map((c, i) => ({
+  const commissionTrend = (rep.commissionByMonth || []).map((c, i) => ({
     label: MONTHS[i] + (i === mi ? ' ▴' : ''),
-    v: basePay + (c || 0),
+    v: c || 0,
     projected: false,
   }));
   return (
@@ -833,34 +831,26 @@ function RepDrawer({ rep, onClose, period }) {
               <div className="sub">earned this period</div>
             </div>
             <div className="scorecard-cell">
-              <div className="lbl">{periodLabel} earnings</div>
-              <div className="val tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(periodEarn, { full: true })}</div>
-              <div className="sub">{periodEarn > 0 ? 'base + commission' : 'no payout'}</div>
+              <div className="lbl">Attainment</div>
+              <div className="val tab" style={{ color: 'var(--accent-3)' }}>{goalPct.toFixed(1)}%</div>
+              <div className="sub">of quota</div>
             </div>
           </div>
         </div>
 
         <div className="drawer-section">
-          <h4>Earnings Trend</h4>
+          <h4>Commission Trend</h4>
           <div className="trend-block">
-            <MiniBars data={monthlyEarn}/>
+            <MiniBars data={commissionTrend}/>
           </div>
         </div>
 
         <div className="drawer-section">
-          <h4>{periodLabel} Payout Breakdown</h4>
+          <h4>{periodLabel} Commission</h4>
           <div>
-            <div className="pay-strip">
-              <span className="key">Base Pay</span>
-              <span className="val tab">{fmtMoney(basePay, { full: true })}</span>
-            </div>
             <div className="pay-strip">
               <span className="key">Commission</span>
               <span className="val tab">{fmtMoney(commissionEarned, { full: true })}</span>
-            </div>
-            <div className="pay-strip total">
-              <span className="key">Total Earnings</span>
-              <span className="val tab">{fmtMoney(periodEarn, { full: true })}</span>
             </div>
             <div className="pay-strip">
               <span className="key">Spiff</span>
@@ -1014,7 +1004,6 @@ function CompareView({ reps, onExit, period }) {
           <div className="compare-plan-info">
             <div className="plan-row"><span>Plan</span><span>{plan.name}</span></div>
             <div className="plan-row"><span>Quota</span><span className="tab">{fmtMoney(plan.quota)} / {plan.type === 'Monthly' ? 'mo' : 'qtr'}</span></div>
-            <div className="plan-row"><span>Base Pay</span><span className="tab">{fmtMoney(rep.basePay)} / mo</span></div>
             <div className="plan-row"><span>{periodLabel} Comm.</span><span className="tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(cm(rep))}</span></div>
           </div>
         </div>
@@ -1280,10 +1269,6 @@ function RepDetailPanel({ rep, period }) {
             <span className="plan-info-label">Annual Quota</span>
             <span className="plan-info-value tab">{fmtMoney(plan.annualQuota, { full: true })}</span>
           </div>
-          <div className="plan-info-row">
-            <span className="plan-info-label">Base Pay</span>
-            <span className="plan-info-value tab">{fmtMoney(rep.basePay, { full: true })} / month</span>
-          </div>
           <div className="plan-tiers">
             <span className="plan-info-label">Commission Tiers</span>
             <div className="tier-list">
@@ -1316,8 +1301,8 @@ function RepDetailPanel({ rep, period }) {
             <div className="ytd-label">Monthly Avg</div>
           </div>
           <div className="ytd-card accent">
-            <div className="ytd-value tab">{fmtMoney(ytdEarnings, { full: true })}</div>
-            <div className="ytd-label">YTD Earnings</div>
+            <div className="ytd-value tab">{fmtMoney(ytdComm, { full: true })}</div>
+            <div className="ytd-label">YTD Commission</div>
           </div>
         </div>
 
@@ -1461,16 +1446,16 @@ function CommissionsView({ period, setPeriod }) {
           </div>
           <div class="summary">
             <div class="summary-card">
-              <div class="summary-label">Total Payroll</div>
-              <div class="summary-value">${fmtMoney(totalEarnings, { full: true })}</div>
-            </div>
-            <div class="summary-card">
-              <div class="summary-label">Commission</div>
+              <div class="summary-label">Total Commission</div>
               <div class="summary-value">${fmtMoney(totalCommissions, { full: true })}</div>
             </div>
             <div class="summary-card">
-              <div class="summary-label">Base Salary</div>
-              <div class="summary-value">${fmtMoney(totalBasePay, { full: true })}</div>
+              <div class="summary-label">Reps Earning</div>
+              <div class="summary-value">${activeReps.filter(r => getRepCommission(r) > 0).length}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Avg Commission</div>
+              <div class="summary-value">${fmtMoney(Math.round(totalCommissions / Math.max(1, activeReps.filter(r => getRepCommission(r) > 0).length)), { full: true })}</div>
             </div>
             <div class="summary-card">
               <div class="summary-label">Active Reps</div>
@@ -1485,15 +1470,12 @@ function CommissionsView({ period, setPeriod }) {
                 <th>Plan</th>
                 <th>Net New</th>
                 <th>Commission</th>
-                <th>Base</th>
-                <th>Total</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               ${activeReps.map(rep => {
                 const commission = getRepCommission(rep);
-                const total = commission + rep.basePay;
                 const netNew = monthIdx !== undefined ? rep.spark[monthIdx] : rep.netNew;
                 const status = payoutStatus[rep.name] || 'pending';
                 return `<tr>
@@ -1502,8 +1484,6 @@ function CommissionsView({ period, setPeriod }) {
                   <td>Plan ${rep.plan}</td>
                   <td class="mono">${fmtMoney(netNew, { full: true })}</td>
                   <td class="mono">${fmtMoney(commission, { full: true })}</td>
-                  <td class="mono">${fmtMoney(rep.basePay, { full: true })}</td>
-                  <td class="mono" style="font-weight: 600">${fmtMoney(total, { full: true })}</td>
                   <td class="${status}">${status === 'approved' ? '✓ Approved' : '○ Pending'}</td>
                 </tr>`;
               }).join('')}
@@ -1556,15 +1536,6 @@ function CommissionsView({ period, setPeriod }) {
       {/* Payout Summary Cards */}
       <div className="payout-summary">
         <div className="payout-card">
-          <div className="payout-icon" style={{ background: 'rgba(52, 211, 153, 0.15)' }}>
-            <Icon.Coin />
-          </div>
-          <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(totalEarnings, { full: true })}</div>
-            <div className="payout-label">Total Payroll</div>
-          </div>
-        </div>
-        <div className="payout-card">
           <div className="payout-icon" style={{ background: 'rgba(251, 191, 36, 0.15)' }}>
             <Icon.Spark />
           </div>
@@ -1574,21 +1545,21 @@ function CommissionsView({ period, setPeriod }) {
           </div>
         </div>
         <div className="payout-card">
-          <div className="payout-icon" style={{ background: 'rgba(99, 102, 241, 0.15)' }}>
+          <div className="payout-icon" style={{ background: 'rgba(52, 211, 153, 0.15)' }}>
             <Icon.Reps />
           </div>
           <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(totalBasePay, { full: true })}</div>
-            <div className="payout-label">Total Base Salary</div>
+            <div className="payout-value tab">{activeReps.filter(r => getRepCommission(r) > 0).length}</div>
+            <div className="payout-label">Reps Earning Commission</div>
           </div>
         </div>
         <div className="payout-card">
-          <div className="payout-icon" style={{ background: 'rgba(244, 114, 182, 0.15)' }}>
-            <Icon.Cal />
+          <div className="payout-icon" style={{ background: 'rgba(99, 102, 241, 0.15)' }}>
+            <Icon.Coin />
           </div>
           <div className="payout-info">
-            <div className="payout-value tab">{fmtMoney(midMonthPayout, { full: true })}</div>
-            <div className="payout-label">Mid-Month Advance (15th)</div>
+            <div className="payout-value tab">{fmtMoney(Math.round(totalCommissions / Math.max(1, activeReps.filter(r => getRepCommission(r) > 0).length)), { full: true })}</div>
+            <div className="payout-label">Avg Commission / Earning Rep</div>
           </div>
         </div>
       </div>
@@ -1608,9 +1579,7 @@ function CommissionsView({ period, setPeriod }) {
               <th>Rep</th>
               <th>Role</th>
               <th>Plan</th>
-              <th style={{ textAlign: 'right' }}>Base Salary</th>
               <th style={{ textAlign: 'right' }}>Commission</th>
-              <th style={{ textAlign: 'right' }}>Total Payout</th>
               <th style={{ textAlign: 'center' }}>Status</th>
               <th style={{ textAlign: 'center' }}>Action</th>
             </tr>
@@ -1620,7 +1589,6 @@ function CommissionsView({ period, setPeriod }) {
               const plan = PLANS[rep.plan] || PLANS.Inactive;
               const status = getStatus(rep.name);
               const commission = getRepCommission(rep);
-              const earnings = getRepEarnings(rep);
               return (
                 <tr key={rep.name} className={status === 'approved' ? 'approved' : ''}>
                   <td>
@@ -1633,9 +1601,7 @@ function CommissionsView({ period, setPeriod }) {
                   </td>
                   <td><span className="role-chip">{rep.role}</span></td>
                   <td><span className="plan-chip-sm">{plan.name.split('—')[0].trim()}</span></td>
-                  <td style={{ textAlign: 'right' }} className="tab">{fmtMoney(rep.basePay, { full: true })}</td>
                   <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(commission, { full: true })}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600 }} className="tab">{fmtMoney(earnings, { full: true })}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span className={'status-badge ' + status}>{status === 'approved' ? 'Approved' : 'Pending'}</span>
                   </td>
@@ -1651,46 +1617,11 @@ function CommissionsView({ period, setPeriod }) {
           <tfoot>
             <tr>
               <td colSpan="3"><strong>TOTALS</strong></td>
-              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalBasePay, { full: true })}</strong></td>
               <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommissions, { full: true })}</strong></td>
-              <td style={{ textAlign: 'right' }} className="tab"><strong>{fmtMoney(totalEarnings, { full: true })}</strong></td>
               <td colSpan="2"></td>
             </tr>
           </tfoot>
         </table>
-      </div>
-
-      {/* Payment Schedule */}
-      <div className="payout-section">
-        <div className="section-header">
-          <h2>Payment Schedule</h2>
-        </div>
-        <div className="schedule-grid">
-          <div className="schedule-card">
-            <div className="schedule-date">
-              <span className="day">15</span>
-              <span className="month">{monthName}</span>
-            </div>
-            <div className="schedule-info">
-              <div className="schedule-title">Mid-Month Advance</div>
-              <div className="schedule-amount tab">{fmtMoney(midMonthPayout, { full: true })}</div>
-              <div className="schedule-desc">50% of base salary for all active reps</div>
-            </div>
-            <span className="schedule-status paid">Paid</span>
-          </div>
-          <div className="schedule-card">
-            <div className="schedule-date">
-              <span className="day">30</span>
-              <span className="month">{monthName}</span>
-            </div>
-            <div className="schedule-info">
-              <div className="schedule-title">End of Month Payout</div>
-              <div className="schedule-amount tab">{fmtMoney(totalEarnings - midMonthPayout, { full: true })}</div>
-              <div className="schedule-desc">Remaining base + all commissions</div>
-            </div>
-            <span className="schedule-status pending">Pending</span>
-          </div>
-        </div>
       </div>
 
       {/* Commission Breakdown by Plan */}
@@ -2594,7 +2525,7 @@ function App() {
     setReportLoading(true);
     setTimeout(() => {
       setReportLoading(false);
-      pushToast('Payout report generated', `${period} · ${REPS.filter(r => r.earnings > 0).length} reps · ${fmtMoney(periodData.earnings, { full: true })} · sent to elijah.diaz@amazinglife.com`);
+      pushToast('Commission report generated', `${period} · ${fmtMoney(periodData.commission, { full: true })} commission · sent to elijah.diaz@amazinglife.com`);
     }, 1100);
   };
 
@@ -2905,7 +2836,7 @@ function App() {
           <div className="lb-head">
             <div>
               <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>· {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
-              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'earnings' ? 'earnings' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'subscriptions' : 'value'} · click a row to view scorecard</div>
+              <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'subscriptions' : sortKey === 'commission' ? 'commission' : 'value'} · click a row to view scorecard</div>
             </div>
             <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster…')}>See all reps →</a>
           </div>
