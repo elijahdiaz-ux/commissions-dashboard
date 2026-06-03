@@ -238,18 +238,18 @@ const REPS = [
 ];
 
 const MONTHLY = [
-  { m: 'Jan', deals: 72, gross: 198741, netNew: 120141, goal: 38.0, commission: 7406, earnings: 29087 },
-  { m: 'Feb', deals: 103, gross: 259113, netNew: 95725, goal: 30.3, commission: 6339, earnings: 28020 },
-  { m: 'Mar', deals: 78, gross: 254616, netNew: 136236, goal: 43.1, commission: 10580, earnings: 40501 },
-  { m: 'Apr', deals: 52, gross: 140482, netNew: 90731, goal: 28.7, commission: 6866, earnings: 28547 },
-  { m: 'May', deals: 46, gross: 156696, netNew: 127931, goal: 40.4, commission: 10124, earnings: 31805 },
-  { m: 'Jun', deals: 0, gross: 0, netNew: 0, goal: 0.0, commission: 0, earnings: 21681 },
+  { m: 'Jan', deals: 221, gross: 524590, netNew: 307132, goal: 97.1, commission: 13286, earnings: 64969 },
+  { m: 'Feb', deals: 260, gross: 497579, netNew: 247717, goal: 78.3, commission: 9185, earnings: 60868 },
+  { m: 'Mar', deals: 202, gross: 479383, netNew: 205995, goal: 65.1, commission: 12149, earnings: 72072 },
+  { m: 'Apr', deals: 134, gross: 361935, netNew: 218390, goal: 69.0, commission: 9263, earnings: 60946 },
+  { m: 'May', deals: 113, gross: 343367, netNew: 240223, goal: 75.9, commission: 11550, earnings: 63233 },
+  { m: 'Jun', deals: 0, gross: 0, netNew: 0, goal: 0.0, commission: 0, earnings: 51683 },
 ];
 
 // Latest month with actual data (fallback default for period lookups)
 const MAY_DATA = MONTHLY[MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0)];
 const YTD = {
-  deals: 351, gross: 1009648, netNew: 570764, commission: 41315, earnings: 179641,
+  deals: 930, gross: 2206854, netNew: 1219457, commission: 55433, earnings: 373771,
 };
 
 // ───────── RUN RATE PROJECTION ─────────
