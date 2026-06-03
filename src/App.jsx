@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import qaData from './qaData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jun 3, 2026 · 8:52 AM CDT';
+const LAST_UPDATED = 'Jun 3, 2026 · 8:52 AM CST';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
