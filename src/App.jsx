@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import qaData from './qaData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jun 3, 2026 · 5:53 PM CST';
+const LAST_UPDATED = 'Jun 3, 2026 · 6:02 PM CST';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -2386,7 +2386,7 @@ function DataQAView() {
     }
     return out;
   }, [rows, q, colFilters, sortCol, sortDir]);
-  const shown = filtered.slice(0, 500);
+  const shown = filtered; // show every matching row (no display cap)
   const anyFilter = q || sortCol != null || Object.values(colFilters).some(v => v && v.trim());
   // Column totals over the filtered set (money columns only)
   const totals = useMemo(() => columns.map((c, ci) =>
@@ -2512,9 +2512,8 @@ function DataQAView() {
           </table>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 10 }}>
-          Showing {shown.length.toLocaleString()} of {filtered.length.toLocaleString()} rows
-          {filtered.length > shown.length ? ' — use the column filters / search to narrow (Export includes all filtered rows).' : '.'}
-          {'  '}Click a header to sort.
+          Showing all {filtered.length.toLocaleString()} rows{filtered.length !== rows.length ? ` (of ${rows.length.toLocaleString()} total)` : ''}.
+          {'  '}Click a header to sort; use the column filters to narrow.
         </div>
       </section>
     </main>
