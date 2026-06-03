@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import qaData from './qaData.json';
 
+// Stamped by sync_dashboard.py on each push that deploys new data (Central time)
+const LAST_UPDATED = 'Jun 3, 2026 · 8:52 AM CDT';
+
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
 const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4, 'Jun 2026': 5 };
@@ -2699,6 +2702,9 @@ function App() {
             </div>
           </div>
           <div className="topbar-actions">
+            <div style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap', marginRight: 10 }} title="When the dashboard last received synced data from the Excel workbook">
+              Last updated {LAST_UPDATED}
+            </div>
             <div className="popover-wrap">
               <div className="pill" onClick={(e) => { e.stopPropagation(); setPeriodOpen(o => !o); setViewOpen(false); setForecastOpen(false); }}>
                 <span className="label">Period:</span>
