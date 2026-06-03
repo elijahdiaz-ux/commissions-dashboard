@@ -1091,13 +1091,26 @@ function RepsView({ onSelectRep, period, setPeriod }) {
   const [compareMode, setCompareMode] = useState(false);
   const [compareReps, setCompareReps] = useState([]);
   const [periodOpen, setPeriodOpen] = useState(false);
+  const [team, setTeam] = useState('AM Team');
 
   const monthIdx = MONTH_INDEX[period];
 
-  const filteredReps = REPS.filter(r =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Team membership by role: AM Team = AM + Small Market AM (SME) + Sr. AM (+ AM mgr); AE Team = AE; SDR Team = SDR
+  const teamOf = (role) => {
+    if (role === 'AE') return 'AE Team';
+    if (role === 'SDR') return 'SDR Team';
+    if (['AM', 'SM AM', 'Sr AM', 'AM Mgr'].includes(role)) return 'AM Team';
+    return null; // e.g. VP — not shown under a team
+  };
+  const TEAMS = ['AM Team', 'AE Team', 'SDR Team'];
+  const teamCount = (t) => REPS.filter(r => teamOf(r.role) === t).length;
+
+  const filteredReps = REPS
+    .filter(r => teamOf(r.role) === team)
+    .filter(r =>
+      r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.role.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const handleSelectRep = (rep) => {
     if (compareMode) {
@@ -1135,7 +1148,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
         <div>
           <h1 className="page-title">Sales Reps</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${REPS.length} reps · ${REPS.filter(r => r.plan !== 'Inactive').length} active`}
+            {compareMode ? `Select ${2 - compareReps.length} rep${2 - compareReps.length !== 1 ? 's' : ''} to compare` : `${team} · ${teamCount(team)} ${teamCount(team) === 1 ? 'rep' : 'reps'}`}
           </div>
         </div>
         <div className="topbar-actions">
@@ -1155,10 +1168,36 @@ function RepsView({ onSelectRep, period, setPeriod }) {
         </div>
       </div>
 
+      {/* Team switcher */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+        {TEAMS.map(t => (
+          <button key={t} onClick={() => { setTeam(t); setSelectedRep(null); setCompareReps([]); }}
+            style={{
+              padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              border: '1px solid ' + (team === t ? 'var(--accent)' : 'rgba(255,255,255,0.12)'),
+              background: team === t ? 'var(--accent-soft)' : 'var(--card-2)',
+              color: team === t ? 'var(--accent)' : 'var(--text-2)', outline: 'none',
+            }}>
+            {t} <span style={{ opacity: 0.6, fontWeight: 500 }}>({teamCount(t)})</span>
+          </button>
+        ))}
+      </div>
+
       <div className="reps-layout">
         {/* Rep List */}
         <div className="reps-list">
-          {filteredReps.map(rep => {
+          {filteredReps.length === 0 ? (
+            <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-3)' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
+                No {team === 'SDR Team' ? 'SDRs' : 'reps'} on this team yet
+              </div>
+              <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>
+                {team === 'SDR Team'
+                  ? 'Add SDR-role reps to the roster in the workbook — they will appear here after the next sync.'
+                  : 'No reps match the current search.'}
+              </div>
+            </div>
+          ) : filteredReps.map(rep => {
             const plan = PLANS[rep.plan] || PLANS.Inactive;
             const ytd = getYTD(rep);
             const isSelected = selectedRep?.name === rep.name;
