@@ -1212,6 +1212,112 @@ function SDRDashboard({ team, setTeam }) {
   );
 }
 
+// ===== Phase 3: SDR reps on the Reps tab (activity scorecards from sdrData) =====
+const SDR_COLORS = ['#34D399', '#60A5FA', '#F3C969', '#E26D8E', '#A78BFA', '#F08F6A'];
+const SDR_MM = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+
+function sdrPeriodMonths(period) {
+  const all = sdrData.months || [];
+  const parts = String(period).split(' ');
+  const year = parts[parts.length - 1];
+  if (SDR_MM[parts[0]] && parts[1]) { const ym = `${parts[1]}-${SDR_MM[parts[0]]}`; return all.filter((x) => x === ym); }
+  const QM = { Q1: ['01', '02', '03'], Q2: ['04', '05', '06'], Q3: ['07', '08', '09'], Q4: ['10', '11', '12'] }[parts[0]];
+  if (QM) return all.filter((x) => x.startsWith(year + '-') && QM.includes(x.slice(5, 7)));
+  if (parts[0] === 'YTD') return all.filter((x) => x.startsWith(year + '-'));
+  return all;
+}
+function sdrRepFor(displayName) {
+  const first = displayName.split(' ')[0].toLowerCase();
+  return (sdrData.reps || []).find((r) => r.name.split(' ')[0].toLowerCase() === first) || null;
+}
+function sdrStats(displayName, period) {
+  const rep = sdrRepFor(displayName);
+  const agg = { dials: 0, connects: 0, talkSec: 0, meetingsSet: null, meetingsHeld: null, hasData: false };
+  if (rep) for (const ym of sdrPeriodMonths(period)) {
+    const d = rep.byMonth[ym]; if (!d) continue;
+    agg.hasData = true; agg.dials += d.dials; agg.connects += d.connects; agg.talkSec += d.talkSec;
+    if (d.meetingsSet != null) agg.meetingsSet = (agg.meetingsSet || 0) + d.meetingsSet;
+    if (d.meetingsHeld != null) agg.meetingsHeld = (agg.meetingsHeld || 0) + d.meetingsHeld;
+  }
+  agg.connectRate = agg.dials ? Math.round((agg.connects / agg.dials) * 1000) / 10 : 0;
+  return agg;
+}
+
+function SDRRepDetail({ rep, period }) {
+  const data = sdrRepFor(rep.name);
+  const s = sdrStats(rep.name, period);
+  const idx = (sdrData.roster || []).indexOf(rep.name);
+  const color = SDR_COLORS[(idx >= 0 ? idx : 0) % SDR_COLORS.length];
+  const months = sdrData.months || [];
+  const periodLabel = period ? period.split(' ')[0] : 'Period';
+  return (
+    <div className="rep-detail-content">
+      <div className="rep-detail-header">
+        <div className="avatar" style={{ background: `linear-gradient(135deg, ${color}, ${color}88)`, width: 56, height: 56, fontSize: 18 }}>
+          {initials(rep.name)}
+        </div>
+        <div>
+          <h2>{rep.name}</h2>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <span className="role-chip">SDR</span>
+            <span className="plan-chip">Outbound Activity</span>
+          </div>
+        </div>
+      </div>
+
+      {!s.hasData ? (
+        <div className="detail-section">
+          <div style={{ color: 'var(--text-3)', fontSize: 13, lineHeight: 1.6 }}>
+            No call activity recorded for {rep.name.split(' ')[0]} in {period}. Their scorecard fills in
+            automatically once Zoom exports including them are added to <code>sdr_zoom_exports/</code>.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="detail-section">
+            <h3>{periodLabel} Activity</h3>
+            <div className="metrics-secondary">
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.dials.toLocaleString()}</span><span className="metric-secondary-label">Dials</span></div>
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.connects.toLocaleString()}</span><span className="metric-secondary-label">Connects</span></div>
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab" style={{ color: 'var(--accent-3)' }}>{s.connectRate}%</span><span className="metric-secondary-label">Connect Rate</span></div>
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{fmtTalk(s.talkSec)}</span><span className="metric-secondary-label">Talk Time</span></div>
+            </div>
+            <div className="metrics-secondary" style={{ marginTop: 10 }}>
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.meetingsSet ?? '—'}</span><span className="metric-secondary-label">Meetings Set</span></div>
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.meetingsHeld ?? '—'}</span><span className="metric-secondary-label">Meetings Held</span></div>
+              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.meetingsSet ? Math.round((s.meetingsHeld / s.meetingsSet) * 100) + '%' : '—'}</span><span className="metric-secondary-label">Show Rate</span></div>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <h3>Monthly Activity</h3>
+            <table className="lb-table sdr-table">
+              <thead><tr><th>Month</th><th>Dials</th><th>Connects</th><th>Rate</th><th>Talk</th><th>Mtg Set</th><th>Mtg Held</th></tr></thead>
+              <tbody>
+                {months.map((ym) => {
+                  const d = data && data.byMonth[ym];
+                  if (!d) return null;
+                  return (
+                    <tr key={ym}>
+                      <td>{sdrData.monthLabels[ym] || ym}</td>
+                      <td className="tab">{d.dials}</td>
+                      <td className="tab">{d.connects}</td>
+                      <td className="tab">{d.connectRate}%</td>
+                      <td className="tab">{fmtTalk(d.talkSec)}</td>
+                      <td className="tab">{d.meetingsSet ?? '—'}</td>
+                      <td className="tab">{d.meetingsHeld ?? '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Sidebar({ activeTab, setActiveTab }) {
   const items = [
     ['Dashboard', Icon.Dashboard],
@@ -1421,7 +1527,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
     return null; // e.g. VP — not shown under a team
   };
   const TEAMS = ['AM Team', 'AE Team', 'SDR Team'];
-  const teamCount = (t) => REPS.filter(r => teamOf(r.role) === t).length;
+  const teamCount = (t) => t === 'SDR Team' ? (sdrData.roster || []).length : REPS.filter(r => teamOf(r.role) === t).length;
 
   const filteredReps = REPS
     .filter(r => teamOf(r.role) === team)
@@ -1429,6 +1535,16 @@ function RepsView({ onSelectRep, period, setPeriod }) {
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.role.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+  // Phase 3: SDR Team renders activity scorecards from sdrData instead of commission reps.
+  const isSDR = team === 'SDR Team';
+  const sdrRoster = (sdrData.roster || [])
+    .filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()))
+    .map(name => ({
+      name, isSDR: true,
+      color: SDR_COLORS[(sdrData.roster || []).indexOf(name) % SDR_COLORS.length],
+      ...sdrStats(name, period),
+    }));
 
   const handleSelectRep = (rep) => {
     if (compareMode) {
@@ -1504,7 +1620,49 @@ function RepsView({ onSelectRep, period, setPeriod }) {
       <div className="reps-layout">
         {/* Rep List */}
         <div className="reps-list">
-          {filteredReps.length === 0 ? (
+          {isSDR ? (
+            sdrRoster.length === 0 ? (
+              <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-3)' }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-2)' }}>No SDRs match that search</div>
+              </div>
+            ) : sdrRoster.map(rep => {
+              const isSelected = selectedRep?.isSDR && selectedRep?.name === rep.name;
+              return (
+                <div
+                  key={rep.name}
+                  className={'rep-card' + (isSelected ? ' selected' : '') + (!rep.hasData ? ' inactive' : '')}
+                  onClick={() => setSelectedRep(rep)}
+                >
+                  <div className="rep-card-header">
+                    <div className="avatar" style={{ background: `linear-gradient(135deg, ${rep.color}, ${rep.color}88)`, width: 48, height: 48 }}>
+                      {initials(rep.name)}
+                    </div>
+                    <div className="rep-card-info">
+                      <div className="rep-card-name">{rep.name}</div>
+                      <div className="rep-card-role">
+                        <span className="role-chip">SDR</span>
+                        {!rep.hasData && <span className="plan-chip">No data yet</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rep-card-stats">
+                    <div className="rep-card-stat">
+                      <span className="stat-value tab">{rep.dials.toLocaleString()}</span>
+                      <span className="stat-label">{period.split(' ')[0]} Dials</span>
+                    </div>
+                    <div className="rep-card-stat">
+                      <span className="stat-value tab">{rep.connects.toLocaleString()}</span>
+                      <span className="stat-label">Connects</span>
+                    </div>
+                    <div className="rep-card-stat">
+                      <span className="stat-value tab" style={{ color: rep.connectRate > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>{rep.connectRate}%</span>
+                      <span className="stat-label">Connect Rate</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : filteredReps.length === 0 ? (
             <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-3)' }}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-2)' }}>
                 No {team === 'SDR Team' ? 'SDRs' : 'reps'} on this team yet
@@ -1570,7 +1728,9 @@ function RepsView({ onSelectRep, period, setPeriod }) {
         {/* Rep Detail Panel */}
         <div className="rep-detail">
           {selectedRep ? (
-            <RepDetailPanel rep={selectedRep} period={period} />
+            selectedRep.isSDR
+              ? <SDRRepDetail rep={selectedRep} period={period} />
+              : <RepDetailPanel rep={selectedRep} period={period} />
           ) : (
             <div className="rep-detail-empty">
               <Icon.Reps />
