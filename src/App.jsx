@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import qaData from './qaData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
@@ -893,6 +893,141 @@ function RepDrawer({ rep, onClose, period }) {
 }
 
 // ───────── SIDEBAR ─────────
+// ===== Phase 1: Dashboard team selector (additive — does not touch the Sales/Commissions view) =====
+// Single source of truth for the team list + which view each renders. Adding the real
+// SDR/CSM dashboards later is a clean swap: replace the placeholder branch in App's render
+// (see `team !== 'Sales Team'`) with e.g. <SDRDashboard/> keyed off this list.
+const TEAMS = ['Sales Team', 'SDR Team', 'CSM Team'];
+
+function TeamSelector({ team, setTeam }) {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false); // kept in DOM during the close animation
+  const [hi, setHi] = useState(0);               // keyboard-highlighted option index
+  const wrapRef = useRef(null);
+  const triggerRef = useRef(null);
+  const listRef = useRef(null);
+
+  // Mount on open; delay unmount so the exit animation can play.
+  useEffect(() => {
+    if (open) { setMounted(true); return; }
+    if (!mounted) return;
+    const id = window.setTimeout(() => setMounted(false), 160);
+    return () => window.clearTimeout(id);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On open: highlight the current selection and move focus into the list.
+  useEffect(() => {
+    if (!(open && mounted)) return;
+    setHi(Math.max(0, TEAMS.indexOf(team)));
+    const id = requestAnimationFrame(() => listRef.current && listRef.current.focus());
+    return () => cancelAnimationFrame(id);
+  }, [open, mounted, team]);
+
+  // Close on outside click (scoped to this component; does not touch the app-level handler).
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const closeToTrigger = () => {
+    setOpen(false);
+    requestAnimationFrame(() => triggerRef.current && triggerRef.current.focus());
+  };
+  const choose = (t) => { setTeam(t); closeToTrigger(); };
+
+  const onTriggerKey = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen((o) => !o); }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true); }
+    else if (e.key === 'Escape') { setOpen(false); }
+  };
+
+  const onListKey = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHi((i) => (i + 1) % TEAMS.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHi((i) => (i - 1 + TEAMS.length) % TEAMS.length); }
+    else if (e.key === 'Home') { e.preventDefault(); setHi(0); }
+    else if (e.key === 'End') { e.preventDefault(); setHi(TEAMS.length - 1); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(TEAMS[hi]); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeToTrigger(); }
+    else if (e.key === 'Tab') { setOpen(false); }
+  };
+
+  return (
+    <div className="team-selector" ref={wrapRef}>
+      <span className="team-selector-label">Team</span>
+      <div className="popover-wrap">
+        <div
+          ref={triggerRef}
+          className="pill team-trigger"
+          role="button"
+          tabIndex={0}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label={`Team selector, currently viewing ${team}`}
+          onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+          onKeyDown={onTriggerKey}
+        >
+          <span className="label">Viewing:</span>
+          <span className="value">{team}</span>
+          <Icon.ChevD/>
+        </div>
+        {mounted && (
+          <div
+            ref={listRef}
+            className={'popover team-popover ' + (open ? 'is-open' : 'is-closing')}
+            role="listbox"
+            tabIndex={-1}
+            aria-label="Select team"
+            aria-activedescendant={`team-opt-${hi}`}
+            onKeyDown={onListKey}
+          >
+            {TEAMS.map((t, i) => (
+              <div
+                key={t}
+                id={`team-opt-${i}`}
+                role="option"
+                aria-selected={team === t}
+                className={'popover-item team-option' + (team === t ? ' active' : '') + (hi === i ? ' hi' : '')}
+                onMouseEnter={() => setHi(i)}
+                onClick={() => choose(t)}
+              >
+                <span>{t}</span>
+                <span className="check">✓</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Placeholder shown for teams whose dashboard is not built yet (Phase 2/3).
+function TeamPlaceholder({ team }) {
+  return (
+    <>
+      <div className="topbar">
+        <div>
+          <h1 className="page-title">{team}</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+            Team dashboard in progress
+          </div>
+        </div>
+      </div>
+      <section className="card team-coming-soon">
+        <div className="team-coming-soon-inner">
+          <div className="team-coming-soon-badge">Coming soon</div>
+          <div className="team-coming-soon-title">{team} dashboard</div>
+          <div className="team-coming-soon-sub">
+            This view is being built. Monthly tracking and per-rep scorecards will live here.
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
 function Sidebar({ activeTab, setActiveTab }) {
   const items = [
     ['Dashboard', Icon.Dashboard],
@@ -2522,6 +2657,7 @@ function DataQAView() {
 
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [team, setTeam] = useState('Sales Team'); // Phase 1: Dashboard team selector; default keeps today's experience
   const [activeRep, setActiveRep] = useState(null);
   const [period, setPeriod] = useState(() => {
     // Default to the latest month that actually has data (skips empty future months)
@@ -2659,8 +2795,15 @@ function App() {
         <ReportsView period={period} setPeriod={setPeriod} />
       ) : activeTab === 'Data' ? (
         <DataQAView />
+      ) : team !== 'Sales Team' ? (
+        // Phase 1 placeholder for SDR / CSM — swap for the real dashboard in Phase 2/3.
+        <main className="main">
+          <TeamSelector team={team} setTeam={setTeam} />
+          <TeamPlaceholder team={team} />
+        </main>
       ) : (
       <main className="main">
+        <TeamSelector team={team} setTeam={setTeam} />
         {/* Topbar */}
         <div className="topbar">
           <div>

@@ -2119,6 +2119,84 @@
     .search { min-width: 140px; }
     .drawer { width: 100vw; }
   }
+
+  /* ===== Phase 1: Dashboard team selector (additive; reuses .pill / .popover tokens) ===== */
+  .team-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .team-selector-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .team-trigger {
+    min-width: 176px;
+    justify-content: space-between;
+  }
+  .team-trigger:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .team-popover {
+    min-width: 184px;
+    transform-origin: top left;
+  }
+  .team-popover:focus { outline: none; }
+  .team-popover.is-open { animation: teamPop 0.16s ease-in-out both; }
+  .team-popover.is-closing { animation: teamPopOut 0.15s ease-in-out both; pointer-events: none; }
+  @keyframes teamPop {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes teamPopOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  }
+  /* keyboard-highlighted option (mirrors the existing :hover treatment) */
+  .team-option.hi { background: rgba(52, 211, 153, 0.10); color: var(--text); }
+  @media (prefers-reduced-motion: reduce) {
+    .team-popover.is-open, .team-popover.is-closing { animation: none; }
+  }
+
+  /* placeholder "coming soon" state for SDR / CSM */
+  .team-coming-soon { margin-top: 4px; }
+  .team-coming-soon-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 64px 24px;
+  }
+  .team-coming-soon-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-3);
+    background: var(--accent-soft);
+    border: 1px solid rgba(52, 211, 153, 0.22);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .team-coming-soon-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .team-coming-soon-sub {
+    font-size: 13px;
+    color: var(--text-3);
+    max-width: 360px;
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
