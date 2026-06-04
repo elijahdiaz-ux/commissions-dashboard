@@ -1074,6 +1074,7 @@ function SDRDashboard({ team, setTeam }) {
   const sqlReps = reps.filter((r) => r.hasSql).sort((a, b) => b.sqlSet - a.sqlSet);
   const maxDials = Math.max(1, ...callers.map((r) => r.dials));
   const maxSql = Math.max(1, ...sqlReps.map((r) => r.sqlSet));
+  const teamCommission = reps.reduce((s, r) => s + (r.hasSql ? r.sqlHeld * (SDR_MONTHLY_VARIABLE / sdrQuota(r.name)) : 0), 0);
 
   return (
     <main className="main">
@@ -1134,15 +1135,15 @@ function SDRDashboard({ team, setTeam }) {
             <div className="metric-tile highlight">
               <div className="metric-icon"><Icon.Calendar/></div>
               <div className="metric-content">
-                <div className="metric-value tab">{totals.hasSql ? totals.sqlSet.toLocaleString() : '—'}</div>
-                <div className="metric-label">SQLs Booked</div>
+                <div className="metric-value tab">{totals.hasSql ? totals.sqlHeld.toLocaleString() : '—'}</div>
+                <div className="metric-label">SQLs Held</div>
               </div>
             </div>
-            <div className="metric-tile">
-              <div className="metric-icon"><Icon.Bullseye/></div>
+            <div className="metric-tile highlight">
+              <div className="metric-icon"><Icon.Commission/></div>
               <div className="metric-content">
-                <div className="metric-value tab">{totals.hasSql ? totals.sqlConverted.toLocaleString() : '—'}</div>
-                <div className="metric-label">Converted</div>
+                <div className="metric-value tab">{totals.hasSql ? fmtMoney(teamCommission) : '—'}</div>
+                <div className="metric-label">Variable Commission</div>
               </div>
             </div>
           </div>
@@ -1152,12 +1153,12 @@ function SDRDashboard({ team, setTeam }) {
               <span className="metric-secondary-label">Connect Rate</span>
             </div>
             <div className="metric-secondary-item">
-              <span className="metric-secondary-value tab">{totals.hasZoom ? fmtTalk(totals.talkSec) : '—'}</span>
-              <span className="metric-secondary-label">Talk Time</span>
+              <span className="metric-secondary-value tab">{totals.hasSql ? totals.sqlSet.toLocaleString() : '—'}</span>
+              <span className="metric-secondary-label">SQLs Booked</span>
             </div>
             <div className="metric-secondary-item">
-              <span className="metric-secondary-value tab">{totals.hasSql ? totals.sqlHeld.toLocaleString() : '—'}</span>
-              <span className="metric-secondary-label">SQLs Held</span>
+              <span className="metric-secondary-value tab">{totals.hasSql ? totals.sqlConverted.toLocaleString() : '—'}</span>
+              <span className="metric-secondary-label">Converted</span>
             </div>
             <div className="metric-secondary-item">
               <span className="metric-secondary-value tab">{totals.hasSql ? totals.convRate + '%' : '—'}</span>
@@ -1208,25 +1209,31 @@ function SDRDashboard({ team, setTeam }) {
           <table className="lb-table sdr-table">
             <thead>
               <tr>
-                <th>Rep</th><th>Dials</th><th>Connects</th><th>Conn. Rate</th><th>SQLs</th><th>Held</th><th>Converted</th>
+                <th>Rep</th><th>Dials</th><th>Connects</th><th>SQLs</th><th>Held</th><th>Quota</th><th>Attain</th><th>Commission</th>
               </tr>
             </thead>
             <tbody>
-              {reps.map((r) => (
-                <tr key={r.name}>
-                  <td>{r.name}</td>
-                  <td className="tab">{r.hasZoom ? r.dials : '—'}</td>
-                  <td className="tab">{r.hasZoom ? r.connects : '—'}</td>
-                  <td className="tab">{r.hasZoom ? r.connectRate + '%' : '—'}</td>
-                  <td className="tab">{r.hasSql ? r.sqlSet : '—'}</td>
-                  <td className="tab">{r.hasSql ? r.sqlHeld : '—'}</td>
-                  <td className="tab">{r.hasSql ? r.sqlConverted : '—'}</td>
-                </tr>
-              ))}
+              {reps.map((r) => {
+                const q = sdrQuota(r.name);
+                const comm = r.hasSql ? r.sqlHeld * (SDR_MONTHLY_VARIABLE / q) : 0;
+                const att = r.hasSql ? Math.round((r.sqlHeld / q) * 100) : 0;
+                return (
+                  <tr key={r.name}>
+                    <td>{r.name}</td>
+                    <td className="tab">{r.hasZoom ? r.dials : '—'}</td>
+                    <td className="tab">{r.hasZoom ? r.connects : '—'}</td>
+                    <td className="tab">{r.hasSql ? r.sqlSet : '—'}</td>
+                    <td className="tab">{r.hasSql ? r.sqlHeld : '—'}</td>
+                    <td className="tab">{r.hasSql ? q : '—'}</td>
+                    <td className="tab">{r.hasSql ? att + '%' : '—'}</td>
+                    <td className="tab">{r.hasSql ? fmtMoney(comm) : '—'}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 12 }}>
-            Dials / Connects from Zoom call exports · SQLs / Held / Converted from SDR SQL logs. “—” means that rep has no data of that type for {label}.
+            Dials / Connects from Zoom · SQLs / Held from SDR SQL logs · Commission = SQLs Held × (${SDR_MONTHLY_VARIABLE.toFixed(2)} ÷ quota), uncapped. “—” = no data of that type for {label}.
           </div>
         </div>
       </section>
@@ -1237,6 +1244,13 @@ function SDRDashboard({ team, setTeam }) {
 // ===== Phase 3: SDR reps on the Reps tab (activity scorecards from sdrData) =====
 const SDR_COLORS = ['#34D399', '#60A5FA', '#F3C969', '#E26D8E', '#A78BFA', '#F08F6A'];
 const SDR_MM = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+
+// SDR comp (JAM Comp Example): $5K variable / 12 = $416.67 at-target monthly variable.
+// Commission = SQLs HELD x value-per-SQL, value-per-SQL = monthly variable / quota, uncapped.
+// Quota 18 SQLs/mo standard; Brooklyn 25. Base/OTE intentionally NOT shown (confidential).
+const SDR_MONTHLY_VARIABLE = 5000 / 12;
+const SDR_QUOTAS = { brooklyn: 25 }; // SQLs/month; default 18
+function sdrQuota(displayName) { return SDR_QUOTAS[displayName.split(' ')[0].toLowerCase()] || 18; }
 
 function sdrPeriodMonths(period) {
   const all = sdrData.months || [];
@@ -1254,16 +1268,22 @@ function sdrRepFor(displayName) {
 }
 function sdrStats(displayName, period) {
   const rep = sdrRepFor(displayName);
-  const agg = { dials: 0, connects: 0, talkSec: 0, sqlSet: 0, sqlHeld: 0, sqlConverted: 0, hasZoom: false, hasSql: false };
+  const agg = { dials: 0, connects: 0, talkSec: 0, sqlSet: 0, sqlHeld: 0, sqlConverted: 0, hasZoom: false, hasSql: false, monthsWithSql: 0 };
   if (rep) for (const ym of sdrPeriodMonths(period)) {
     const d = rep.byMonth[ym]; if (!d) continue;
     agg.dials += d.dials; agg.connects += d.connects; agg.talkSec += d.talkSec;
     agg.sqlSet += d.sqlSet; agg.sqlHeld += d.sqlHeld; agg.sqlConverted += d.sqlConverted;
     agg.hasZoom = agg.hasZoom || d.hasZoom;
     agg.hasSql = agg.hasSql || d.hasSql;
+    if (d.hasSql) agg.monthsWithSql++;
   }
   agg.connectRate = agg.dials ? Math.round((agg.connects / agg.dials) * 1000) / 10 : 0;
   agg.convRate = agg.sqlHeld ? Math.round((agg.sqlConverted / agg.sqlHeld) * 1000) / 10 : 0;
+  // Comp: held SQLs x value-per-SQL (= monthly variable / quota), uncapped.
+  agg.quota = sdrQuota(displayName);
+  agg.valuePerSql = SDR_MONTHLY_VARIABLE / agg.quota;
+  agg.commission = agg.sqlHeld * agg.valuePerSql;
+  agg.attainment = (agg.hasSql && agg.monthsWithSql) ? Math.round((agg.sqlHeld / (agg.quota * agg.monthsWithSql)) * 100) : 0;
   agg.hasData = agg.hasZoom || agg.hasSql;
   return agg;
 }
@@ -1322,10 +1342,23 @@ function SDRRepDetail({ rep, period }) {
             </div>
           )}
 
+          {s.hasSql && (
+            <div className="detail-section">
+              <h3>{periodLabel} Compensation</h3>
+              <div className="metrics-secondary">
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.quota}/mo</span><span className="metric-secondary-label">SQL Quota</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">${s.valuePerSql.toFixed(2)}</span><span className="metric-secondary-label">Value / SQL</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.attainment}%</span><span className="metric-secondary-label">Attainment</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab" style={{ color: 'var(--accent-3)' }}>{fmtMoney(s.commission, { full: true })}</span><span className="metric-secondary-label">Variable Commission</span></div>
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-4)', marginTop: 8 }}>SQLs Held × value-per-SQL, uncapped. Base pay excluded.</div>
+            </div>
+          )}
+
           <div className="detail-section">
             <h3>Monthly Breakdown</h3>
             <table className="lb-table sdr-table">
-              <thead><tr><th>Month</th><th>Dials</th><th>Connects</th><th>Rate</th><th>SQLs</th><th>Held</th><th>Conv.</th></tr></thead>
+              <thead><tr><th>Month</th><th>Dials</th><th>Connects</th><th>SQLs</th><th>Held</th><th>Conv.</th><th>Comm.</th></tr></thead>
               <tbody>
                 {months.map((ym) => {
                   const d = data && data.byMonth[ym];
@@ -1335,10 +1368,10 @@ function SDRRepDetail({ rep, period }) {
                       <td>{sdrData.monthLabels[ym] || ym}</td>
                       <td className="tab">{d.hasZoom ? d.dials : '—'}</td>
                       <td className="tab">{d.hasZoom ? d.connects : '—'}</td>
-                      <td className="tab">{d.hasZoom ? d.connectRate + '%' : '—'}</td>
                       <td className="tab">{d.hasSql ? d.sqlSet : '—'}</td>
                       <td className="tab">{d.hasSql ? d.sqlHeld : '—'}</td>
                       <td className="tab">{d.hasSql ? d.sqlConverted : '—'}</td>
+                      <td className="tab">{d.hasSql ? fmtMoney(d.sqlHeld * s.valuePerSql) : '—'}</td>
                     </tr>
                   );
                 })}
@@ -1682,16 +1715,16 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                     {rep.hasSql ? (
                       <>
                         <div className="rep-card-stat">
-                          <span className="stat-value tab">{rep.sqlSet.toLocaleString()}</span>
-                          <span className="stat-label">{period.split(' ')[0]} SQLs</span>
-                        </div>
-                        <div className="rep-card-stat">
                           <span className="stat-value tab">{rep.sqlHeld.toLocaleString()}</span>
-                          <span className="stat-label">Held</span>
+                          <span className="stat-label">{period.split(' ')[0]} SQLs Held</span>
                         </div>
                         <div className="rep-card-stat">
-                          <span className="stat-value tab" style={{ color: rep.sqlConverted > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>{rep.sqlConverted.toLocaleString()}</span>
-                          <span className="stat-label">Converted</span>
+                          <span className="stat-value tab">{rep.attainment}%</span>
+                          <span className="stat-label">Attainment</span>
+                        </div>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab" style={{ color: rep.commission > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>{fmtMoney(rep.commission)}</span>
+                          <span className="stat-label">Commission</span>
                         </div>
                       </>
                     ) : (
