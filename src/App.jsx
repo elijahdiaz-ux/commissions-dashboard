@@ -1058,21 +1058,22 @@ function SDRDashboard({ team, setTeam }) {
         <div className="topbar"><div><h1 className="page-title">SDR Team</h1></div></div>
         <section className="card team-coming-soon"><div className="team-coming-soon-inner">
           <div className="team-coming-soon-badge">No data yet</div>
-          <div className="team-coming-soon-title">No Zoom exports found</div>
-          <div className="team-coming-soon-sub">Drop Zoom user-usage CSVs into <code>Sales Dash Automation/sdr_zoom_exports/</code> and re-sync.</div>
+          <div className="team-coming-soon-title">No SDR data yet</div>
+          <div className="team-coming-soon-sub">Drop Zoom usage CSVs into <code>sdr_zoom_exports/</code> or SQL logs into <code>sdr_sql_logs/</code>, then re-sync.</div>
         </div></section>
       </main>
     );
   }
 
   const label = sdrData.monthLabels[month] || month;
-  const totals = sdrData.totals[month] || { dials: 0, connects: 0, connectRate: 0, talkSec: 0, meetingsSet: 0, meetingsHeld: 0, hasMeetings: false, reps: 0 };
+  const totals = sdrData.totals[month] || { dials: 0, connects: 0, connectRate: 0, talkSec: 0, sqlSet: 0, sqlHeld: 0, sqlConverted: 0, convRate: 0, hasZoom: false, hasSql: false, reps: 0 };
   const reps = sdrData.reps
-    .map((r) => ({ name: r.name, ...(r.byMonth[month] || { dials: 0, connects: 0, talkSec: 0, connectRate: 0, meetingsSet: null, meetingsHeld: null }) }))
-    .filter((r) => r.dials > 0 || r.connects > 0 || r.talkSec > 0 || r.meetingsSet)
-    .sort((a, b) => b.dials - a.dials);
-  const maxDials = Math.max(1, ...reps.map((r) => r.dials));
-  const showRate = totals.meetingsSet ? Math.round((totals.meetingsHeld / totals.meetingsSet) * 100) : null;
+    .map((r) => ({ name: r.name, ...(r.byMonth[month] || {}) }))
+    .filter((r) => r.hasZoom || r.hasSql);
+  const callers = reps.filter((r) => r.hasZoom).sort((a, b) => b.dials - a.dials);
+  const sqlReps = reps.filter((r) => r.hasSql).sort((a, b) => b.sqlSet - a.sqlSet);
+  const maxDials = Math.max(1, ...callers.map((r) => r.dials));
+  const maxSql = Math.max(1, ...sqlReps.map((r) => r.sqlSet));
 
   return (
     <main className="main">
@@ -1080,7 +1081,7 @@ function SDRDashboard({ team, setTeam }) {
       <div className="topbar">
         <div>
           <h1 className="page-title">SDR Team</h1>
-          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>Outbound calling activity · {label}</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>Call activity + SQL production · {label}</div>
         </div>
         <div className="topbar-actions">
           <div className="popover-wrap" ref={mRef}>
@@ -1111,7 +1112,7 @@ function SDRDashboard({ team, setTeam }) {
         <div className="card-head">
           <div>
             <div className="card-title">Team Activity</div>
-            <div className="card-sub">{totals.reps} reps calling · {label}</div>
+            <div className="card-sub">{totals.reps} active {totals.reps === 1 ? 'rep' : 'reps'} · {label}</div>
           </div>
         </div>
         <div className="card-body">
@@ -1119,62 +1120,85 @@ function SDRDashboard({ team, setTeam }) {
             <div className="metric-tile">
               <div className="metric-icon"><Icon.Target/></div>
               <div className="metric-content">
-                <div className="metric-value tab">{totals.dials.toLocaleString()}</div>
+                <div className="metric-value tab">{totals.hasZoom ? totals.dials.toLocaleString() : '—'}</div>
                 <div className="metric-label">Dials</div>
               </div>
             </div>
             <div className="metric-tile">
               <div className="metric-icon"><Icon.Spark/></div>
               <div className="metric-content">
-                <div className="metric-value tab">{totals.connects.toLocaleString()}</div>
+                <div className="metric-value tab">{totals.hasZoom ? totals.connects.toLocaleString() : '—'}</div>
                 <div className="metric-label">Connects</div>
               </div>
             </div>
             <div className="metric-tile highlight">
-              <div className="metric-icon"><Icon.ChartBar/></div>
+              <div className="metric-icon"><Icon.Calendar/></div>
               <div className="metric-content">
-                <div className="metric-value tab">{totals.connectRate}%</div>
-                <div className="metric-label">Connect Rate</div>
+                <div className="metric-value tab">{totals.hasSql ? totals.sqlSet.toLocaleString() : '—'}</div>
+                <div className="metric-label">SQLs Booked</div>
               </div>
             </div>
             <div className="metric-tile">
-              <div className="metric-icon"><Icon.Calendar/></div>
+              <div className="metric-icon"><Icon.Bullseye/></div>
               <div className="metric-content">
-                <div className="metric-value tab">{totals.hasMeetings ? totals.meetingsSet.toLocaleString() : '—'}</div>
-                <div className="metric-label">Meetings Set</div>
+                <div className="metric-value tab">{totals.hasSql ? totals.sqlConverted.toLocaleString() : '—'}</div>
+                <div className="metric-label">Converted</div>
               </div>
             </div>
           </div>
           <div className="metrics-secondary">
             <div className="metric-secondary-item">
-              <span className="metric-secondary-value tab">{fmtTalk(totals.talkSec)}</span>
-              <span className="metric-secondary-label">Total Talk Time</span>
+              <span className="metric-secondary-value tab">{totals.hasZoom ? totals.connectRate + '%' : '—'}</span>
+              <span className="metric-secondary-label">Connect Rate</span>
             </div>
             <div className="metric-secondary-item">
-              <span className="metric-secondary-value tab">{totals.hasMeetings ? totals.meetingsHeld.toLocaleString() : '—'}</span>
-              <span className="metric-secondary-label">Meetings Held</span>
+              <span className="metric-secondary-value tab">{totals.hasZoom ? fmtTalk(totals.talkSec) : '—'}</span>
+              <span className="metric-secondary-label">Talk Time</span>
             </div>
             <div className="metric-secondary-item">
-              <span className="metric-secondary-value tab">{showRate !== null ? showRate + '%' : '—'}</span>
-              <span className="metric-secondary-label">Show Rate</span>
+              <span className="metric-secondary-value tab">{totals.hasSql ? totals.sqlHeld.toLocaleString() : '—'}</span>
+              <span className="metric-secondary-label">SQLs Held</span>
+            </div>
+            <div className="metric-secondary-item">
+              <span className="metric-secondary-value tab">{totals.hasSql ? totals.convRate + '%' : '—'}</span>
+              <span className="metric-secondary-label">Conversion Rate</span>
             </div>
           </div>
 
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--hairline)' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12, fontWeight: 500 }}>Dials by Rep</div>
-            {reps.map((r) => {
-              const pct = (r.dials / maxDials) * 100;
-              return (
-                <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <div style={{ width: 80, fontSize: 12, color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name.split(' ')[0]}</div>
-                  <div style={{ flex: 1, height: 16, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: pct + '%', height: '100%', background: 'var(--accent)', borderRadius: 4, transition: 'width 0.3s ease' }} />
+          {callers.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--hairline)' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12, fontWeight: 500 }}>Dials by Rep</div>
+              {callers.map((r) => {
+                const pct = (r.dials / maxDials) * 100;
+                return (
+                  <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 80, fontSize: 12, color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name.split(' ')[0]}</div>
+                    <div style={{ flex: 1, height: 16, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: pct + '%', height: '100%', background: 'var(--accent)', borderRadius: 4, transition: 'width 0.3s ease' }} />
+                    </div>
+                    <div className="tab" style={{ width: 44, textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{r.dials}</div>
                   </div>
-                  <div className="tab" style={{ width: 44, textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{r.dials}</div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
+          {sqlReps.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--hairline)' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12, fontWeight: 500 }}>SQLs Booked by Rep</div>
+              {sqlReps.map((r) => {
+                const pct = (r.sqlSet / maxSql) * 100;
+                return (
+                  <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 80, fontSize: 12, color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name.split(' ')[0]}</div>
+                    <div style={{ flex: 1, height: 16, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: pct + '%', height: '100%', background: 'var(--accent-2)', borderRadius: 4, transition: 'width 0.3s ease' }} />
+                    </div>
+                    <div className="tab" style={{ width: 44, textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{r.sqlSet}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -1184,28 +1208,26 @@ function SDRDashboard({ team, setTeam }) {
           <table className="lb-table sdr-table">
             <thead>
               <tr>
-                <th>Rep</th><th>Dials</th><th>Connects</th><th>Connect Rate</th><th>Talk Time</th><th>Meetings Set</th><th>Meetings Held</th>
+                <th>Rep</th><th>Dials</th><th>Connects</th><th>Conn. Rate</th><th>SQLs</th><th>Held</th><th>Converted</th>
               </tr>
             </thead>
             <tbody>
               {reps.map((r) => (
                 <tr key={r.name}>
                   <td>{r.name}</td>
-                  <td className="tab">{r.dials}</td>
-                  <td className="tab">{r.connects}</td>
-                  <td className="tab">{r.connectRate}%</td>
-                  <td className="tab">{fmtTalk(r.talkSec)}</td>
-                  <td className="tab">{r.meetingsSet ?? '—'}</td>
-                  <td className="tab">{r.meetingsHeld ?? '—'}</td>
+                  <td className="tab">{r.hasZoom ? r.dials : '—'}</td>
+                  <td className="tab">{r.hasZoom ? r.connects : '—'}</td>
+                  <td className="tab">{r.hasZoom ? r.connectRate + '%' : '—'}</td>
+                  <td className="tab">{r.hasSql ? r.sqlSet : '—'}</td>
+                  <td className="tab">{r.hasSql ? r.sqlHeld : '—'}</td>
+                  <td className="tab">{r.hasSql ? r.sqlConverted : '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {!totals.hasMeetings && (
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 12 }}>
-              Meetings aren't in Zoom exports. Add <code>sdr_meetings.csv</code> (columns: Name, Month, Meetings Set, Meetings Held) to the automation folder to fill those columns.
-            </div>
-          )}
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 12 }}>
+            Dials / Connects from Zoom call exports · SQLs / Held / Converted from SDR SQL logs. “—” means that rep has no data of that type for {label}.
+          </div>
         </div>
       </section>
     </main>
@@ -1232,14 +1254,17 @@ function sdrRepFor(displayName) {
 }
 function sdrStats(displayName, period) {
   const rep = sdrRepFor(displayName);
-  const agg = { dials: 0, connects: 0, talkSec: 0, meetingsSet: null, meetingsHeld: null, hasData: false };
+  const agg = { dials: 0, connects: 0, talkSec: 0, sqlSet: 0, sqlHeld: 0, sqlConverted: 0, hasZoom: false, hasSql: false };
   if (rep) for (const ym of sdrPeriodMonths(period)) {
     const d = rep.byMonth[ym]; if (!d) continue;
-    agg.hasData = true; agg.dials += d.dials; agg.connects += d.connects; agg.talkSec += d.talkSec;
-    if (d.meetingsSet != null) agg.meetingsSet = (agg.meetingsSet || 0) + d.meetingsSet;
-    if (d.meetingsHeld != null) agg.meetingsHeld = (agg.meetingsHeld || 0) + d.meetingsHeld;
+    agg.dials += d.dials; agg.connects += d.connects; agg.talkSec += d.talkSec;
+    agg.sqlSet += d.sqlSet; agg.sqlHeld += d.sqlHeld; agg.sqlConverted += d.sqlConverted;
+    agg.hasZoom = agg.hasZoom || d.hasZoom;
+    agg.hasSql = agg.hasSql || d.hasSql;
   }
   agg.connectRate = agg.dials ? Math.round((agg.connects / agg.dials) * 1000) / 10 : 0;
+  agg.convRate = agg.sqlHeld ? Math.round((agg.sqlConverted / agg.sqlHeld) * 1000) / 10 : 0;
+  agg.hasData = agg.hasZoom || agg.hasSql;
   return agg;
 }
 
@@ -1260,7 +1285,7 @@ function SDRRepDetail({ rep, period }) {
           <h2>{rep.name}</h2>
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
             <span className="role-chip">SDR</span>
-            <span className="plan-chip">Outbound Activity</span>
+            <span className="plan-chip">{s.hasSql && s.hasZoom ? 'Calls + SQLs' : s.hasSql ? 'SQL Production' : 'Call Activity'}</span>
           </div>
         </div>
       </div>
@@ -1268,44 +1293,52 @@ function SDRRepDetail({ rep, period }) {
       {!s.hasData ? (
         <div className="detail-section">
           <div style={{ color: 'var(--text-3)', fontSize: 13, lineHeight: 1.6 }}>
-            No call activity recorded for {rep.name.split(' ')[0]} in {period}. Their scorecard fills in
-            automatically once Zoom exports including them are added to <code>sdr_zoom_exports/</code>.
+            No activity recorded for {rep.name.split(' ')[0]} in {period}. Their scorecard fills in automatically
+            once a Zoom export (<code>sdr_zoom_exports/</code>) or SQL log (<code>sdr_sql_logs/</code>) including them is added.
           </div>
         </div>
       ) : (
         <>
-          <div className="detail-section">
-            <h3>{periodLabel} Activity</h3>
-            <div className="metrics-secondary">
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.dials.toLocaleString()}</span><span className="metric-secondary-label">Dials</span></div>
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.connects.toLocaleString()}</span><span className="metric-secondary-label">Connects</span></div>
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab" style={{ color: 'var(--accent-3)' }}>{s.connectRate}%</span><span className="metric-secondary-label">Connect Rate</span></div>
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{fmtTalk(s.talkSec)}</span><span className="metric-secondary-label">Talk Time</span></div>
+          {s.hasZoom && (
+            <div className="detail-section">
+              <h3>{periodLabel} Call Activity</h3>
+              <div className="metrics-secondary">
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.dials.toLocaleString()}</span><span className="metric-secondary-label">Dials</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.connects.toLocaleString()}</span><span className="metric-secondary-label">Connects</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab" style={{ color: 'var(--accent-3)' }}>{s.connectRate}%</span><span className="metric-secondary-label">Connect Rate</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{fmtTalk(s.talkSec)}</span><span className="metric-secondary-label">Talk Time</span></div>
+              </div>
             </div>
-            <div className="metrics-secondary" style={{ marginTop: 10 }}>
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.meetingsSet ?? '—'}</span><span className="metric-secondary-label">Meetings Set</span></div>
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.meetingsHeld ?? '—'}</span><span className="metric-secondary-label">Meetings Held</span></div>
-              <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.meetingsSet ? Math.round((s.meetingsHeld / s.meetingsSet) * 100) + '%' : '—'}</span><span className="metric-secondary-label">Show Rate</span></div>
+          )}
+          {s.hasSql && (
+            <div className="detail-section">
+              <h3>{periodLabel} SQL Production</h3>
+              <div className="metrics-secondary">
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.sqlSet.toLocaleString()}</span><span className="metric-secondary-label">SQLs Booked</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.sqlHeld.toLocaleString()}</span><span className="metric-secondary-label">Held</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab" style={{ color: 'var(--accent-3)' }}>{s.sqlConverted.toLocaleString()}</span><span className="metric-secondary-label">Converted</span></div>
+                <div className="metric-secondary-item"><span className="metric-secondary-value tab">{s.convRate}%</span><span className="metric-secondary-label">Conversion Rate</span></div>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="detail-section">
-            <h3>Monthly Activity</h3>
+            <h3>Monthly Breakdown</h3>
             <table className="lb-table sdr-table">
-              <thead><tr><th>Month</th><th>Dials</th><th>Connects</th><th>Rate</th><th>Talk</th><th>Mtg Set</th><th>Mtg Held</th></tr></thead>
+              <thead><tr><th>Month</th><th>Dials</th><th>Connects</th><th>Rate</th><th>SQLs</th><th>Held</th><th>Conv.</th></tr></thead>
               <tbody>
                 {months.map((ym) => {
                   const d = data && data.byMonth[ym];
-                  if (!d) return null;
+                  if (!d || (!d.hasZoom && !d.hasSql)) return null;
                   return (
                     <tr key={ym}>
                       <td>{sdrData.monthLabels[ym] || ym}</td>
-                      <td className="tab">{d.dials}</td>
-                      <td className="tab">{d.connects}</td>
-                      <td className="tab">{d.connectRate}%</td>
-                      <td className="tab">{fmtTalk(d.talkSec)}</td>
-                      <td className="tab">{d.meetingsSet ?? '—'}</td>
-                      <td className="tab">{d.meetingsHeld ?? '—'}</td>
+                      <td className="tab">{d.hasZoom ? d.dials : '—'}</td>
+                      <td className="tab">{d.hasZoom ? d.connects : '—'}</td>
+                      <td className="tab">{d.hasZoom ? d.connectRate + '%' : '—'}</td>
+                      <td className="tab">{d.hasSql ? d.sqlSet : '—'}</td>
+                      <td className="tab">{d.hasSql ? d.sqlHeld : '—'}</td>
+                      <td className="tab">{d.hasSql ? d.sqlConverted : '—'}</td>
                     </tr>
                   );
                 })}
@@ -1646,18 +1679,37 @@ function RepsView({ onSelectRep, period, setPeriod }) {
                     </div>
                   </div>
                   <div className="rep-card-stats">
-                    <div className="rep-card-stat">
-                      <span className="stat-value tab">{rep.dials.toLocaleString()}</span>
-                      <span className="stat-label">{period.split(' ')[0]} Dials</span>
-                    </div>
-                    <div className="rep-card-stat">
-                      <span className="stat-value tab">{rep.connects.toLocaleString()}</span>
-                      <span className="stat-label">Connects</span>
-                    </div>
-                    <div className="rep-card-stat">
-                      <span className="stat-value tab" style={{ color: rep.connectRate > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>{rep.connectRate}%</span>
-                      <span className="stat-label">Connect Rate</span>
-                    </div>
+                    {rep.hasSql ? (
+                      <>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab">{rep.sqlSet.toLocaleString()}</span>
+                          <span className="stat-label">{period.split(' ')[0]} SQLs</span>
+                        </div>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab">{rep.sqlHeld.toLocaleString()}</span>
+                          <span className="stat-label">Held</span>
+                        </div>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab" style={{ color: rep.sqlConverted > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>{rep.sqlConverted.toLocaleString()}</span>
+                          <span className="stat-label">Converted</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab">{rep.hasZoom ? rep.dials.toLocaleString() : '—'}</span>
+                          <span className="stat-label">{period.split(' ')[0]} Dials</span>
+                        </div>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab">{rep.hasZoom ? rep.connects.toLocaleString() : '—'}</span>
+                          <span className="stat-label">Connects</span>
+                        </div>
+                        <div className="rep-card-stat">
+                          <span className="stat-value tab" style={{ color: rep.connectRate > 0 ? 'var(--accent-3)' : 'var(--text-3)' }}>{rep.hasZoom ? rep.connectRate + '%' : '—'}</span>
+                          <span className="stat-label">Connect Rate</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );
