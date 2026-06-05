@@ -2267,6 +2267,7 @@ function CommissionsView({ period, setPeriod }) {
 function ReportsView({ period, setPeriod }) {
   const [periodOpen, setPeriodOpen] = useState(false);
   const [activeReport, setActiveReport] = useState('executive');
+  const [sdrScope, setSdrScope] = useState(sdrData.latestMonth || 'YTD'); // SDR report: 'YTD' or a YYYY-MM
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState(null);
 
@@ -2420,6 +2421,7 @@ function ReportsView({ period, setPeriod }) {
   // Report definitions
   const reports = [
     { id: 'executive', name: 'Executive Summary', IconComponent: Icon.ChartBar, available: true },
+    { id: 'sdr', name: 'SDR Team', IconComponent: Icon.Reps, available: true },
     { id: 'arr-bridge', name: 'ARR Movement', IconComponent: Icon.Bridge, available: true },
     { id: 'retention', name: 'Revenue Retention', IconComponent: Icon.Refresh, available: false, needs: ['Cohort data by signup month', 'Monthly recurring revenue by customer', 'Churn dates'] },
     { id: 'renewals', name: 'Renewal Forecast', IconComponent: Icon.Calendar, available: false, needs: ['Renewal dates by account', 'Contract values', 'Risk scoring data'] },
@@ -2782,6 +2784,113 @@ function ReportsView({ period, setPeriod }) {
   );
 
   // Get current report content
+  // SDR Team report — from sdrData.json (call activity + SQL production + comp). Month or YTD.
+  const renderSDRReport = () => {
+    const scopeMonths = sdrScope === 'YTD' ? (sdrData.months || []).filter(m => m.startsWith('2026-')) : [sdrScope];
+    const scopeLabel = sdrScope === 'YTD' ? 'Year to Date (2026)' : (sdrData.monthLabels[sdrScope] || sdrScope);
+    const rows = (sdrData.roster || []).map(name => {
+      const rep = sdrRepFor(name);
+      const a = { name, dials: 0, connects: 0, talkSec: 0, sqlSet: 0, sqlHeld: 0, sqlConverted: 0, hasZoom: false, hasSql: false, monthsWithSql: 0 };
+      if (rep) for (const ym of scopeMonths) {
+        const d = rep.byMonth[ym]; if (!d) continue;
+        a.dials += d.dials; a.connects += d.connects; a.talkSec += d.talkSec;
+        a.sqlSet += d.sqlSet; a.sqlHeld += d.sqlHeld; a.sqlConverted += d.sqlConverted;
+        a.hasZoom = a.hasZoom || d.hasZoom; a.hasSql = a.hasSql || d.hasSql;
+        if (d.hasSql) a.monthsWithSql++;
+      }
+      const q = sdrQuota(name);
+      a.quota = q;
+      a.connectRate = a.dials ? Math.round(a.connects / a.dials * 1000) / 10 : 0;
+      a.commission = a.sqlHeld * (SDR_MONTHLY_VARIABLE / q);
+      a.attainment = (a.hasSql && a.monthsWithSql) ? Math.round(a.sqlHeld / (q * a.monthsWithSql) * 100) : 0;
+      return a;
+    });
+    const team = rows.reduce((t, r) => ({
+      dials: t.dials + r.dials, connects: t.connects + r.connects, sqlSet: t.sqlSet + r.sqlSet,
+      sqlHeld: t.sqlHeld + r.sqlHeld, sqlConverted: t.sqlConverted + r.sqlConverted, commission: t.commission + r.commission,
+    }), { dials: 0, connects: 0, sqlSet: 0, sqlHeld: 0, sqlConverted: 0, commission: 0 });
+    const teamConnRate = team.dials ? Math.round(team.connects / team.dials * 1000) / 10 : 0;
+    const mono = { fontFamily: 'JetBrains Mono, monospace' };
+    const pill = (active) => ({
+      padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+      border: '1px solid ' + (active ? 'var(--accent)' : 'rgba(255,255,255,0.12)'),
+      background: active ? 'var(--accent-soft)' : 'var(--card-2)', color: active ? 'var(--accent)' : 'var(--text-2)',
+    });
+    return (
+      <>
+        {/* Period control — outside #report-content so it stays out of the PDF */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Period</span>
+          <button onClick={() => setSdrScope('YTD')} style={pill(sdrScope === 'YTD')}>YTD</button>
+          {(sdrData.months || []).map(ym => (
+            <button key={ym} onClick={() => setSdrScope(ym)} style={pill(sdrScope === ym)}>{sdrData.monthLabels[ym] || ym}</button>
+          ))}
+        </div>
+
+        <div id="report-content">
+          <div className="report-header">
+            <div>
+              <div className="report-logo">Amazing Life Foundation</div>
+              <div className="report-title">SDR Team Report — {scopeLabel}</div>
+            </div>
+            <div className="report-meta">
+              <div>RevOps Dashboard</div>
+              <div>Generated {new Date().toLocaleDateString()}</div>
+            </div>
+          </div>
+
+          <div className="metric-grid">
+            <div className="metric-card"><div className="metric-label">Dials</div><div className="metric-value">{team.dials.toLocaleString()}</div></div>
+            <div className="metric-card"><div className="metric-label">Connects</div><div className="metric-value">{team.connects.toLocaleString()}</div></div>
+            <div className="metric-card"><div className="metric-label">Connect Rate</div><div className="metric-value">{teamConnRate}%</div></div>
+            <div className="metric-card"><div className="metric-label">SQLs Held</div><div className="metric-value">{team.sqlHeld.toLocaleString()}</div></div>
+            <div className="metric-card"><div className="metric-label">SQLs Booked</div><div className="metric-value">{team.sqlSet.toLocaleString()}</div></div>
+            <div className="metric-card"><div className="metric-label">Converted</div><div className="metric-value">{team.sqlConverted.toLocaleString()}</div></div>
+            <div className="metric-card"><div className="metric-label">Variable Commission</div><div className="metric-value">{fmtMoney(team.commission, { full: true })}</div></div>
+          </div>
+
+          <div className="section-title">Per-Rep Performance · {scopeLabel}</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Rep</th><th>Dials</th><th>Connects</th><th>Conn %</th><th>Booked</th><th>Held</th><th>Quota</th><th>Attain</th><th>Commission</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.name}>
+                  <td style={{ fontWeight: 500 }}>{r.name}</td>
+                  <td style={mono}>{r.hasZoom ? r.dials.toLocaleString() : '—'}</td>
+                  <td style={mono}>{r.hasZoom ? r.connects.toLocaleString() : '—'}</td>
+                  <td style={mono}>{r.hasZoom ? r.connectRate + '%' : '—'}</td>
+                  <td style={mono}>{r.hasSql ? r.sqlSet : '—'}</td>
+                  <td style={mono}>{r.hasSql ? r.sqlHeld : '—'}</td>
+                  <td style={mono}>{r.hasSql ? r.quota : '—'}</td>
+                  <td style={mono}>{r.hasSql ? r.attainment + '%' : '—'}</td>
+                  <td style={mono}>{r.hasSql ? fmtMoney(r.commission, { full: true }) : '—'}</td>
+                </tr>
+              ))}
+              <tr style={{ fontWeight: 700, borderTop: '2px solid #112025' }}>
+                <td>Team</td>
+                <td style={mono}>{team.dials.toLocaleString()}</td>
+                <td style={mono}>{team.connects.toLocaleString()}</td>
+                <td style={mono}>{teamConnRate}%</td>
+                <td style={mono}>{team.sqlSet}</td>
+                <td style={mono}>{team.sqlHeld}</td>
+                <td></td>
+                <td></td>
+                <td style={mono}>{fmtMoney(team.commission, { full: true })}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+            Dials / Connects from Zoom · SQLs / Held / Converted from SDR SQL logs · Commission = SQLs Held × ($416.67 ÷ quota), uncapped. Attainment = Held ÷ (quota × months). Base pay excluded. “—” = no data of that type for the period.
+          </div>
+        </div>
+      </>
+    );
+  };
+
   const getReportContent = () => {
     const report = reports.find(r => r.id === activeReport);
     if (!report) return null;
@@ -2792,6 +2901,7 @@ function ReportsView({ period, setPeriod }) {
 
     switch (activeReport) {
       case 'executive': return renderExecutiveSummary();
+      case 'sdr': return renderSDRReport();
       case 'arr-bridge': return renderARRBridge();
       case 'product': return renderProductPerformance();
       default: return renderDataNeeded(report);
