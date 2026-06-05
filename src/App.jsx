@@ -2930,6 +2930,7 @@ function DataQAView() {
   const [colFilters, setColFilters] = useState({});
   const [sortCol, setSortCol] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
+  const [xlsxLoading, setXlsxLoading] = useState(false);
 
   const filtered = useMemo(() => {
     let out = rows.filter(r => {
@@ -3015,11 +3016,32 @@ function DataQAView() {
     setTimeout(() => w.print(), 300);
   };
 
+  // Export the (filtered + sorted) records to a real .xlsx (SheetJS loaded on demand)
+  const exportXLSX = async () => {
+    setXlsxLoading(true);
+    try {
+      const XLSX = await import('xlsx');
+      const aoa = [columns, ...filtered.map(r => r.map(v => (v === '' || v == null ? '' : v)))];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Cleaned Zuora Data');
+      const stamp = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Zuora_Data_${stamp}.xlsx`);
+    } catch (e) {
+      alert('Excel export failed: ' + (e && e.message ? e.message : e));
+    } finally {
+      setXlsxLoading(false);
+    }
+  };
+
   return (
     <main className="main">
       <div className="topbar">
         <div><h1 className="page-title">Data</h1></div>
         <div className="topbar-actions">
+          <button className="export-btn" onClick={exportXLSX} disabled={xlsxLoading}>
+            <Icon.ChartBar/> {xlsxLoading ? 'Exporting…' : 'Export Excel'}
+          </button>
           <button className="export-btn" onClick={exportPDF}><Icon.Reports/> Export to PDF</button>
         </div>
       </div>
