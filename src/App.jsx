@@ -3,7 +3,7 @@ import qaData from './qaData.json';
 import sdrData from './sdrData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jun 4, 2026 · 9:33 AM CST';
+const LAST_UPDATED = 'Jun 8, 2026 · 3:00 PM CST';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -234,10 +234,10 @@ const REPS = [
       { customer: 'Westminster Chapel', product: 'Manual Charge', arr: 778, netNew: 778 },
     ]
   },
-  { name: 'Sean Parr',        role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Carson Santee',    role: 'SM AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Sean Parr',        role: 'AM',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 1135, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 1, 0], commissionByMonth: [0, 0, 0, 0, 19, 0], dealsList: [] },
+  { name: 'Carson Santee',    role: 'SM AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 6940, 0], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 4, 0], commissionByMonth: [0, 0, 0, 0, 118, 0], dealsList: [] },
   { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Timm Horton',      role: 'Sr AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Timm Horton',      role: 'Sr AM', deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 13788, 0], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 9, 0], commissionByMonth: [0, 0, 0, 0, 276, 0], dealsList: [] },
 ];
 
 const MONTHLY = [
