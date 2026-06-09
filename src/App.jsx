@@ -736,6 +736,22 @@ function AttainBars({ pct }) {
 }
 
 // ───────── DRAWER ─────────
+// Per-rep subscription detail, read LIVE from the Data tab (qaData) so it's always current for
+// EVERY rep (incl. newly-added ones) — replaces the old hardcoded `dealsList` that was only
+// populated for some reps and never synced. Period-aware: a single month filters to that month
+// (Payment Month is 1-based); Q1/YTD show all the rep's deals.
+const QA_COL = {};
+qaData.columns.forEach((c, i) => { QA_COL[c] = i; });
+function repSubs(repName, period) {
+  const iRep = QA_COL['Sales Rep'], iMon = QA_COL['Payment Month'], iAcct = QA_COL['AccountName'],
+        iProd = QA_COL['ProductPurchased'], iArr = QA_COL['ChargeAmount'], iNet = QA_COL['Subscription Delta'];
+  if (iRep === undefined || iAcct === undefined) return [];
+  const mi = MONTH_INDEX[period]; // 0-based month, or undefined for Q1/YTD
+  return qaData.rows
+    .filter(r => r[iRep] === repName && (mi === undefined || r[iMon] === mi + 1))
+    .map(r => ({ customer: r[iAcct], product: r[iProd], arr: r[iArr] || 0, netNew: r[iNet] || 0 }));
+}
+
 function RepDrawer({ rep, onClose, period }) {
   if (!rep) return null;
   const goalPct = repAttainment(rep, period); // period-aware attainment (matches leaderboard)
@@ -746,6 +762,7 @@ function RepDrawer({ rep, onClose, period }) {
   const periodDeals  = mi !== undefined ? (rep.monthlyDeals?.[mi] ?? 0) : (rep.monthlyDeals ? sumArr(rep.monthlyDeals) : rep.deals);
   const periodNetNew = mi !== undefined ? (rep.spark?.[mi] ?? 0)        : (rep.spark ? sumArr(rep.spark) : rep.netNew);
   const commissionEarned = mi !== undefined ? (rep.commissionByMonth?.[mi] ?? 0) : sumArr(rep.commissionByMonth);
+  const subs = repSubs(rep.name, period); // live subscription detail from the Data tab
   // Commission per month (actual)
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   const commissionTrend = (rep.commissionByMonth || []).map((c, i) => ({
@@ -862,7 +879,7 @@ function RepDrawer({ rep, onClose, period }) {
         <div className="drawer-section">
           <h4>Subscription Detail <span style={{ color: 'var(--text-3)', fontWeight: 400, fontSize: 12 }}>(latest snapshot)</span></h4>
           <div className="deals-list">
-            {rep.dealsList && rep.dealsList.length > 0 ? (
+            {subs.length > 0 ? (
               <table className="deals-table">
                 <thead>
                   <tr>
@@ -873,7 +890,7 @@ function RepDrawer({ rep, onClose, period }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {rep.dealsList.map((deal, idx) => (
+                  {subs.map((deal, idx) => (
                     <tr key={idx}>
                       <td>{deal.customer}</td>
                       <td><span className="product-chip">{deal.product}</span></td>
@@ -1832,6 +1849,7 @@ function RepsView({ onSelectRep, period, setPeriod }) {
 function RepDetailPanel({ rep, period }) {
   const plan = PLANS[rep.plan] || PLANS.Inactive;
   const periodLabel = period ? period.split(' ')[0] : 'Period';
+  const subs = repSubs(rep.name, period); // live subscription detail from the Data tab
   const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
   const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -1929,7 +1947,7 @@ function RepDetailPanel({ rep, period }) {
       <div className="detail-section">
         <h3>Subscription Detail <span style={{ color: 'var(--text-3)', fontWeight: 400, fontSize: 13 }}>(latest snapshot)</span></h3>
         <div className="deals-list">
-          {rep.dealsList && rep.dealsList.length > 0 ? (
+          {subs.length > 0 ? (
             <table className="deals-table">
               <thead>
                 <tr>
@@ -1940,7 +1958,7 @@ function RepDetailPanel({ rep, period }) {
                 </tr>
               </thead>
               <tbody>
-                {rep.dealsList.map((deal, idx) => (
+                {subs.map((deal, idx) => (
                   <tr key={idx}>
                     <td>{deal.customer}</td>
                     <td><span className="product-chip">{deal.product}</span></td>
@@ -2669,7 +2687,7 @@ function ReportsView({ period, setPeriod }) {
     // Aggregate product data from deals
     const productData = {};
     REPS.forEach(rep => {
-      (rep.dealsList || []).forEach(deal => {
+      repSubs(rep.name, period).forEach(deal => {
         const product = deal.product || 'Other';
         if (!productData[product]) {
           productData[product] = { deals: 0, arr: 0, netNew: 0 };
