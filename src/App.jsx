@@ -3,7 +3,7 @@ import qaData from './qaData.json';
 import sdrData from './sdrData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jun 10, 2026 · 9:57 AM CST';
+const LAST_UPDATED = 'Jun 11, 2026 · 12:00 PM CST';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -245,14 +245,14 @@ const MONTHLY = [
   { m: 'Feb', deals: 260, gross: 497579, netNew: 247717, goal: 78.3, commission: 9185, earnings: 60868 },
   { m: 'Mar', deals: 202, gross: 479383, netNew: 205995, goal: 65.1, commission: 12149, earnings: 72072 },
   { m: 'Apr', deals: 134, gross: 361935, netNew: 218390, goal: 69.0, commission: 9263, earnings: 60946 },
-  { m: 'May', deals: 107, gross: 341436, netNew: 230064, goal: 72.7, commission: 11880, earnings: 63148 },
+  { m: 'May', deals: 107, gross: 341436, netNew: 230064, goal: 72.7, commission: 11880, earnings: 63561 },
   { m: 'Jun', deals: 0, gross: 0, netNew: 0, goal: 0.0, commission: 0, earnings: 51683 },
 ];
 
 // Latest month with actual data (fallback default for period lookups)
 const MAY_DATA = MONTHLY[MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0)];
 const YTD = {
-  deals: 924, gross: 2204923, netNew: 1209298, commission: 55765, earnings: 373686,
+  deals: 924, gross: 2204923, netNew: 1209298, commission: 55765, earnings: 374099,
 };
 
 // ───────── RUN RATE PROJECTION ─────────
