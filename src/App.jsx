@@ -110,7 +110,7 @@ const PLANS = {
 };
 
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 19, netNew: 9244, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 21317, 55322, 28569, 9244], color: '#00F0FF', plan: 'C', monthlyDeals: [102, 102, 77, 54, 32, 19], commissionByMonth: [4845, 1484, 362, 1382, 486, 157],
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 19, netNew: 9244, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 21317, 55322, 28569, 9244], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 32, 19], commissionByMonth: [4845, 1484, 362, 1382, 486, 157],
     dealsList: [
       { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
       { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
@@ -135,7 +135,7 @@ const REPS = [
       { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
     ]
   },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 11, netNew: 28938, goal: 60.8,  gross: 30403, commission: 517,  basePay: 4167, earnings: 4684, status: 'on-track', spark: [14877, 44955, 54195, 49690, 34030, 28938], color: '#39FF9C', plan: 'D', arrCollected: [14877, 44955, 54195, 49690, 30403], monthlyDeals: [14, 35, 30, 26, 15, 11], commissionByMonth: [253, 764, 921, 845, 579, 492],
+  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 11, netNew: 28938, goal: 60.8,  gross: 30403, commission: 517,  basePay: 4167, earnings: 4684, status: 'on-track', spark: [14877, 44955, 54195, 49690, 34030, 28938], color: '#6BD9A4', plan: 'D', arrCollected: [14877, 44955, 54195, 49690, 30403], monthlyDeals: [14, 35, 30, 26, 15, 11], commissionByMonth: [253, 764, 921, 845, 579, 492],
     dealsList: [
       { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
       { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
@@ -155,7 +155,7 @@ const REPS = [
       { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
     ]
   },
-  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#6F6FA0', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0],
+  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0],
     dealsList: [
       { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
       { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
@@ -170,7 +170,7 @@ const REPS = [
       { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
     ]
   },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 0, netNew: 0, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 42030, 0], color: '#FFD60A', plan: 'A', monthlyDeals: [6, 18, 13, 15, 14, 0], commissionByMonth: [126, 1434, 1743, 2761, 3362, 0],
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 0, netNew: 0, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 42030, 0], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 14, 0], commissionByMonth: [126, 1434, 1743, 2761, 3362, 0],
     dealsList: [
       { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
       { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
@@ -188,7 +188,7 @@ const REPS = [
       { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
     ]
   },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 2,  netNew: 21726, goal: 92.2,  gross: 63760, commission: 3073, basePay: 5000, earnings: 8073, status: 'on-track',   spark: [32535, 31839, 66096, 25713, 44079, 21726], color: '#FF2FD2', plan: 'A', monthlyDeals: [15, 22, 26, 6, 11, 2], commissionByMonth: [2603, 2547, 5288, 2057, 3526, 1738],
+  { name: 'Caleb Gilbert',    role: 'AE',    deals: 2,  netNew: 21726, goal: 92.2,  gross: 63760, commission: 3073, basePay: 5000, earnings: 8073, status: 'on-track',   spark: [32535, 31839, 66096, 25713, 44079, 21726], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6, 11, 2], commissionByMonth: [2603, 2547, 5288, 2057, 3526, 1738],
     dealsList: [
       { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
       { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
@@ -197,7 +197,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 7, netNew: 9275, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 32392, 25598, 26471, 9275], color: '#FF6B35', plan: 'A', monthlyDeals: [31, 50, 29, 13, 10, 7], commissionByMonth: [4678, 1953, 2591, 2048, 2118, 742],
+  { name: 'Brian Carl',       role: 'AE',    deals: 7, netNew: 9275, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 32392, 25598, 26471, 9275], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 10, 7], commissionByMonth: [4678, 1953, 2591, 2048, 2118, 742],
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -212,7 +212,7 @@ const REPS = [
       { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
     ]
   },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 0,  netNew: 0,  goal: 26.5,  gross: 22013, commission: 225,  basePay: 4167, earnings: 4392, status: 'behind',   spark: [46057, 35159, 16829, 9990, 9454, 0],   color: '#7DF8FF', plan: 'C', monthlyDeals: [57, 46, 27, 7, 7, 0], commissionByMonth: [783, 598, 286, 170, 161, 0],
+  { name: 'Elijah Diaz',      role: 'AM',    deals: 0,  netNew: 0,  goal: 26.5,  gross: 22013, commission: 225,  basePay: 4167, earnings: 4392, status: 'behind',   spark: [46057, 35159, 16829, 9990, 9454, 0],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7, 7, 0], commissionByMonth: [783, 598, 286, 170, 161, 0],
     dealsList: [
       { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: 0 },
       { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: 1125 },
@@ -223,7 +223,7 @@ const REPS = [
       { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
     ]
   },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 5, netNew: 0,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15966, 4903, 10070, 0],  color: '#4DC9FF', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13, 5], commissionByMonth: [0, 405, 958, 0, 0, 0],
+  { name: "Connor O'Brien",   role: 'AE',    deals: 5, netNew: 0,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15966, 4903, 10070, 0],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 13, 5], commissionByMonth: [0, 405, 958, 0, 0, 0],
     dealsList: [
       { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
       { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
@@ -234,10 +234,10 @@ const REPS = [
       { customer: 'Westminster Chapel', product: 'Manual Charge', arr: 778, netNew: 778 },
     ]
   },
-  { name: 'Sean Parr',        role: 'AM',    deals: 4, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 1135, 0], color: '#FF7AC6', plan: 'C', monthlyDeals: [0, 0, 0, 0, 1, 4], commissionByMonth: [0, 0, 0, 0, 19, 0], dealsList: [] },
-  { name: 'Carson Santee',    role: 'SM AM', deals: 8, netNew: 20047, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 6940, 20047], color: '#00FFA3', plan: 'D', monthlyDeals: [0, 0, 0, 0, 4, 8], commissionByMonth: [0, 0, 0, 0, 118, 341], dealsList: [] },
-  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#FF4D6D', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Timm Horton',      role: 'Sr AM', deals: 2, netNew: 2012, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 9611, 2012], color: '#4D79FF', plan: 'C', monthlyDeals: [0, 0, 0, 0, 9, 2], commissionByMonth: [0, 0, 0, 0, 192, 40], dealsList: [] },
+  { name: 'Sean Parr',        role: 'AM',    deals: 4, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 1135, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 1, 4], commissionByMonth: [0, 0, 0, 0, 19, 0], dealsList: [] },
+  { name: 'Carson Santee',    role: 'SM AM', deals: 8, netNew: 20047, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 6940, 20047], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 4, 8], commissionByMonth: [0, 0, 0, 0, 118, 341], dealsList: [] },
+  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
+  { name: 'Timm Horton',      role: 'Sr AM', deals: 2, netNew: 2012, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 9611, 2012], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 9, 2], commissionByMonth: [0, 0, 0, 0, 192, 40], dealsList: [] },
 ];
 
 const MONTHLY = [
@@ -439,7 +439,7 @@ function PeriodSelector({ period, setPeriod, periodOpen, setPeriodOpen }) {
 }
 
 // ───────── SPARKLINE ─────────
-function Sparkline({ data, width = 110, height = 32, color = '#00F0FF', filled = true, glow = true }) {
+function Sparkline({ data, width = 110, height = 32, color = '#34D399', filled = true, glow = true }) {
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
@@ -491,29 +491,29 @@ function ForecastViz() {
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
       <defs>
         <radialGradient id="orb-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#7DF8FF" stopOpacity="0.45" />
-          <stop offset="60%" stopColor="#00F0FF" stopOpacity="0.10" />
-          <stop offset="100%" stopColor="#00F0FF" stopOpacity="0" />
+          <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.45" />
+          <stop offset="60%" stopColor="#34D399" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="#34D399" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="cone-grad" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stopColor="#00F0FF" stopOpacity="0.0" />
-          <stop offset="100%" stopColor="#00F0FF" stopOpacity="0.22" />
+          <stop offset="0%" stopColor="#34D399" stopOpacity="0.0" />
+          <stop offset="100%" stopColor="#34D399" stopOpacity="0.22" />
         </linearGradient>
       </defs>
       {/* Concentric orbital rings behind the May forecast dot */}
       <g transform={`translate(${xFor(projIdx)} ${yFor(projMid)})`} opacity="0.7">
         <circle r="58" fill="url(#orb-glow)" />
-        <ellipse rx="50" ry="14" fill="none" stroke="rgba(0, 240, 255,0.18)" strokeWidth="1"/>
-        <ellipse rx="42" ry="11" fill="none" stroke="rgba(0, 240, 255,0.22)" strokeWidth="1" transform="rotate(-25)"/>
-        <ellipse rx="34" ry="9" fill="none" stroke="rgba(0, 240, 255,0.26)" strokeWidth="1" transform="rotate(20)"/>
-        <ellipse rx="26" ry="7" fill="none" stroke="rgba(0, 240, 255,0.30)" strokeWidth="1" transform="rotate(-45)"/>
+        <ellipse rx="50" ry="14" fill="none" stroke="rgba(52, 211, 153,0.18)" strokeWidth="1"/>
+        <ellipse rx="42" ry="11" fill="none" stroke="rgba(52, 211, 153,0.22)" strokeWidth="1" transform="rotate(-25)"/>
+        <ellipse rx="34" ry="9" fill="none" stroke="rgba(52, 211, 153,0.26)" strokeWidth="1" transform="rotate(20)"/>
+        <ellipse rx="26" ry="7" fill="none" stroke="rgba(52, 211, 153,0.30)" strokeWidth="1" transform="rotate(-45)"/>
         {/* Scattered particles */}
         {[...Array(28)].map((_, i) => {
           const ang = (i * 137) % 360;
           const r = 14 + (i * 7) % 46;
           const x = Math.cos(ang * Math.PI / 180) * r;
           const y = Math.sin(ang * Math.PI / 180) * r * 0.35;
-          return <circle key={i} cx={x} cy={y} r={i % 5 === 0 ? 1.2 : 0.7} fill="#7DF8FF" opacity={0.4 + (i % 4) * 0.15} />;
+          return <circle key={i} cx={x} cy={y} r={i % 5 === 0 ? 1.2 : 0.7} fill="#6EE7B7" opacity={0.4 + (i % 4) * 0.15} />;
         })}
       </g>
 
@@ -524,20 +524,20 @@ function ForecastViz() {
       <path d={conePath} fill="url(#cone-grad)" />
 
       {/* Actual line */}
-      <path d={actualPath} stroke="#00F0FF" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 6px #00F0FF80)' }}/>
+      <path d={actualPath} stroke="#34D399" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 6px #34D39980)' }}/>
       {/* Projected dashed */}
-      <path d={projPath} stroke="#7DF8FF" strokeWidth="2" fill="none" strokeDasharray="4 4" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 6px #7DF8FF80)' }}/>
+      <path d={projPath} stroke="#6EE7B7" strokeWidth="2" fill="none" strokeDasharray="4 4" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 6px #6EE7B780)' }}/>
 
       {/* Dots with value labels */}
       {actual.map((v, i) => (
         <g key={i}>
-          <circle cx={xFor(i)} cy={yFor(v)} r="4" fill="#0E0D1F" stroke="#00F0FF" strokeWidth="2" />
+          <circle cx={xFor(i)} cy={yFor(v)} r="4" fill="#0E1220" stroke="#34D399" strokeWidth="2" />
           <text
             x={xFor(i)}
             y={yFor(v) - 10}
             fontSize="9"
             fontWeight="600"
-            fill="#00F0FF"
+            fill="#34D399"
             textAnchor="middle"
             fontFamily="JetBrains Mono"
           >
@@ -546,18 +546,18 @@ function ForecastViz() {
         </g>
       ))}
       {/* May ghost dot */}
-      <circle cx={xFor(projIdx)} cy={yFor(projMid)} r="6" fill="#7DF8FF" style={{ filter: 'drop-shadow(0 0 10px #7DF8FF)' }}/>
-      <circle cx={xFor(projIdx)} cy={yFor(projMid)} r="11" fill="none" stroke="#7DF8FF" strokeWidth="1" opacity="0.4"/>
+      <circle cx={xFor(projIdx)} cy={yFor(projMid)} r="6" fill="#6EE7B7" style={{ filter: 'drop-shadow(0 0 10px #6EE7B7)' }}/>
+      <circle cx={xFor(projIdx)} cy={yFor(projMid)} r="11" fill="none" stroke="#6EE7B7" strokeWidth="1" opacity="0.4"/>
 
       {/* X-axis labels */}
       {months.map((m, i) => (
-        <text key={m} x={xFor(i)} y={H - 10} fontSize="10.5" fill={i === projIdx ? '#7DF8FF' : '#6F6FA0'} textAnchor="middle" fontWeight="500" fontFamily="Plus Jakarta Sans">{m}</text>
+        <text key={m} x={xFor(i)} y={H - 10} fontSize="10.5" fill={i === projIdx ? '#6EE7B7' : '#6B6F8C'} textAnchor="middle" fontWeight="500" fontFamily="Plus Jakarta Sans">{m}</text>
       ))}
 
       {/* May value label */}
       <g transform={`translate(${xFor(projIdx)} ${yFor(projMid) - 16})`}>
-        <rect x="-30" y="-13" width="60" height="18" rx="5" fill="#1B1936" stroke="rgba(0, 240, 255,0.4)"/>
-        <text x="0" y="-1" fontSize="10.5" fontWeight="600" fill="#7DF8FF" textAnchor="middle" fontFamily="JetBrains Mono">${(projMid / 1000).toFixed(1)}K</text>
+        <rect x="-30" y="-13" width="60" height="18" rx="5" fill="#1E2238" stroke="rgba(52, 211, 153,0.4)"/>
+        <text x="0" y="-1" fontSize="10.5" fontWeight="600" fill="#6EE7B7" textAnchor="middle" fontFamily="JetBrains Mono">${(projMid / 1000).toFixed(1)}K</text>
       </g>
     </svg>
   );
@@ -586,11 +586,11 @@ function YTDNetNewChart() {
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="xMidYMid meet">
       <defs>
         <linearGradient id="ytd-bar-grad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#7DF8FF" stopOpacity="0.9"/>
-          <stop offset="100%" stopColor="#00A3FF" stopOpacity="1"/>
+          <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.9"/>
+          <stop offset="100%" stopColor="#10B981" stopOpacity="1"/>
         </linearGradient>
         <linearGradient id="ytd-line-grad" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stopColor="#FFD60A"/>
+          <stop offset="0%" stopColor="#F3C969"/>
           <stop offset="100%" stopColor="#FBBF24"/>
         </linearGradient>
       </defs>
@@ -656,8 +656,8 @@ function YTDNetNewChart() {
         const y = padTop + chartH - (val / maxCumulative) * chartH;
         return (
           <g key={i}>
-            <circle cx={x} cy={y} r="5" fill="#0E1A1D" stroke="#FFD60A" strokeWidth="2"/>
-            <text x={x} y={y - 12} fontSize="9" fill="#FFD60A" textAnchor="middle" fontWeight="600" fontFamily="JetBrains Mono">
+            <circle cx={x} cy={y} r="5" fill="#0E1A1D" stroke="#F3C969" strokeWidth="2"/>
+            <text x={x} y={y - 12} fontSize="9" fill="#F3C969" textAnchor="middle" fontWeight="600" fontFamily="JetBrains Mono">
               ${(val / 1000).toFixed(0)}K
             </text>
           </g>
@@ -675,12 +675,12 @@ function MiniBars({ data }) {
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="xMidYMid meet">
       <defs>
         <linearGradient id="mb-grad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#7DF8FF" stopOpacity="0.05"/>
-          <stop offset="100%" stopColor="#00A3FF" stopOpacity="0.85"/>
+          <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.05"/>
+          <stop offset="100%" stopColor="#10B981" stopOpacity="0.85"/>
         </linearGradient>
         <linearGradient id="mb-grad-projection" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#7DF8FF" stopOpacity="0.03"/>
-          <stop offset="100%" stopColor="#00F0FF" stopOpacity="0.4"/>
+          <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.03"/>
+          <stop offset="100%" stopColor="#34D399" stopOpacity="0.4"/>
         </linearGradient>
       </defs>
       {data.map((d, i) => {
@@ -689,8 +689,8 @@ function MiniBars({ data }) {
         const y = H - h - 16;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={barW} height={h} rx={Math.min(barW / 4, 7)} fill={d.projected ? 'url(#mb-grad-projection)' : 'url(#mb-grad)'} stroke={d.projected ? 'rgba(0, 240, 255,0.3)' : 'none'} strokeDasharray={d.projected ? '3 3' : ''}/>
-            <text x={x + barW / 2} y={H - 3} fontSize="9.5" fill={d.projected ? '#7DF8FF' : '#6F6FA0'} textAnchor="middle" fontWeight="500" fontFamily="Plus Jakarta Sans">{d.label}</text>
+            <rect x={x} y={y} width={barW} height={h} rx={Math.min(barW / 4, 7)} fill={d.projected ? 'url(#mb-grad-projection)' : 'url(#mb-grad)'} stroke={d.projected ? 'rgba(52, 211, 153,0.3)' : 'none'} strokeDasharray={d.projected ? '3 3' : ''}/>
+            <text x={x + barW / 2} y={H - 3} fontSize="9.5" fill={d.projected ? '#6EE7B7' : '#6B6F8C'} textAnchor="middle" fontWeight="500" fontFamily="Plus Jakarta Sans">{d.label}</text>
           </g>
         );
       })}
@@ -1259,7 +1259,7 @@ function SDRDashboard({ team, setTeam }) {
 }
 
 // ===== Phase 3: SDR reps on the Reps tab (activity scorecards from sdrData) =====
-const SDR_COLORS = ['#00F0FF', '#4D9FFF', '#FFD60A', '#FF2FD2', '#BD8CFF', '#FF6B35'];
+const SDR_COLORS = ['#34D399', '#60A5FA', '#F3C969', '#E26D8E', '#A78BFA', '#F08F6A'];
 const SDR_MM = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
 
 // SDR comp (JAM Comp Example): $5K variable / 12 = $416.67 at-target monthly variable.
@@ -2165,7 +2165,7 @@ function CommissionsView({ period, setPeriod }) {
           </div>
         </div>
         <div className="payout-card">
-          <div className="payout-icon" style={{ background: 'rgba(0, 240, 255, 0.15)' }}>
+          <div className="payout-icon" style={{ background: 'rgba(52, 211, 153, 0.15)' }}>
             <Icon.Reps />
           </div>
           <div className="payout-info">
