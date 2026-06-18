@@ -3,7 +3,7 @@ import qaData from './qaData.json';
 import sdrData from './sdrData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jun 15, 2026 · 3:19 PM CST';
+const LAST_UPDATED = 'Jun 18, 2026 · 9:00 AM CST';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -110,7 +110,7 @@ const PLANS = {
 };
 
 const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 19, netNew: 9244, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 21317, 55322, 28569, 9244], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 32, 19], commissionByMonth: [4845, 1484, 362, 1382, 486, 157],
+  { name: 'Cameron Grissom',  role: 'AM',    deals: 20, netNew: 9244, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 21317, 55322, 28569, 9244], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 32, 20], commissionByMonth: [4845, 1484, 362, 1382, 486, 157],
     dealsList: [
       { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: 1387 },
       { customer: 'Amplify Church', product: '252', arr: 3073, netNew: 2378 },
@@ -170,7 +170,7 @@ const REPS = [
       { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
     ]
   },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 0, netNew: 0, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 42030, 0], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 14, 0], commissionByMonth: [126, 1434, 1743, 2761, 3362, 0],
+  { name: 'Connor Krauseneck',role: 'AE',    deals: 1, netNew: 0, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 34517, 42030, 0], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 14, 1], commissionByMonth: [126, 1434, 1743, 2761, 3362, 0],
     dealsList: [
       { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
       { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
@@ -235,7 +235,7 @@ const REPS = [
     ]
   },
   { name: 'Sean Parr',        role: 'AM',    deals: 4, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 1135, 0], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 1, 4], commissionByMonth: [0, 0, 0, 0, 19, 0], dealsList: [] },
-  { name: 'Carson Santee',    role: 'SM AM', deals: 8, netNew: 20047, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 6940, 20047], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 4, 8], commissionByMonth: [0, 0, 0, 0, 118, 341], dealsList: [] },
+  { name: 'Carson Santee',    role: 'SM AM', deals: 9, netNew: 22505, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 6940, 22505], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 4, 9], commissionByMonth: [0, 0, 0, 0, 118, 383], dealsList: [] },
   { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0], dealsList: [] },
   { name: 'Timm Horton',      role: 'Sr AM', deals: 2, netNew: 2012, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 9611, 2012], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 9, 2], commissionByMonth: [0, 0, 0, 0, 192, 40], dealsList: [] },
 ];
@@ -246,13 +246,13 @@ const MONTHLY = [
   { m: 'Mar', deals: 202, gross: 479383, netNew: 205995, goal: 65.1, commission: 12149, earnings: 72072 },
   { m: 'Apr', deals: 134, gross: 361935, netNew: 218390, goal: 69.0, commission: 9263, earnings: 60946 },
   { m: 'May', deals: 107, gross: 341436, netNew: 201631, goal: 63.7, commission: 10561, earnings: 62244 },
-  { m: 'Jun', deals: 44, gross: 163207, netNew: 60456, goal: 19.1, commission: 3510, earnings: 55193 },
+  { m: 'Jun', deals: 48, gross: 170934, netNew: 60456, goal: 19.1, commission: 3552, earnings: 55235 },
 ];
 
 // Latest month with actual data (fallback default for period lookups)
 const MAY_DATA = MONTHLY[MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0)];
 const YTD = {
-  deals: 968, gross: 2368130, netNew: 1241321, commission: 57956, earnings: 376292,
+  deals: 972, gross: 2375857, netNew: 1241321, commission: 57998, earnings: 376334,
 };
 
 // ───────── RUN RATE PROJECTION ─────────
