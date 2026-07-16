@@ -3,7 +3,7 @@ import qaData from './qaData.json';
 import sdrData from './sdrData.json';
 
 // Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jul 15, 2026 · 11:55 AM CST';
+const LAST_UPDATED = 'Jul 16, 2026 · 3:53 PM CST';
 
 // ───────── PERIOD OPTIONS ─────────
 const PERIOD_OPTIONS = ['Jul 2026', 'Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
@@ -197,7 +197,7 @@ const REPS = [
       { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
     ]
   },
-  { name: 'Brian Carl',       role: 'AE',    deals: 2, netNew: 133, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 32392, 23989, 27672, 18047, 133], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 10, 10, 2], commissionByMonth: [4678, 1953, 2591, 1919, 2214, 1444, 11],
+  { name: 'Brian Carl',       role: 'AE',    deals: 2, netNew: 133, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 32392, 23989, 27672, 25421, 133], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 10, 10, 2], commissionByMonth: [4678, 1953, 2591, 1919, 2214, 2034, 11],
     dealsList: [
       { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
       { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
@@ -246,14 +246,14 @@ const MONTHLY = [
   { m: 'Mar', deals: 202, gross: 479383, netNew: 205995, goal: 65.1, commission: 12149, earnings: 72072 },
   { m: 'Apr', deals: 140, gross: 361935, netNew: 217242, goal: 68.7, commission: 8682, earnings: 60366 },
   { m: 'May', deals: 113, gross: 349572, netNew: 227198, goal: 71.8, commission: 12104, earnings: 63786 },
-  { m: 'Jun', deals: 125, gross: 384096, netNew: 229934, goal: 72.7, commission: 10489, earnings: 62171 },
+  { m: 'Jun', deals: 125, gross: 384096, netNew: 238132, goal: 75.3, commission: 11079, earnings: 62761 },
   { m: 'Jul', deals: 81, gross: 252798, netNew: 75636, goal: 23.9, commission: 2054, earnings: 52700 },
 ];
 
 // Latest month with actual data (fallback default for period lookups)
 const MAY_DATA = MONTHLY[MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0)];
 const YTD = {
-  deals: 1142, gross: 2849953, netNew: 1510854, commission: 67951, earnings: 436932,
+  deals: 1142, gross: 2849953, netNew: 1519052, commission: 68541, earnings: 437522,
 };
 
 // ───────── RUN RATE PROJECTION ─────────
