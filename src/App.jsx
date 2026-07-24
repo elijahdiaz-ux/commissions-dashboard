@@ -1,22 +1,22 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import qaData from './qaData.json';
 import sdrData from './sdrData.json';
+import dashData from './dashData.json';
+import { buildConstants } from './dashDataAdapter';
 
-// Stamped by sync_dashboard.py on each push that deploys new data (Central time)
-const LAST_UPDATED = 'Jul 21, 2026 · 10:32 AM CST';
-
-// ───────── PERIOD OPTIONS ─────────
-const PERIOD_OPTIONS = ['Jul 2026', 'Jun 2026', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Q1 2026', 'YTD 2026'];
-const MONTH_INDEX = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4, 'Jun 2026': 5, 'Jul 2026': 6 };
-
-// ───────── PACING CONFIG ─────────
-// For live tracking, update these values to current date
-const CURRENT_MONTH = {
-  name: 'April',
-  year: 2026,
-  dayOfMonth: 30,  // Current day (30 = end of month for April)
-  daysInMonth: 30, // Total days in April
-};
+// ───────── LIVE DATA ─────────
+// Every synced constant now derives from dashData.json, which the automation builds
+// from the REVAMP workbook's Export tab (see Sales Dash Automation/README.md).
+// The adapter returns the exact shapes the components below have always consumed.
+const {
+  LAST_UPDATED,      // stamp of the last pipeline run (Central time)
+  PERIOD_OPTIONS,    // ['Jul 2026', …, 'Jan 2026', 'Q1 2026', 'YTD 2026']
+  MONTH_INDEX,       // { 'Jan 2026': 0, … } (actual months only)
+  CURRENT_MONTH,     // pacing config, derived from the data month
+  REPS,              // per-rep blocks incl. spark/monthlyDeals/commissionByMonth
+  MONTHLY,           // team by month (sales view, matching the old headline)
+  YTD,               // team year-to-date
+} = buildConstants(dashData);
 
 // Calculate expected pacing percentage
 const EXPECTED_PACING = (CURRENT_MONTH.dayOfMonth / CURRENT_MONTH.daysInMonth) * 100;
@@ -98,6 +98,19 @@ const PLANS = {
     ],
     description: '1.7% flat rate on total ARR Collected (no tiers, no kicker)',
   },
+  E: {
+    name: 'Plan E — Sr. AM Monthly',
+    type: 'Monthly',
+    quota: 62500,
+    annualQuota: 750000,
+    baseRate: 0.02,
+    kickerRate: 0.10,
+    tiers: [
+      { min: 0, max: 62500, rate: 0.02, label: 'Base (2%)' },
+      { min: 62500, max: 999999, rate: 0.10, label: 'Kicker (10% over quota)' },
+    ],
+    description: '2% on Net New ARR up to the $62.5K monthly quota, 10% kicker on overages',
+  },
   Inactive: {
     name: 'Inactive',
     type: 'N/A',
@@ -109,152 +122,10 @@ const PLANS = {
   },
 };
 
-const REPS = [
-  { name: 'Cameron Grissom',  role: 'AM',    deals: 75, netNew: -7679, goal: 54.1, gross: 44883, commission: 459, basePay: 4167, earnings: 4626, status: 'on-track', spark: [89945, 56342, 21317, 49589, 32949, 64962, -7679], color: '#34D399', plan: 'C', monthlyDeals: [102, 102, 77, 54, 34, 50, 75], commissionByMonth: [4845, 1484, 362, 843, 560, 2346, -131],
-    dealsList: [
-      { customer: 'Alliance Missionary Church', product: '252', arr: 2070, netNew: -7679 },
-      { customer: 'Amplify Church', product: '252', arr: 3073, netNew: -7679 },
-      { customer: 'Amplify Church', product: 'First Look', arr: 2154, netNew: 833 },
-      { customer: 'Amplify Church', product: 'Amazing Music', arr: 1500, netNew: 1500 },
-      { customer: 'Austin Avenue Methodist', product: 'Amazing+', arr: 2173, netNew: 1820 },
-      { customer: 'Brentwood United Methodist', product: 'Amazing Music', arr: 1500, netNew: 1500 },
-      { customer: 'Compass Church', product: '252', arr: 1007, netNew: 511 },
-      { customer: 'Destination Community Church', product: '252', arr: 1199, netNew: 496 },
-      { customer: 'Destination Community Church', product: 'First Look', arr: 1052, netNew: 388 },
-      { customer: 'Elevate City Church', product: '252', arr: 2372, netNew: 1338 },
-      { customer: 'Elevate City Church', product: 'First Look', arr: 1583, netNew: 1178 },
-      { customer: 'Grace Church', product: '252', arr: 3577, netNew: 2818 },
-      { customer: 'Higher Vision Church', product: 'First Look', arr: 2610, netNew: 2610 },
-      { customer: 'Higher Vision Church', product: '252', arr: 3577, netNew: 3577 },
-      { customer: 'Lakeview Church', product: 'First Look', arr: 1955, netNew: 1545 },
-      { customer: 'Lakeview Church', product: '252', arr: 2774, netNew: 1189 },
-      { customer: 'Lionheart Childrens Academy', product: '252', arr: 3438, netNew: 3031 },
-      { customer: 'Local Church SAV', product: 'Amazing+', arr: 4952, netNew: 3420 },
-      { customer: 'Oakwood Christian Church', product: 'Amazing+', arr: 4952, netNew: 2993 },
-      { customer: 'Palm Harbor United Methodist', product: '252', arr: 3073, netNew: 2050 },
-      { customer: 'SOUTHSTONE CHURCH', product: 'Amazing+', arr: 3459, netNew: 3459 },
-    ]
-  },
-  { name: 'Kaitlyn Lack',     role: 'SM AM', deals: 24, netNew: 58306, goal: 60.8,  gross: 30403, commission: 517,  basePay: 4167, earnings: 4684, status: 'on-track', spark: [14877, 44955, 54195, 49690, 34030, 42299, 58306], color: '#6BD9A4', plan: 'D', monthlyDeals: [14, 35, 30, 26, 15, 21, 24], commissionByMonth: [253, 764, 921, 845, 579, 719, 991],
-    dealsList: [
-      { customer: 'Allentown UMC', product: '252', arr: 1199, netNew: 642 },
-      { customer: 'Awaken Church', product: '252', arr: 1199, netNew: 777 },
-      { customer: 'Belong Church Atlanta', product: 'Amazing+', arr: 4627, netNew: 826 },
-      { customer: 'Calvary Vision Church', product: '252', arr: 557, netNew: 557 },
-      { customer: 'Capital Christian Church', product: '252', arr: 2070, netNew: 1063 },
-      { customer: 'Elm City Vineyard Church', product: 'Amazing+', arr: 3025, netNew: 1738 },
-      { customer: 'Faith Center', product: 'Amazing+', arr: 3459, netNew: 3459 },
-      { customer: 'FCC Crescent', product: '252', arr: 1199, netNew: 1199 },
-      { customer: 'First Baptist Church', product: '252', arr: 1199, netNew: 1199 },
-      { customer: 'Houston Church', product: 'Amazing+', arr: 4138, netNew: 1141 },
-      { customer: 'Keymar Evangelical Wesley', product: 'Amazing+', arr: 2251, netNew: 681 },
-      { customer: 'Midway Locust Grove UMC', product: '252', arr: 2070, netNew: 496 },
-      { customer: 'Renovation Church', product: 'Amazing+', arr: 4941, netNew: 6187 },
-      { customer: 'The Freedom Church', product: '252', arr: 557, netNew: 557 },
-      { customer: 'TTUMC', product: '252', arr: 1199, netNew: 1199 },
-      { customer: 'Waypoint', product: '252', arr: 2070, netNew: 871 },
-    ]
-  },
-  { name: 'Chase Bryant',     role: 'AM Mgr', deals: 0, netNew: 0, goal: 0.0,   gross: 73570, commission: 0,    basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0, 0], color: '#6B6F8C', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0, 0],
-    dealsList: [
-      { customer: 'Austin Ridge Bible Church', product: 'Amazing+', arr: 0, netNew: 6719 },
-      { customer: 'Central Wesleyan Church', product: 'Middle School', arr: 2441, netNew: 955 },
-      { customer: 'Central Wesleyan Church', product: '252', arr: 3445, netNew: 1231 },
-      { customer: 'Central Wesleyan Church', product: 'First Look', arr: 2543, netNew: 1023 },
-      { customer: 'Central Wesleyan Church', product: 'High School', arr: 2441, netNew: 2625 },
-      { customer: 'Christ Fellowship', product: 'First Look', arr: 2100, netNew: 1690 },
-      { customer: 'Christ Fellowship', product: '252', arr: 3500, netNew: 2333 },
-      { customer: 'Church360', product: 'First Look', arr: 3177, netNew: 2670 },
-      { customer: 'First Baptist Church Orlando', product: 'Amazing+', arr: 16849, netNew: 13887 },
-      { customer: 'Parkview Christian Church', product: 'Amazing+', arr: 3950, netNew: 1258 },
-      { customer: 'The United Methodist Church', product: '252', arr: 4304, netNew: 3031 },
-    ]
-  },
-  { name: 'Connor Krauseneck',role: 'AE',    deals: 11, netNew: 16945, goal: 51.3,  gross: 35491, commission: 1710, basePay: 5000, earnings: 6710, status: 'behind',   spark: [1569, 17920, 21781, 35506, 49096, 35623, 16945], color: '#F3C969', plan: 'A', monthlyDeals: [6, 18, 13, 15, 16, 14, 11], commissionByMonth: [126, 1434, 1743, 2840, 3928, 2850, 1356],
-    dealsList: [
-      { customer: 'Breiel Blvd. Church of God', product: 'Amazing+', arr: 3573, netNew: 3573 },
-      { customer: 'Harbor Life Church', product: 'Amazing+', arr: 2380, netNew: 2380 },
-      { customer: 'Horizons Community Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
-      { customer: 'Kalamazoo Community Church', product: 'Amazing+', arr: 3600, netNew: 3600 },
-      { customer: 'La Jolla United Methodist', product: 'Amazing+', arr: 4562, netNew: 4562 },
-      { customer: 'Limitless Church', product: 'Amazing+', arr: 366, netNew: 1100 },
-      { customer: 'Malibu Pacific Church', product: 'Amazing+', arr: 3312, netNew: 1512 },
-      { customer: 'Multiply Church', product: 'Amazing+', arr: 1751, netNew: 1751 },
-      { customer: 'Redemption Church', product: 'Amazing+', arr: 647, netNew: 647 },
-      { customer: 'Rexdale Alliance Church', product: 'Amazing+', arr: 2365, netNew: 2365 },
-      { customer: 'Society Church', product: 'Amazing+', arr: 2788, netNew: 2788 },
-      { customer: 'Together Church', product: 'Amazing+', arr: 3785, netNew: 3835 },
-      { customer: 'Voices of Faith East', product: 'Amazing+', arr: 1901, netNew: 1901 },
-      { customer: 'Word Of Life Church', product: 'Amazing+', arr: 2251, netNew: 2251 },
-    ]
-  },
-  { name: 'Caleb Gilbert',    role: 'AE',    deals: 5,  netNew: 6890, goal: 92.2,  gross: 63760, commission: 3073, basePay: 5000, earnings: 8073, status: 'on-track',   spark: [32535, 31839, 66096, 25775, 54079, 23862, 6890], color: '#E26D8E', plan: 'A', monthlyDeals: [15, 22, 26, 6, 11, 4, 5], commissionByMonth: [2603, 2547, 5288, 2062, 4326, 1909, 551],
-    dealsList: [
-      { customer: 'Christian Tabernacle Church', product: 'Amazing+', arr: 5814, netNew: 5814 },
-      { customer: 'Connect Church', product: '252', arr: 4304, netNew: 3105 },
-      { customer: 'Cornerstone Church', product: 'Amazing+', arr: 14999, netNew: 14999 },
-      { customer: 'Godalming Minster', product: 'Amazing+', arr: 959, netNew: 459 },
-      { customer: 'Liberty Baptist Church', product: 'High School', arr: 2431, netNew: 1335 },
-    ]
-  },
-  { name: 'Brian Carl',       role: 'AE',    deals: 3, netNew: 266, goal: 49.3,  gross: 34070, commission: 1642, basePay: 5000, earnings: 6642, status: 'behind',   spark: [58472, 24416, 32392, 23989, 27672, 25421, 266], color: '#F08F6A', plan: 'A', monthlyDeals: [31, 50, 29, 13, 10, 10, 3], commissionByMonth: [4678, 1953, 2591, 1919, 2214, 2034, 21],
-    dealsList: [
-      { customer: 'Cornerstone Methodist Church', product: 'Amazing+', arr: 1039, netNew: 1920 },
-      { customer: 'Frankenmuth Bible Church', product: 'Amazing+', arr: 2191, netNew: 1351 },
-      { customer: 'Freshwater Community Church', product: 'Amazing+', arr: 4055, netNew: 2489 },
-      { customer: 'Grace UMC', product: 'Amazing+', arr: 800, netNew: 2401 },
-      { customer: 'Jesus Crew', product: 'Amazing+', arr: 475, netNew: 475 },
-      { customer: 'Lifepoint Church', product: 'Amazing+', arr: 7400, netNew: 7400 },
-      { customer: 'Nashville Life Church', product: 'Amazing Music', arr: 799, netNew: 799 },
-      { customer: 'OneLife Church', product: 'Amazing+', arr: 4138, netNew: 1512 },
-      { customer: 'SonRise Church', product: 'Amazing+', arr: 647, netNew: 647 },
-      { customer: 'The Orchard Community Church', product: 'Amazing+', arr: 4380, netNew: 417 },
-      { customer: 'The Vine', product: 'Amazing+', arr: 6187, netNew: 6187 },
-    ]
-  },
-  { name: 'Elijah Diaz',      role: 'AM',    deals: 1,  netNew: -1069,  goal: 26.5,  gross: 22013, commission: 225,  basePay: 4167, earnings: 4392, status: 'behind',   spark: [46057, 35159, 16829, 10191, 4929, 0, -1069],   color: '#6EE7B7', plan: 'C', monthlyDeals: [57, 46, 27, 7, 6, 0, 1], commissionByMonth: [783, 598, 286, 173, 84, 0, -18],
-    dealsList: [
-      { customer: 'Calvary Church', product: 'First Look', arr: 664, netNew: -1069 },
-      { customer: 'Christ Family Church', product: 'Amazing+', arr: 2256, netNew: -1069 },
-      { customer: 'Discovery Church', product: 'First Look', arr: 201, netNew: 0 },
-      { customer: 'Discovery Church', product: '252', arr: 227, netNew: 0 },
-      { customer: 'Encompass Church', product: 'Amazing Music', arr: 1350, netNew: 1350 },
-      { customer: 'Journey Church', product: 'Amazing+', arr: 2922, netNew: 3659 },
-      { customer: 'One Line Church', product: 'Amazing+', arr: 3080, netNew: 3856 },
-    ]
-  },
-  { name: "Connor O'Brien",   role: 'AE',    deals: 1, netNew: 9584,  goal: 23.3,  gross: 16095, commission: 0,    basePay: 6681, earnings: 6681, status: 'behind',   spark: [27565, 21550, 15966, 6535, 13352, 7217, 9584],  color: '#7BD3EA', plan: 'B', monthlyDeals: [25, 32, 24, 22, 14, 6, 1], commissionByMonth: [0, 405, 958, 0, 0, 0, 0],
-    dealsList: [
-      { customer: 'Blue Oaks Church', product: 'First Look', arr: 894, netNew: 337 },
-      { customer: 'His Presence Church', product: '252', arr: 2070, netNew: 871 },
-      { customer: 'Innisfail Alliance Church', product: 'Amazing+', arr: 488, netNew: 488 },
-      { customer: 'New Life Foursquare', product: '252', arr: 1839, netNew: 1214 },
-      { customer: 'Port Orange Christian Church', product: 'First Look', arr: 557, netNew: 557 },
-      { customer: 'St. Mark Baptist Church', product: 'Amazing+', arr: 916, netNew: 499 },
-      { customer: 'Westminster Chapel', product: 'Manual Charge', arr: 778, netNew: 778 },
-    ]
-  },
-  { name: 'Sean Parr',        role: 'AM',    deals: 29, netNew: -12527, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 1135, 7745, -12527], color: '#F687B3', plan: 'C', monthlyDeals: [0, 0, 0, 0, 1, 13, 29], commissionByMonth: [0, 0, 0, 0, 19, 132, -213], dealsList: [] },
-  { name: 'Carson Santee',    role: 'SM AM', deals: 23, netNew: 38814, goal: 0, gross: 0, commission: 0, basePay: 4167, earnings: 4167, status: 'inactive', spark: [0, 0, 0, 0, 6940, 53852, 38814], color: '#68D391', plan: 'D', monthlyDeals: [0, 0, 0, 0, 4, 25, 23], commissionByMonth: [0, 0, 0, 0, 118, 915, 660], dealsList: [] },
-  { name: 'Lenny Fellez',     role: 'VP',    deals: 0, netNew: 0, goal: 0, gross: 0, commission: 0, basePay: 0,    earnings: 0,    status: 'inactive', spark: [0, 0, 0, 0, 0, 0, 0], color: '#FC8181', plan: 'Inactive', monthlyDeals: [0, 0, 0, 0, 0, 0, 0], commissionByMonth: [0, 0, 0, 0, 0, 0, 0], dealsList: [] },
-  { name: 'Timm Horton',      role: 'Sr AM', deals: 17, netNew: -30570, goal: 0, gross: 0, commission: 0, basePay: 5000, earnings: 5000, status: 'inactive', spark: [0, 0, 0, 0, 13788, 13243, -30570], color: '#63B3ED', plan: 'C', monthlyDeals: [0, 0, 0, 0, 9, 10, 17], commissionByMonth: [0, 0, 0, 0, 276, 265, -611], dealsList: [] },
-];
-
-const MONTHLY = [
-  { m: 'Jan', deals: 221, gross: 524590, netNew: 307132, goal: 97.1, commission: 13288, earnings: 64969 },
-  { m: 'Feb', deals: 260, gross: 497579, netNew: 247717, goal: 78.3, commission: 9185, earnings: 60868 },
-  { m: 'Mar', deals: 202, gross: 479383, netNew: 205995, goal: 65.1, commission: 12149, earnings: 72072 },
-  { m: 'Apr', deals: 140, gross: 361935, netNew: 217242, goal: 68.7, commission: 8682, earnings: 60366 },
-  { m: 'May', deals: 113, gross: 349572, netNew: 227198, goal: 71.8, commission: 12104, earnings: 63786 },
-  { m: 'Jun', deals: 128, gross: 389127, netNew: 242785, goal: 76.7, commission: 11170, earnings: 62853 },
-  { m: 'Jul', deals: 114, gross: 458392, netNew: -11747, goal: -3.7, commission: 2606, earnings: 53462 },
-];
+// REPS / MONTHLY / YTD come from the dashData adapter (top of file).
 
 // Latest month with actual data (fallback default for period lookups)
 const MAY_DATA = MONTHLY[MONTHLY.reduce((mx, m, i) => (m.netNew > 0 ? i : mx), 0)];
-const YTD = {
-  deals: 1178, gross: 3060578, netNew: 1436322, commission: 69184, earnings: 438376,
-};
 
 // ───────── RUN RATE PROJECTION ─────────
 // Calculate monthly run rate and project next month
@@ -340,6 +211,12 @@ const calcCommission = (rep, netNew) => {
   // Plan D (Small Market AM): flat 1.7%, no kicker
   if (rep.plan === 'D') {
     return Math.round(netNew * 0.017);
+  }
+
+  // Plan E (Sr. AM): 2% base on the first $62.5K + 10% kicker on the excess
+  if (rep.plan === 'E') {
+    const quota = plan.quota || 62500;
+    return Math.round(Math.min(netNew, quota) * 0.02 + Math.max(0, netNew - quota) * 0.10);
   }
 
   // Plan A (AE): 8% monthly advance rate
