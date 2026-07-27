@@ -14,8 +14,14 @@ const {
   MONTH_INDEX,       // { 'Jan 2026': 0, … } (actual months only)
   CURRENT_MONTH,     // pacing config, derived from the data month
   REPS,              // per-rep blocks incl. spark/monthlyDeals/commissionByMonth
-  MONTHLY,           // team by month (sales view, matching the old headline)
-  YTD,               // team year-to-date
+  MONTHLY,           // team by month — ALL-IN (sales + online store + leadership)
+  YTD,               // team year-to-date — ALL-IN
+  PAYOUT,            // payout liability: total due EOM, payable month, QA gate, per-rep
+  CHANNEL,           // Sales vs Online Store split (per month + YTD)
+  LEADERSHIP,        // Chase/Lenny comp (YTD)
+  TEAM_QUOTA,        // real team quota + engine YTD attainment
+  COVERAGE,          // payments ingested through this date
+  PRIOR_YEAR,        // FY2025 book ARR baseline
 } = buildConstants(dashData);
 
 // Calculate expected pacing percentage
@@ -448,7 +454,11 @@ function ForecastViz() {
 // ───────── YTD NET NEW ARR CHART ─────────
 function YTDNetNewChart() {
   const data = MONTHLY.map(m => ({ label: m.m, value: m.netNew, goal: m.goal }));
-  const max = Math.max(...data.map(d => d.value));
+  // Scale to the monthly team quota when it exceeds the best month, so the quota
+  // reference line always fits on the chart (bars below the line = below goal).
+  const monthlyQuota = TEAM_QUOTA.monthly.length
+    ? TEAM_QUOTA.monthly.reduce((a, b) => a + b, 0) / TEAM_QUOTA.monthly.length : 0;
+  const max = Math.max(...data.map(d => d.value), monthlyQuota || 0);
   const W = 600, H = 200;
   const padLeft = 60, padRight = 20, padTop = 20, padBot = 40;
   const chartW = W - padLeft - padRight;
@@ -516,6 +526,20 @@ function YTDNetNewChart() {
         );
       })}
 
+      {/* Monthly team quota reference line */}
+      {monthlyQuota > 0 && (() => {
+        const qy = padTop + chartH - (monthlyQuota / max) * chartH;
+        return (
+          <g>
+            <line x1={padLeft} x2={W - padRight} y1={qy} y2={qy}
+              stroke="#F3C969" strokeWidth="1.5" strokeDasharray="6 5" opacity="0.75"/>
+            <text x={W - padRight} y={qy - 6} fontSize="10" fill="#F3C969" textAnchor="end" fontFamily="JetBrains Mono">
+              Quota ${(monthlyQuota / 1000).toFixed(0)}K/mo
+            </text>
+          </g>
+        );
+      })()}
+
       {/* Cumulative line */}
       <polyline
         points={cumulativeData.map((val, i) => {
@@ -580,22 +604,6 @@ function MiniBars({ data }) {
 }
 
 // ───────── BAR TILE ─────────
-function BarTile({ value, label, pct, color = 'normal' }) {
-  const heightPct = Math.max(8, Math.min(100, pct));
-  return (
-    <div className="bar-tile">
-      <div className="bar-tile-head">
-        <div className="value tab">{value}</div>
-        <div className="label">{label}</div>
-      </div>
-      <div className="bar-visual">
-        <div className={'bar-capsule' + (color === 'inactive' ? ' inactive' : '')} style={{ height: heightPct + '%' }}/>
-        <div className="bar-pct tab">{Math.round(pct)}%</div>
-      </div>
-    </div>
-  );
-}
-
 // ───────── ATTAINMENT BARS (SEGMENT VIZ) ─────────
 function AttainBars({ pct }) {
   // 5 segments, fill based on % to goal (cap 110%)
@@ -750,10 +758,31 @@ function RepDrawer({ rep, onClose, period }) {
               <span className="key">Commission</span>
               <span className="val tab">{fmtMoney(commissionEarned, { full: true })}</span>
             </div>
-            <div className="pay-strip">
-              <span className="key">Spiff</span>
-              <span className="val tab" style={{ color: 'var(--text-3)' }}>$0</span>
-            </div>
+            {(() => {
+              // Multi-year spiff amounts from the workbook data. Spiff Mode is OFF in
+              // Settings, so these are ELIGIBLE amounts, not paid — label them as such.
+              const cols = qaData.columns || [];
+              const si = cols.indexOf('Multi-Year Spiff Amount');
+              const ri = cols.indexOf('Sales Rep');
+              const pi = cols.indexOf('Payment Month');
+              let spiff = 0;
+              if (si >= 0 && ri >= 0 && pi >= 0) {
+                const miD = MONTH_INDEX[period];
+                spiff = qaData.rows.reduce((s, r) => {
+                  if (r[ri] !== rep.name) return s;
+                  const pm = Number(r[pi]);
+                  const inP = miD !== undefined ? pm === miD + 1
+                    : period.startsWith('Q1') ? pm >= 1 && pm <= 3 : true;
+                  return inP ? s + (Number(r[si]) || 0) : s;
+                }, 0);
+              }
+              return (
+                <div className="pay-strip">
+                  <span className="key">Multi-Year Spiff <span style={{ fontSize: 10, color: 'var(--text-3)' }}>(eligible · mode OFF)</span></span>
+                  <span className="val tab" style={{ color: spiff > 0 ? 'var(--text-2)' : 'var(--text-3)' }}>{fmtMoney(spiff, { full: true })}</span>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -1289,7 +1318,6 @@ function Sidebar({ activeTab, setActiveTab }) {
     ['Commissions', Icon.Commission],
     ['Reports', Icon.Reports],
     ['Data', Icon.ChartBar],
-    ['Notifications', Icon.Notify],
   ];
   return (
     <aside className="sidebar">
@@ -1308,9 +1336,6 @@ function Sidebar({ activeTab, setActiveTab }) {
           </div>
         ))}
 
-        <div className="nav-section">Other</div>
-        <div className="nav-item"><Icon.Settings/><span>Settings</span></div>
-        <div className="nav-item"><Icon.Help/><span>Help</span></div>
       </nav>
 
       <div className="nav-spacer"/>
@@ -1883,12 +1908,7 @@ function CommissionsView({ period, setPeriod }) {
     return calcCommission(rep, rep.netNew);
   };
 
-  const getRepEarnings = (rep) => rep.basePay + getRepCommission(rep);
-
-  const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
   const totalCommissions = activeReps.reduce((sum, r) => sum + getRepCommission(r), 0);
-  const totalEarnings = activeReps.reduce((sum, r) => sum + getRepEarnings(r), 0);
-  const midMonthPayout = totalBasePay / 2; // 50% advance
 
   const toggleStatus = (repName) => {
     setPayoutStatus(prev => ({
@@ -2013,7 +2033,10 @@ function CommissionsView({ period, setPeriod }) {
         <div>
           <h1 className="page-title">Commission Payouts</h1>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-            {period} · {activeReps.length} active reps · awaiting approval
+            {period} · {activeReps.length} active reps ·{' '}
+            <span style={{ color: String(PAYOUT.qaStatus).toUpperCase().includes('OK') ? 'var(--green)' : 'var(--rose)', fontWeight: 600 }}>
+              QA {PAYOUT.qaStatus || '—'}
+            </span>
           </div>
         </div>
         <div className="topbar-actions">
@@ -2033,6 +2056,56 @@ function CommissionsView({ period, setPeriod }) {
           </button>
         </div>
       </div>
+
+      {/* Payout cycle — the payroll-run numbers (always the active payout cycle,
+          independent of the period selector above) */}
+      {PAYOUT.totalDueEom != null && (
+        <div className="payout-summary" style={{ marginBottom: 14 }}>
+          <div className="payout-card" style={{ borderColor: 'rgba(243,201,105,0.35)' }}>
+            <div className="payout-icon" style={{ background: 'rgba(243, 201, 105, 0.15)' }}>
+              <Icon.Commission />
+            </div>
+            <div className="payout-info">
+              <div className="payout-value tab">{fmtMoney(PAYOUT.totalDueEom, { full: true })}</div>
+              <div className="payout-label">Total Due EOM · {PAYOUT.activityMonthName} activity</div>
+            </div>
+          </div>
+          <div className="payout-card">
+            <div className="payout-icon" style={{ background: 'rgba(99, 102, 241, 0.15)' }}>
+              <Icon.Reports />
+            </div>
+            <div className="payout-info">
+              <div className="payout-value tab">{(() => {
+                const ym = PAYOUT.payableEom;
+                if (!ym || !/^\d{4}-\d{2}$/.test(ym)) return ym || '—';
+                const [y, m] = ym.split('-');
+                return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m - 1]} ${y}`;
+              })()}</div>
+              <div className="payout-label">Payable End of Month</div>
+            </div>
+          </div>
+          {PAYOUT.midMonthTotal != null && (
+            <div className="payout-card">
+              <div className="payout-icon" style={{ background: 'rgba(52, 211, 153, 0.15)' }}>
+                <Icon.Coin />
+              </div>
+              <div className="payout-info">
+                <div className="payout-value tab">{fmtMoney(PAYOUT.midMonthTotal, { full: true })} <span style={{ fontSize: 13, color: 'var(--text-3)' }}>/ {fmtMoney(PAYOUT.eomTotal, { full: true })}</span></div>
+                <div className="payout-label">Mid-Month Advance / EOM Balance</div>
+              </div>
+            </div>
+          )}
+          <div className="payout-card">
+            <div className="payout-icon" style={{ background: String(PAYOUT.qaStatus).toUpperCase().includes('OK') ? 'rgba(52, 211, 153, 0.15)' : 'rgba(226, 109, 142, 0.2)' }}>
+              <Icon.Target />
+            </div>
+            <div className="payout-info">
+              <div className="payout-value" style={{ color: String(PAYOUT.qaStatus).toUpperCase().includes('OK') ? 'var(--green)' : 'var(--rose)' }}>{PAYOUT.qaStatus || '—'}</div>
+              <div className="payout-label">Payouts QA Gate</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payout Summary Cards */}
       <div className="payout-summary">
@@ -2069,8 +2142,16 @@ function CommissionsView({ period, setPeriod }) {
       <div className="payout-section">
         <div className="section-header">
           <h2>Individual Payouts</h2>
-          <div className="section-meta">
-            {Object.values(payoutStatus).filter(s => s === 'approved').length} of {activeReps.length} approved
+          <div className="section-meta" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {(() => {
+              const claw = activeReps.map(r => getRepCommission(r)).filter(c => c < 0);
+              return claw.length > 0 ? (
+                <span style={{ background: 'rgba(226,109,142,0.15)', color: 'var(--rose)', border: '1px solid rgba(226,109,142,0.35)', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                  {claw.length} clawback{claw.length > 1 ? 's' : ''} · −{fmtMoney(Math.abs(claw.reduce((a, b) => a + b, 0)), { full: true })} this period
+                </span>
+              ) : null;
+            })()}
+            <span>{Object.values(payoutStatus).filter(s => s === 'approved').length} of {activeReps.length} approved</span>
           </div>
         </div>
 
@@ -2081,6 +2162,7 @@ function CommissionsView({ period, setPeriod }) {
               <th>Role</th>
               <th>Plan</th>
               <th style={{ textAlign: 'right' }}>Commission</th>
+              <th style={{ textAlign: 'right' }}>EOM Payout ({PAYOUT.activityMonthName || '—'})</th>
               <th style={{ textAlign: 'center' }}>Status</th>
               <th style={{ textAlign: 'center' }}>Action</th>
             </tr>
@@ -2102,7 +2184,11 @@ function CommissionsView({ period, setPeriod }) {
                   </td>
                   <td><span className="role-chip">{rep.role}</span></td>
                   <td><span className="plan-chip-sm">{plan.name.split('—')[0].trim()}</span></td>
-                  <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(commission, { full: true })}</td>
+                  <td style={{ textAlign: 'right', color: commission < 0 ? 'var(--rose)' : 'var(--accent-3)' }} className="tab">{fmtMoney(commission, { full: true })}</td>
+                  <td style={{ textAlign: 'right', color: 'var(--text-2)' }} className="tab">{(() => {
+                    const pr = PAYOUT.perRep?.find(p => p.name === rep.name);
+                    return pr?.eomPayout != null ? fmtMoney(pr.eomPayout, { full: true }) : '—';
+                  })()}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span className={'status-badge ' + status}>{status === 'approved' ? 'Approved' : 'Pending'}</span>
                   </td>
@@ -2119,11 +2205,41 @@ function CommissionsView({ period, setPeriod }) {
             <tr>
               <td colSpan="3"><strong>TOTALS</strong></td>
               <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab"><strong>{fmtMoney(totalCommissions, { full: true })}</strong></td>
+              <td style={{ textAlign: 'right', color: 'var(--text-2)' }} className="tab"><strong>{(() => {
+                const t = (PAYOUT.perRep || []).reduce((a, p) => a + (p.eomPayout || 0), 0);
+                return t ? fmtMoney(t, { full: true }) : '—';
+              })()}</strong></td>
               <td colSpan="2"></td>
             </tr>
           </tfoot>
         </table>
       </div>
+
+      {/* Leadership overrides — % of team performance, outside the seller table */}
+      {LEADERSHIP.length > 0 && (
+        <div className="payout-section">
+          <div className="section-header">
+            <h2>Leadership Comp (YTD)</h2>
+            <div className="section-meta">% of team performance — Settings ▸ tblLeadership</div>
+          </div>
+          <table className="payout-table">
+            <tbody>
+              {LEADERSHIP.map(l => (
+                <tr key={l.name}>
+                  <td>
+                    <div className="rep-cell">
+                      <div className="avatar-sm" style={{ background: `linear-gradient(135deg, ${l.color}, ${l.color}88)` }}>{initials(l.name)}</div>
+                      <span>{l.name}</span>
+                    </div>
+                  </td>
+                  <td><span className="role-chip">{l.role}</span></td>
+                  <td style={{ textAlign: 'right', color: 'var(--accent-3)' }} className="tab">{fmtMoney(l.ytdComp, { full: true })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Commission Breakdown by Plan */}
       <div className="payout-section">
@@ -2131,7 +2247,7 @@ function CommissionsView({ period, setPeriod }) {
           <h2>Commission Breakdown by Plan</h2>
         </div>
         <div className="plan-breakdown">
-          {['A', 'B', 'C', 'D'].map(planKey => {
+          {['A', 'B', 'C', 'D', 'E'].map(planKey => {
             const plan = PLANS[planKey];
             const repsOnPlan = activeReps.filter(r => r.plan === planKey);
             if (repsOnPlan.length === 0) return null;
@@ -2188,8 +2304,6 @@ function ReportsView({ period, setPeriod }) {
   const repNetNew = monthIdx !== undefined
     ? REPS.reduce((sum, r) => sum + (r.spark[monthIdx] || 0), 0)
     : REPS.reduce((sum, r) => sum + r.spark.reduce((a, b) => a + b, 0), 0);
-  const totalBasePay = activeReps.reduce((sum, r) => sum + r.basePay, 0);
-  const totalEarnings = totalCommission + totalBasePay;
 
   // Calculate month-over-month changes
   const netNewChange = prevMonthData ? ((currentMonthData.netNew - prevMonthData.netNew) / prevMonthData.netNew * 100) : 0;
@@ -2439,6 +2553,26 @@ function ReportsView({ period, setPeriod }) {
           <div className="metric-label">YTD Commissions</div>
           <div className="metric-value">{fmtMoney(YTD.commission, { full: true })}</div>
         </div>
+        <div className="metric-card">
+          <div className="metric-label">Team Attainment vs Quota</div>
+          <div className="metric-value">{((TEAM_QUOTA.ytdAttainment ?? 0) * 100).toFixed(1)}%</div>
+          <div className="metric-sub" style={{ fontSize: 11, color: '#666' }}>YTD quota {fmtMoney(TEAM_QUOTA.ytd, { full: true })}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Comp Efficiency (YTD)</div>
+          <div className="metric-value">{YTD.netNew > 0 ? ((YTD.commission / YTD.netNew) * 100).toFixed(1) + '%' : '—'}</div>
+          <div className="metric-sub" style={{ fontSize: 11, color: '#666' }}>Commission cost per $ of Net New ARR</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Channel Split (YTD Net New)</div>
+          <div className="metric-value" style={{ fontSize: 16 }}>{fmtMoney(CHANNEL.ytd.sales)} sales · {fmtMoney(CHANNEL.ytd.online)} online</div>
+          <div className="metric-sub" style={{ fontSize: 11, color: '#666' }}>Online = Limio Store Front house channel</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">FY2025 Book ARR (baseline)</div>
+          <div className="metric-value">{PRIOR_YEAR ? fmtMoney(PRIOR_YEAR, { full: true }) : '—'}</div>
+          <div className="metric-sub" style={{ fontSize: 11, color: '#666' }}>Prior-year total book, for growth context</div>
+        </div>
       </div>
 
       <div className="data-needed">
@@ -2461,8 +2595,26 @@ function ReportsView({ period, setPeriod }) {
     // For single month, show the flow
     const openingARR = monthIdx > 0 ? MONTHLY.slice(0, monthIdx).reduce((sum, m) => sum + m.netNew, 0) : 0;
     const newARR = totalNetNew;
-    // Note: We don't have expansion/contraction/churn data - showing what we have
     const closingARR = openingARR + newARR;
+
+    // Decompose rep-attributed Net New by the workbook's Movement Type
+    // (sales-team rows only — qaData excludes the Limio house channel).
+    const cols = qaData.columns || [];
+    const mvIdx = cols.indexOf('Movement Type');
+    const dlIdx = cols.indexOf('Subscription Delta');
+    const pmIdx = cols.indexOf('Payment Month');
+    const movement = { New: 0, Expansion: 0, 'Flat Renewal': 0 };
+    if (mvIdx >= 0 && dlIdx >= 0 && pmIdx >= 0) {
+      for (const r of qaData.rows) {
+        const pm = Number(r[pmIdx]);
+        const inPeriod = monthIdx !== undefined ? pm === monthIdx + 1
+          : period.startsWith('Q1') ? pm >= 1 && pm <= 3 : true; // YTD/default = all
+        if (!inPeriod) continue;
+        const mv = r[mvIdx];
+        if (mv in movement) movement[mv] += Number(r[dlIdx]) || 0;
+      }
+    }
+    const hasMovement = mvIdx >= 0;
 
     return (
       <div id="report-content">
@@ -2497,15 +2649,20 @@ function ReportsView({ period, setPeriod }) {
               <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#065f46' }}>{fmtMoney(newARR, { full: true })}</td>
               <td style={{ color: '#065f46', fontSize: 12 }}>Net new ARR from new and existing customers</td>
             </tr>
+            <tr style={{ background: '#d1fae5' }}>
+              <td style={{ fontWeight: 500, color: '#065f46' }}>&nbsp;&nbsp;of which: New logos</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#065f46' }}>{hasMovement ? fmtMoney(movement.New, { full: true }) : '—'}</td>
+              <td style={{ color: '#065f46', fontSize: 12 }}>Workbook Movement Type = New (rep-attributed rows)</td>
+            </tr>
             <tr style={{ background: '#fef3c7' }}>
-              <td style={{ fontWeight: 500, color: '#92400e' }}>+ Expansion</td>
-              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>—</td>
-              <td style={{ color: '#92400e', fontSize: 12 }}>Data needed: Upgrade/upsell amounts</td>
+              <td style={{ fontWeight: 500, color: '#92400e' }}>&nbsp;&nbsp;of which: Expansion</td>
+              <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#92400e' }}>{hasMovement ? fmtMoney(movement.Expansion, { full: true }) : '—'}</td>
+              <td style={{ color: '#92400e', fontSize: 12 }}>Movement Type = Expansion; Flat Renewals add {hasMovement ? fmtMoney(movement['Flat Renewal'], { full: true }) : '—'}</td>
             </tr>
             <tr style={{ background: '#fee2e2' }}>
               <td style={{ fontWeight: 500, color: '#991b1b' }}>− Contraction</td>
               <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991b1b' }}>—</td>
-              <td style={{ color: '#991b1b', fontSize: 12 }}>Data needed: Downgrade amounts</td>
+              <td style={{ color: '#991b1b', fontSize: 12 }}>Engine floors renewal deltas at $0 — contraction is not separately tracked</td>
             </tr>
             <tr style={{ background: '#fee2e2' }}>
               <td style={{ fontWeight: 500, color: '#991b1b' }}>− Churn</td>
@@ -2885,8 +3042,8 @@ const METRIC_INFO = {
     definition: 'The net change in Annual Recurring Revenue won during the period — new subscriptions plus expansions (upsells), net of contraction (downgrades). It is the primary measure of how much new recurring revenue the team added, and what reps carry quota against.',
     formula: 'Net New ARR  =  New ARR  +  Expansion ARR  −  Contraction ARR',
     notes: [
-      'Sourced directly from the Excel "Dashboard" sheet (row 13) — the company source of truth.',
-      'Counts all reps and deal types, including reps without an individual scorecard tab.',
+      'Sourced from the REVAMP workbook engine (Export tab) — the company source of truth.',
+      'ALL-IN across channels: sales team + the Limio online store (see the Net New split line for the breakdown).',
       'Differs from Gross Revenue, which does not subtract downgrades or churn.',
     ],
   },
@@ -2895,7 +3052,7 @@ const METRIC_INFO = {
     definition: 'The number of individual subscriptions booked in the period, pulled from Zuora. One customer can contribute several subscriptions when they buy multiple products.',
     formula: 'Subscriptions  =  count of individual subscriptions booked in the period',
     notes: [
-      'Sourced from the Excel "Dashboard" sheet (row 11).',
+      'Sourced from the REVAMP workbook engine (Export tab); includes online-store subscriptions.',
       'Includes new, expansion, and renewal subscriptions.',
     ],
   },
@@ -2904,7 +3061,7 @@ const METRIC_INFO = {
     definition: 'Total contract value (gross ARR) booked in the period before netting out downgrades and cancellations. It is always greater than or equal to Net New ARR.',
     formula: 'Gross Revenue  =  sum of gross ARR across all closed deals',
     notes: [
-      'Sourced from the Excel "Dashboard" sheet (row 12).',
+      'Sourced from the REVAMP workbook engine (Export tab).',
       'Use Net New ARR — not Gross — when measuring quota attainment.',
     ],
   },
@@ -2913,7 +3070,7 @@ const METRIC_INFO = {
     definition: 'Total commission earned by the team for the period under each rep’s compensation plan. Each rep’s figure comes from their own Excel scorecard, so plan-specific rules (kickers, dead zones, quarterly true-ups) are already applied.',
     formula: 'AM (Plan C):  1.7% × first $50K  +  10% × amount over $50K\nSmall-Market AM (Plan D):  flat 1.7%\nAE (Plan A / B):  8% / 6% monthly advance, trued-up to tiers at quarter end',
     notes: [
-      'Team total matches the Excel "Dashboard" sheet (row 20).',
+      'Team total matches the workbook engine and includes leadership overrides (Chase/Lenny).',
       'AE plans pay a monthly advance and reconcile to quarterly tiered commission (paid Mar & Jun).',
       'Plan B (dead zone): no commission until $42,367 of quarterly ARR is cleared.',
     ],
@@ -2923,8 +3080,8 @@ const METRIC_INFO = {
     definition: 'How much of quota a rep (or the team) achieved in the period, measured on Net New ARR (ARR Collected for Small-Market AMs).',
     formula: 'Attainment %  =  Net New ARR  ÷  Quota',
     notes: [
-      'AM monthly quota = $50,000; AE quarterly quota = $125,000 (Q1 ramped to 50%).',
-      'Team monthly quota = $529,167.',
+      'Team Attainment uses the engine\'s real team quota (currently ~$529K/month) — not a rep average.',
+      'Per-rep leaderboard attainment still uses plan-standard quotas (AM $50K/mo, AE $125K/qtr, Q1 ramped).',
     ],
   },
 };
@@ -2940,6 +3097,7 @@ function DataQAView() {
   const [sortCol, setSortCol] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
   const [xlsxLoading, setXlsxLoading] = useState(false);
+  const [showFindings, setShowFindings] = useState(false);
 
   const filtered = useMemo(() => {
     let out = rows.filter(r => {
@@ -3055,6 +3213,40 @@ function DataQAView() {
         </div>
       </div>
 
+      {/* Data Quality — the findings the QA generator computes on every sync */}
+      {(qaData.findings || []).length > 0 && (
+        <section className="card" style={{ marginBottom: 14 }}>
+          <div className="card-head" style={{ cursor: 'pointer' }} onClick={() => setShowFindings(s => !s)}>
+            <div>
+              <div className="card-title">Data Quality · {qaData.findings.length} finding{qaData.findings.length !== 1 ? 's' : ''}</div>
+              <div className="card-sub">
+                {qaData.summary ? `${qaData.summary.rows.toLocaleString()} rows · ${qaData.summary.accounts.toLocaleString()} accounts · ${qaData.summary.reps} reps` : ''}
+                {qaData.excludedNoRep ? ` · ${qaData.excludedNoRep} house-channel/excluded rows not shown` : ''}
+              </div>
+            </div>
+            <span style={{ color: 'var(--text-3)', fontSize: 13 }}>{showFindings ? 'Hide ▲' : 'Show ▼'}</span>
+          </div>
+          {showFindings && (
+            <div className="card-body" style={{ paddingTop: 0 }}>
+              {qaData.findings.map((f, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '6px 0', borderBottom: '1px solid var(--hairline)', fontSize: 13 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, flexShrink: 0,
+                    background: f.severity === 'HIGH' ? 'rgba(226,109,142,0.18)' : f.severity === 'MED' ? 'rgba(243,201,105,0.15)' : 'rgba(255,255,255,0.06)',
+                    color: f.severity === 'HIGH' ? 'var(--rose)' : f.severity === 'MED' ? '#F3C969' : 'var(--text-3)',
+                  }}>{f.severity}</span>
+                  <span style={{ color: 'var(--text-2)' }}>{f.check}</span>
+                  <span style={{ color: 'var(--text-3)', marginLeft: 'auto' }} className="tab">{f.detail}</span>
+                </div>
+              ))}
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8 }}>
+                Generated by the sync pipeline on every run — findings describe the workbook's Cleaned Zuora Data, not the dashboard.
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="card">
         <div className="card-head">
           <div className="card-title">Records</div>
@@ -3125,15 +3317,11 @@ function App() {
     return withData.length ? `${withData[withData.length - 1].m} 2026` : PERIOD_OPTIONS[0];
   });
   const [periodOpen, setPeriodOpen] = useState(false);
-  const [viewOpen, setViewOpen] = useState(false);
   const [view, setView] = useState('By metric');
-  const [forecastMonth, setForecastMonth] = useState('Aug');
-  const [forecastOpen, setForecastOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState('goal');
   const [sortDir, setSortDir] = useState('desc');
   const [toasts, setToasts] = useState([]);
-  const [reportLoading, setReportLoading] = useState(false);
   const [showMethodology, setShowMethodology] = useState(false);
   const [infoMetric, setInfoMetric] = useState(null);
 
@@ -3141,7 +3329,7 @@ function App() {
   useEffect(() => {
     const handler = (e) => {
       if (e.target.closest && e.target.closest('.popover-wrap')) return;
-      setPeriodOpen(false); setViewOpen(false); setForecastOpen(false);
+      setPeriodOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -3153,14 +3341,6 @@ function App() {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4200);
   };
 
-  const handleGenerateReport = () => {
-    if (reportLoading) return;
-    setReportLoading(true);
-    setTimeout(() => {
-      setReportLoading(false);
-      pushToast('Commission report generated', `${period} · ${fmtMoney(periodData.commission, { full: true })} commission · sent to elijah.diaz@amazinglife.com`);
-    }, 1100);
-  };
 
   // Resolve current period to monthly data
   const periodMonth = { 'Jan 2026': 'Jan', 'Feb 2026': 'Feb', 'Mar 2026': 'Mar', 'Apr 2026': 'Apr', 'May 2026': 'May', 'Jun 2026': 'Jun', 'Jul 2026': 'Jul' }[period];
@@ -3175,13 +3355,6 @@ function App() {
   } : periodData;
 
   // KPI bar percents — bar height relative to YTD peak across months
-  const peakDeals = 260, peakGross = 524590, peakNetNew = 305149, peakComm = isYTD ? YTD.commission : 13253;
-  const tiles = [
-    { value: activeData.deals, label: 'Deals closed', pct: (activeData.deals / (isYTD ? YTD.deals : peakDeals)) * 100, color: 'normal' },
-    { value: fmtMoney(activeData.gross), label: 'Gross revenue', pct: (activeData.gross / (isYTD ? YTD.gross : peakGross)) * 100, color: 'normal' },
-    { value: fmtMoney(activeData.netNew), label: 'Net new ARR', pct: (activeData.netNew / (isYTD ? YTD.netNew : peakNetNew)) * 100, color: 'normal' },
-    { value: fmtMoney(activeData.commission), label: 'Commissions', pct: (activeData.commission / peakComm) * 100, color: 'normal' },
-  ];
 
   // Helper to get rep data for selected period
   const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4, 'Jun 2026': 5, 'Jul 2026': 6 }[period];
@@ -3236,12 +3409,44 @@ function App() {
   };
   const sortInd = (key) => sortKey === key ? <span className="sort-ind">{sortDir === 'desc' ? '▼' : '▲'}</span> : null;
 
-  const avgAttain = REPS.reduce((s, r) => s + getRepGoal(r), 0) / REPS.length;
   const avgDeal = activeData.netNew / activeData.deals;
 
+  // ── CFO-layer derivations (all from the engine via the adapter) ──
+  const miCfo = MONTH_INDEX[period];
+  // Team attainment vs the REAL team quota (engine numbers, not a rep average)
+  const teamAttain = (() => {
+    if (miCfo !== undefined) return MONTHLY[miCfo]?.goal ?? 0;
+    if (period.startsWith('Q1')) {
+      const nn = MONTHLY.slice(0, 3).reduce((a, b) => a + b.netNew, 0);
+      const q = TEAM_QUOTA.monthly.slice(0, 3).reduce((a, b) => a + b, 0);
+      return q ? (nn / q) * 100 : 0;
+    }
+    return (TEAM_QUOTA.ytdAttainment ?? 0) * 100; // YTD / default
+  })();
+  // Sellers earning commission this period (leadership placeholder rows excluded)
+  const sellerRows = REPS.filter(r => r.plan !== 'Inactive');
+  const repsEarning = sellerRows.filter(r => getRepPeriodCommission(r) > 0).length;
+  // Comp efficiency: commission cost per $ of Net New ARR
+  const compEff = activeData.netNew > 0 ? (activeData.commission / activeData.netNew) * 100 : null;
+  // Sales vs Online Store split for the selected period
+  const channelSplit = (() => {
+    if (miCfo !== undefined) return CHANNEL.monthly[miCfo] || { sales: 0, online: 0 };
+    if (period.startsWith('Q1')) return CHANNEL.monthly.slice(0, 3).reduce(
+      (a, b) => ({ sales: a.sales + b.sales, online: a.online + b.online }), { sales: 0, online: 0 });
+    return { sales: CHANNEL.ytd.sales, online: CHANNEL.ytd.online };
+  })();
+  const fmtYm = (ym) => { // "2026-08" → "Aug 2026"
+    if (!ym || !/^\d{4}-\d{2}$/.test(ym)) return ym || '—';
+    const [y, m] = ym.split('-');
+    return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m - 1]} ${y}`;
+  };
+  const fmtCoverage = (iso) => { // "2026-07-27" → "Jul 27"
+    if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+    const [, m, d] = iso.split('-');
+    return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m - 1]} ${+d}`;
+  };
+
   const periodOptions = PERIOD_OPTIONS;
-  const viewOptions = ['By metric', 'By rep', 'By role'];
-  const forecastOptions = ['May', 'Jun', 'Jul', 'Q2 close'];
 
   return (
     <div className="app">
@@ -3271,15 +3476,23 @@ function App() {
           <div>
             <h1 className="page-title">Commissions</h1>
             <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
-              Q2 2026 · finalized May 26 · awaiting payout approval
+              {PAYOUT.activityMonthName ? (
+                <>
+                  {PAYOUT.activityMonthName} {CURRENT_MONTH.year} activity · payable EOM {fmtYm(PAYOUT.payableEom)} ·{' '}
+                  <span style={{ color: String(PAYOUT.qaStatus).toUpperCase().includes('OK') ? 'var(--green)' : 'var(--rose)', fontWeight: 600 }}>
+                    QA {PAYOUT.qaStatus || '—'}
+                  </span>
+                </>
+              ) : `FY${CURRENT_MONTH.year} commissions`}
             </div>
           </div>
           <div className="topbar-actions">
-            <div style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap', marginRight: 10 }} title="When the dashboard last received synced data from the Excel workbook">
+            <div style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap', marginRight: 10 }} title="Payments ingested through this date; stamp = when the pipeline last ran">
+              {fmtCoverage(COVERAGE) ? <>Data through <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>{fmtCoverage(COVERAGE)}</span> · </> : null}
               Last updated {LAST_UPDATED}
             </div>
             <div className="popover-wrap">
-              <div className="pill" onClick={(e) => { e.stopPropagation(); setPeriodOpen(o => !o); setViewOpen(false); setForecastOpen(false); }}>
+              <div className="pill" onClick={(e) => { e.stopPropagation(); setPeriodOpen(o => !o); }}>
                 <span className="label">Period:</span>
                 <span className="value">{period}</span>
                 <Icon.ChevD/>
@@ -3305,7 +3518,7 @@ function App() {
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
-                <div className="card-sub">All reps · {period}</div>
+                <div className="card-sub">All channels (sales team + online store) · {period}</div>
               </div>
             </div>
             <div className="card-body">
@@ -3339,18 +3552,28 @@ function App() {
                   </div>
                 </div>
               </div>
+              {/* Sales vs Online Store split — reconciles the all-in headline */}
+              <div style={{ display: 'flex', gap: 18, alignItems: 'center', margin: '12px 2px 0', fontSize: 12, color: 'var(--text-3)' }}>
+                <span>Net New split:</span>
+                <span><span style={{ color: 'var(--text)', fontWeight: 600 }} className="tab">{fmtMoney(channelSplit.sales)}</span> Sales team</span>
+                <span><span style={{ color: 'var(--text)', fontWeight: 600 }} className="tab">{fmtMoney(channelSplit.online)}</span> Online store (Limio)</span>
+              </div>
               <div className="metrics-secondary">
                 <div className="metric-secondary-item" onClick={() => setInfoMetric('attainment')} style={{ cursor: 'pointer' }} title="What is this? Click for definition">
-                  <span className="metric-secondary-value tab">{avgAttain.toFixed(1)}%</span>
-                  <span className="metric-secondary-label">Avg Attainment ⓘ</span>
+                  <span className="metric-secondary-value tab">{teamAttain.toFixed(1)}%</span>
+                  <span className="metric-secondary-label">Team Attainment ⓘ</span>
                 </div>
                 <div className="metric-secondary-item">
                   <span className="metric-secondary-value tab">{fmtMoney(avgDeal)}</span>
                   <span className="metric-secondary-label">Avg Subscription Size</span>
                 </div>
                 <div className="metric-secondary-item">
-                  <span className="metric-secondary-value tab">7/8</span>
+                  <span className="metric-secondary-value tab">{repsEarning}/{sellerRows.length}</span>
                   <span className="metric-secondary-label">Reps Earning</span>
+                </div>
+                <div className="metric-secondary-item" title="Commission cost as a share of Net New ARR (lower = more efficient)">
+                  <span className="metric-secondary-value tab">{compEff === null ? '—' : compEff.toFixed(1) + '%'}</span>
+                  <span className="metric-secondary-label">Comp Efficiency</span>
                 </div>
               </div>
 
@@ -3369,7 +3592,7 @@ function App() {
 
                 return (
                   <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--hairline)' }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '12px', fontWeight: 500 }}>Net New ARR by Rep</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '12px', fontWeight: 500 }}>Net New ARR by Rep (sales team)</div>
                     {sortedReps.map((rep) => {
                       const repNetNew = getRepNetNew(rep);
                       const pct = (repNetNew / maxNetNew) * 100;
@@ -3411,19 +3634,8 @@ function App() {
                   {MAY.trendPct >= 0 ? '↑' : '↓'} {Math.abs(MAY.trendPct).toFixed(0)}% vs prior months · Range: {fmtMoney(MAY.projLow)} - {fmtMoney(MAY.projHigh)}
                 </div>
               </div>
-              <div className="popover-wrap">
-                <div className="chip-select" onClick={(e) => { e.stopPropagation(); setForecastOpen(o => !o); setPeriodOpen(false); setViewOpen(false); }}>{forecastMonth} <Icon.ChevD/></div>
-                {forecastOpen && (
-                  <div className="popover" style={{ right: 0, minWidth: 140 }}>
-                    {forecastOptions.map(f => (
-                      <div key={f} className={'popover-item' + (forecastMonth === f ? ' active' : '')} onClick={() => { setForecastMonth(f); setForecastOpen(false); }}>
-                        <span>{f}</span>
-                        <span className="check">✓</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Forecast horizon is always the month after the last actual month */}
+              <div className="chip-select" style={{ cursor: 'default' }}>{MAY.nextMonthName}</div>
             </div>
             <div className="mini-chart">
               <div className="mini-chart-label">Commission · YTD + Projection</div>
@@ -3431,8 +3643,8 @@ function App() {
                 ...MONTHLY.slice(0, MAY.lastActual + 1).map(m => ({ label: m.m, v: m.commission, projected: false })),
                 { label: MAY.nextMonthName, v: MAY.projectedCommission, projected: true },
               ]}/>
-              <button className="cta-pill" onClick={handleGenerateReport} disabled={reportLoading}>
-                {reportLoading ? 'Generating…' : 'Generate payout report'}
+              <button className="cta-pill" onClick={() => setActiveTab('Commissions')}>
+                View payout run →
               </button>
             </div>
           </section>
@@ -3459,15 +3671,30 @@ function App() {
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Monthly Avg</div>
-                <div className="ytd-stat-value tab">{fmtMoney(YTD.netNew / 4, { full: true })}</div>
+                <div className="ytd-stat-value tab">{fmtMoney(YTD.netNew / Math.max(1, MONTHLY.length), { full: true })}</div>
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Best Month</div>
-                <div className="ytd-stat-value tab">Jan · $305K</div>
+                <div className="ytd-stat-value tab">{(() => {
+                  const best = MONTHLY.reduce((mx, b) => b.netNew > mx.netNew ? b : mx, MONTHLY[0]);
+                  return `${best.m} · ${fmtMoney(best.netNew)}`;
+                })()}</div>
               </div>
               <div className="ytd-stat">
                 <div className="ytd-stat-label">Trend</div>
-                <div className="ytd-stat-value" style={{ color: 'var(--rose)' }}>↓ Declining</div>
+                {(() => {
+                  // Last month vs the average of the prior three (or fewer)
+                  const n = MONTHLY.length;
+                  const last = MONTHLY[n - 1]?.netNew ?? 0;
+                  const prior = MONTHLY.slice(Math.max(0, n - 4), n - 1);
+                  const priorAvg = prior.length ? prior.reduce((a, b) => a + b.netNew, 0) / prior.length : last;
+                  const up = last >= priorAvg;
+                  return <div className="ytd-stat-value" style={{ color: up ? 'var(--green)' : 'var(--rose)' }}>{up ? '↑ Improving' : '↓ Declining'}</div>;
+                })()}
+              </div>
+              <div className="ytd-stat">
+                <div className="ytd-stat-label">vs YTD Quota</div>
+                <div className="ytd-stat-value tab">{TEAM_QUOTA.ytd ? `${((TEAM_QUOTA.ytdAttainment ?? 0) * 100).toFixed(1)}% of ${fmtMoney(TEAM_QUOTA.ytd)}` : '—'}</div>
               </div>
             </div>
           </div>
@@ -3480,7 +3707,7 @@ function App() {
               <div className="card-title">Rep Leaderboard {query && <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, marginLeft: 8 }}>· {ranked.length} match{ranked.length !== 1 ? 'es' : ''}</span>}</div>
               <div className="card-sub">Sorted by {sortKey === 'goal' ? 'attainment' : sortKey === 'netNew' ? 'net new ARR' : sortKey === 'deals' ? 'subscriptions' : sortKey === 'commission' ? 'commission' : 'value'} · click a row to view scorecard</div>
             </div>
-            <a className="see-all" onClick={() => pushToast('All reps view', 'Opening full rep roster…')}>See all reps →</a>
+            <a className="see-all" onClick={() => setActiveTab('Reps')}>See all reps →</a>
           </div>
 
           <table className="lb-table">

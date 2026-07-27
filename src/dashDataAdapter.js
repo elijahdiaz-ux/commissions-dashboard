@@ -10,7 +10,7 @@ const ROSTER = {
   'Brian Carl':        { base: 5000, start: 1, end: 12, role: 'AE' },
   'Caleb Gilbert':     { base: 5000, start: 1, end: 12, role: 'AE' },
   'Connor Krauseneck': { base: 5000, start: 1, end: 12, role: 'AE' },
-  "Connor O'Brien":    { base: 6681, start: 1, end: 12, role: 'AE' },
+  "Connor O'Brien":    { base: 6681, start: 1, end: 7,  role: 'AE' }, // Departed — paid through Jul 2026
   'Cameron Grissom':   { base: 4167, start: 1, end: 12, role: 'AM' },
   'Elijah Diaz':       { base: 4167, start: 1, end: 6,  role: 'AM' },
   'Jordy Hornbuckle':  { base: 4167, start: 1, end: 4,  role: 'AM' },
@@ -117,8 +117,9 @@ export function buildConstants(dashData) {
     ...dashData.leadership.map((l) => leaderRow(l.name)),
   ];
 
-  // ── Team monthly + YTD (sales view: sellers only, matching the old headline) ──
-  const sellersMonth = (m) => dashData.reps.map((r) => r.monthly[m]);
+  // ── Team monthly + YTD — ALL-IN engine numbers (sales reps + online store +
+  // leadership comp), matching the workbook Dashboard/Payouts QA. The sales-only
+  // split lives in CHANNEL below so the headline is always reconcilable. ──
   const baseForMonth = (m) => dashData.reps.reduce((sum, r) => {
     const info = ROSTER[r.name] || {};
     return sum + (((info.start ?? 1) <= m + 1 && m + 1 <= (info.end ?? 12))
@@ -126,29 +127,82 @@ export function buildConstants(dashData) {
   }, 0);
 
   const MONTHLY = months.map((b, m) => {
-    const rows = sellersMonth(m);
-    const commission = Math.round(rows.reduce((a, r) => a + (r.commission || 0), 0));
+    const commission = Math.round(b.commission || 0);
     return {
       m: b.name,
-      deals: b.salesDeals,
-      gross: Math.round(rows.reduce((a, r) => a + (r.gross || 0), 0)),
-      netNew: Math.round(b.salesNetNew),
-      goal: Math.round((b.salesAttainment || 0) * 1000) / 10,
+      deals: b.deals,
+      gross: Math.round(b.gross || 0),
+      netNew: Math.round(b.netNew || 0),
+      goal: Math.round((b.attainment || 0) * 1000) / 10,
       commission,
       earnings: commission + baseForMonth(m),
     };
   });
 
-  const ytdCommission = Math.round(
-    dashData.reps.reduce((a, r) => a + (r.ytd.commission || 0), 0));
+  const teamYtd = dashData.team.ytd || {};
+  const ytdCommission = Math.round(teamYtd.commission || 0);
   const ytdBase = MONTHLY.reduce((a, _b, m) => a + baseForMonth(m), 0);
   const YTD = {
-    deals: dashData.team.ytd.salesDeals,
-    gross: Math.round(dashData.reps.reduce((a, r) => a + (r.ytd.gross || 0), 0)),
-    netNew: Math.round(dashData.team.ytd.salesNetNew),
+    deals: teamYtd.deals ?? 0,
+    gross: MONTHLY.reduce((a, b) => a + b.gross, 0),
+    netNew: Math.round(teamYtd.netNew || 0),
     commission: ytdCommission,
     earnings: ytdCommission + ytdBase,
   };
 
-  return { LAST_UPDATED, PERIOD_OPTIONS, MONTH_INDEX, CURRENT_MONTH, REPS, MONTHLY, YTD };
+  // ── CFO-layer exports (all guarded — an older dashData.json must not crash) ──
+  const online = dashData.onlineStore || {};
+  const onlineMonthly = online.monthly || [];
+  const CHANNEL = {
+    ytd: {
+      sales: Math.round(teamYtd.salesNetNew || 0),
+      salesDeals: teamYtd.salesDeals ?? 0,
+      online: Math.round(online.ytdNetNew || 0),
+      onlineDeals: online.ytdDeals ?? 0,
+      onlineName: online.name || 'Online Store',
+    },
+    monthly: months.map((b, m) => ({
+      sales: Math.round(b.salesNetNew || 0),
+      salesDeals: b.salesDeals ?? 0,
+      online: Math.round(onlineMonthly[m]?.netNew || 0),
+      onlineDeals: onlineMonthly[m]?.deals ?? 0,
+    })),
+  };
+
+  const payout = dashData.payout || {};
+  const am = (payout.activityMonth || dm) - 1; // activity-month index for payout rows
+  const teamAm = dashData.team.monthly[am] || {};
+  const PAYOUT = {
+    ...payout,
+    totalPayout: teamAm.totalPayout ?? null,       // mid-month advances + EOM, all reps
+    eomTotal: teamAm.eomPayout ?? null,
+    midMonthTotal: (teamAm.totalPayout != null && teamAm.eomPayout != null)
+      ? Math.round((teamAm.totalPayout - teamAm.eomPayout) * 100) / 100 : null,
+    perRep: dashData.reps.map((r) => ({
+      name: r.name,
+      totalPayout: r.monthly[am]?.totalPayout ?? null,
+      eomPayout: r.monthly[am]?.eomPayout ?? null,
+    })),
+  };
+
+  const LEADERSHIP = (dashData.leadership || []).map((l) => ({
+    name: l.name,
+    ytdComp: Math.round((l.ytdComp || 0) * 100) / 100,
+    role: (ROSTER[l.name] || {}).role || 'Leader',
+    color: REP_COLORS[l.name] || '#6B6F8C',
+  }));
+
+  const TEAM_QUOTA = {
+    monthly: months.map((b) => b.quota || 0),
+    ytd: teamYtd.quota || 0,
+    ytdAttainment: teamYtd.attainment ?? null,
+  };
+
+  const COVERAGE = dashData.coverageThrough || null;
+  const PRIOR_YEAR = dashData.priorYearBookArr || null;
+
+  return {
+    LAST_UPDATED, PERIOD_OPTIONS, MONTH_INDEX, CURRENT_MONTH, REPS, MONTHLY, YTD,
+    PAYOUT, CHANNEL, LEADERSHIP, TEAM_QUOTA, COVERAGE, PRIOR_YEAR,
+  };
 }
