@@ -2295,9 +2295,9 @@ function ReportsView({ period, setPeriod }) {
 
   // Calculate available metrics from existing data
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
-  // Team totals come from the engine via MONTHLY/YTD — SALES-TEAM ONLY (Limio
-  // excluded from netNew/deals/gross, 2026-08-03). Commission includes leadership
-  // overrides; Limio earns none, so no exclusion is needed there.
+  // Team totals come from the engine via MONTHLY/YTD — SALES-TEAM ONLY
+  // (2026-08-03): Limio excluded from netNew/deals/gross, and commission is the
+  // seller sum (no Chase/Lenny leadership comp; see the Leadership section).
   const totalNetNew = monthIdx !== undefined ? currentMonthData.netNew : YTD.netNew;
   const totalDeals = monthIdx !== undefined ? currentMonthData.deals : YTD.deals;
   const totalCommission = monthIdx !== undefined ? currentMonthData.commission : YTD.commission;
@@ -3071,7 +3071,7 @@ const METRIC_INFO = {
     definition: 'Total commission earned by the team for the period under each rep’s compensation plan. Each rep’s figure comes from their own Excel scorecard, so plan-specific rules (kickers, dead zones, quarterly true-ups) are already applied.',
     formula: 'AM (Plan C):  1.7% × first $50K  +  10% × amount over $50K\nSmall-Market AM (Plan D):  flat 1.7%\nAE (Plan A / B):  8% / 6% monthly advance, trued-up to tiers at quarter end',
     notes: [
-      'Team total matches the workbook engine and includes leadership overrides (Chase/Lenny).',
+      'SALES REPS ONLY — leadership overrides (Chase/Lenny) are excluded here; see the Leadership section for their comp. The Commissions tab payroll run remains the full engine payout.',
       'AE plans pay a monthly advance and reconcile to quarterly tiered commission (paid Mar & Jun).',
       'Plan B (dead zone): no commission until $42,367 of quarterly ARR is cleared.',
     ],
@@ -3519,7 +3519,7 @@ function App() {
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
-                <div className="card-sub">Sales team only — online store (Limio) excluded · {period}</div>
+                <div className="card-sub">Sales team only — online store (Limio) & leadership comp excluded · {period}</div>
               </div>
             </div>
             <div className="card-body">

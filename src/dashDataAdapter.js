@@ -140,8 +140,14 @@ export function buildConstants(dashData) {
   // uses for salesDeals: 433 − 115 = 318 ✓).
   const online = dashData.onlineStore || {};
   const onlineMonthly = online.monthly || [];
+  // Commission is summed from the SELLER rows only — team.monthly[].commission
+  // includes Chase/Lenny leadership comp, which the user excluded from Team
+  // Performance (2026-08-03). Leadership comp stays visible in LEADERSHIP and
+  // the payroll (PAYOUT) numbers remain the full engine payouts.
+  const salesCommission = (m) => dashData.reps.reduce(
+    (sum, r) => sum + (r.monthly[m]?.commission || 0), 0);
   const MONTHLY = months.map((b, m) => {
-    const commission = Math.round(b.commission || 0);
+    const commission = Math.round(salesCommission(m));
     return {
       m: b.name,
       deals: b.salesDeals ?? b.deals,
@@ -154,7 +160,7 @@ export function buildConstants(dashData) {
   });
 
   const teamYtd = dashData.team.ytd || {};
-  const ytdCommission = Math.round(teamYtd.commission || 0);
+  const ytdCommission = MONTHLY.reduce((a, b) => a + b.commission, 0); // sellers only
   const ytdBase = MONTHLY.reduce((a, _b, m) => a + baseForMonth(m), 0);
   const YTD = {
     deals: teamYtd.salesDeals ?? teamYtd.deals ?? 0, // sales team only — no Limio
