@@ -265,7 +265,7 @@ const repAttainment = (rep, period) => {
     }
     return (basis / 125000) * 100;
   }
-  const mQuota = 50000; // AMs: monthly quota
+  const mQuota = (PLANS[rep.plan] && PLANS[rep.plan].quota) || 50000; // AM monthly quota from the rep's plan (Plan E = $62.5K)
   if (period === 'Q1 2026') return (basis / (mQuota * 3)) * 100;
   if (period === 'YTD 2026') return (basis / (mQuota * Math.max(1, monthsWithData))) * 100;
   return (basis / mQuota) * 100;
@@ -653,7 +653,7 @@ function RepDrawer({ rep, onClose, period }) {
   const commissionEarned = mi !== undefined ? (rep.commissionByMonth?.[mi] ?? 0) : sumArr(rep.commissionByMonth);
   const subs = repSubs(rep.name, period); // live subscription detail from the Data tab
   // Commission per month (actual)
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const MONTHS = MONTHLY.map((mm) => mm.m);
   const commissionTrend = (rep.commissionByMonth || []).map((c, i) => ({
     label: MONTHS[i] + (i === mi ? ' ▴' : ''),
     v: c || 0,
@@ -1356,7 +1356,7 @@ function CompareView({ reps, onExit, period }) {
   const rep2 = reps[1];
   const plan1 = PLANS[rep1.plan] || PLANS.Inactive;
   const plan2 = PLANS[rep2.plan] || PLANS.Inactive;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const months = MONTHLY.map((mm) => mm.m);
   const mi = MONTH_INDEX[period];
   const periodLabel = period ? period.split(' ')[0] : 'Period';
   const nn = (r) => mi !== undefined ? (r.spark?.[mi] || 0) : (r.spark ? r.spark.reduce((a, b) => a + (b || 0), 0) : r.netNew);
@@ -1758,7 +1758,7 @@ function RepDetailPanel({ rep, period }) {
   const subs = repSubs(rep.name, period); // live subscription detail from the Data tab
   const ytdNetNew = rep.spark.reduce((a, b) => a + b, 0);
   const ytdDeals = rep.monthlyDeals ? rep.monthlyDeals.reduce((a, b) => a + b, 0) : rep.deals;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const months = MONTHLY.map((mm) => mm.m);
   const monthsActive = rep.spark ? rep.spark.reduce((mx, v, i) => (v ? i + 1 : mx), 0) : 0;
   const ytdComm = rep.commissionByMonth ? rep.commissionByMonth.reduce((a, b) => a + (b || 0), 0) : 0;
   const ytdEarnings = (rep.basePay || 0) * Math.max(1, monthsActive) + ytdComm;
@@ -2287,7 +2287,7 @@ function ReportsView({ period, setPeriod }) {
   const [exportError, setExportError] = useState(null);
 
   // Get period data
-  const periodMonth = { 'Jan 2026': 'Jan', 'Feb 2026': 'Feb', 'Mar 2026': 'Mar', 'Apr 2026': 'Apr', 'May 2026': 'May', 'Jun 2026': 'Jun', 'Jul 2026': 'Jul' }[period];
+  const periodMonth = MONTH_INDEX[period] !== undefined ? period.split(' ')[0] : undefined;
   const monthIdx = MONTH_INDEX[period];
   const currentMonthData = MONTHLY.find(m => m.m === periodMonth) || MONTHLY[MONTHLY.length - 1];
   const prevMonthData = monthIdx > 0 ? MONTHLY[monthIdx - 1] : null;
@@ -3343,7 +3343,7 @@ function App() {
 
 
   // Resolve current period to monthly data
-  const periodMonth = { 'Jan 2026': 'Jan', 'Feb 2026': 'Feb', 'Mar 2026': 'Mar', 'Apr 2026': 'Apr', 'May 2026': 'May', 'Jun 2026': 'Jun', 'Jul 2026': 'Jul' }[period];
+  const periodMonth = MONTH_INDEX[period] !== undefined ? period.split(' ')[0] : undefined;
   const periodData = MONTHLY.find(m => m.m === periodMonth) || MAY_DATA;
   const isYTD = period === 'YTD 2026';
   const isQ1 = period === 'Q1 2026';
@@ -3357,7 +3357,7 @@ function App() {
   // KPI bar percents — bar height relative to YTD peak across months
 
   // Helper to get rep data for selected period
-  const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4, 'Jun 2026': 5, 'Jul 2026': 6 }[period];
+  const monthIndex = MONTH_INDEX[period];
   const getRepNetNew = (rep) => {
     if (monthIndex !== undefined) return rep.spark[monthIndex] || 0;
     if (period === 'Q1 2026') return (rep.spark[0] || 0) + (rep.spark[1] || 0) + (rep.spark[2] || 0);
@@ -3579,8 +3579,8 @@ function App() {
 
               {/* Net New ARR by Rep Bar Chart */}
               {(() => {
-                // Map period to spark array index (0=Jan, 1=Feb, 2=Mar, 3=Apr, 4=May)
-                const monthIndex = { 'Jan 2026': 0, 'Feb 2026': 1, 'Mar 2026': 2, 'Apr 2026': 3, 'May 2026': 4, 'Jun 2026': 5, 'Jul 2026': 6 }[period];
+                // Map period to spark array index (adapter MONTH_INDEX covers every actual month)
+                const monthIndex = MONTH_INDEX[period];
                 const getRepNetNew = (rep) => {
                   if (monthIndex !== undefined) return rep.spark[monthIndex];
                   if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
