@@ -73,7 +73,12 @@ export function buildConstants(dashData) {
     const info = ROSTER[r.name] || {};
     const isPlanD = planLetter(r.plan) === 'D';
     const mo = r.monthly.slice(0, dm);
-    const spark = mo.map((b) => Math.round(isPlanD ? b.gross : b.netNew));
+    // spark = TRUE net new for every rep (it feeds every "Net New ARR" display).
+    // Plan D attainment is measured on ARR Collected, so that basis rides in
+    // basisSpark instead — repAttainment reads it; charts never do. (2026-08-03:
+    // Plan D gross used to ride in spark and showed as "net new" on the rep charts.)
+    const spark = mo.map((b) => Math.round(b.netNew));
+    const basisSpark = isPlanD ? mo.map((b) => Math.round(b.gross)) : spark;
     const cur = mo[dm - 1];
     const commission = Math.round(cur.commission || 0);
     const active = (info.start ?? 1) <= dm && dm <= (info.end ?? 12);
@@ -90,6 +95,7 @@ export function buildConstants(dashData) {
       earnings: basePay + commission,
       status: 'on-track', // recomputed live by getRepStatus everywhere it matters
       spark,
+      basisSpark,
       color: REP_COLORS[r.name] ||
         FALLBACK_COLORS[(fallbackIdx++) % FALLBACK_COLORS.length],
       plan: planLetter(r.plan),
@@ -126,14 +132,17 @@ export function buildConstants(dashData) {
       ? (info.base ?? 0) : 0);
   }, 0);
 
+  // Team Net New ARR is SALES-TEAM ONLY (user decision 2026-08-03: Limio online
+  // store must not factor into team-performance net new). Deals/gross/commission
+  // stay all-in; the Limio dollars remain visible via CHANNEL (the split strip).
   const MONTHLY = months.map((b, m) => {
     const commission = Math.round(b.commission || 0);
     return {
       m: b.name,
       deals: b.deals,
       gross: Math.round(b.gross || 0),
-      netNew: Math.round(b.netNew || 0),
-      goal: Math.round((b.attainment || 0) * 1000) / 10,
+      netNew: Math.round(b.salesNetNew || 0),
+      goal: Math.round((b.salesAttainment || 0) * 1000) / 10,
       commission,
       earnings: commission + baseForMonth(m),
     };
@@ -145,7 +154,7 @@ export function buildConstants(dashData) {
   const YTD = {
     deals: teamYtd.deals ?? 0,
     gross: MONTHLY.reduce((a, b) => a + b.gross, 0),
-    netNew: Math.round(teamYtd.netNew || 0),
+    netNew: Math.round(teamYtd.salesNetNew || 0), // sales team only — no Limio
     commission: ytdCommission,
     earnings: ytdCommission + ytdBase,
   };
@@ -195,7 +204,7 @@ export function buildConstants(dashData) {
   const TEAM_QUOTA = {
     monthly: months.map((b) => b.quota || 0),
     ytd: teamYtd.quota || 0,
-    ytdAttainment: teamYtd.attainment ?? null,
+    ytdAttainment: teamYtd.salesAttainment ?? teamYtd.attainment ?? null, // sales basis
   };
 
   const COVERAGE = dashData.coverageThrough || null;

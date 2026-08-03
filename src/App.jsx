@@ -14,7 +14,7 @@ const {
   MONTH_INDEX,       // { 'Jan 2026': 0, … } (actual months only)
   CURRENT_MONTH,     // pacing config, derived from the data month
   REPS,              // per-rep blocks incl. spark/monthlyDeals/commissionByMonth
-  MONTHLY,           // team by month — ALL-IN (sales + online store + leadership)
+  MONTHLY,           // team by month — netNew/goal are SALES-TEAM ONLY; deals/gross/commission all-in
   YTD,               // team year-to-date — ALL-IN
   PAYOUT,            // payout liability: total due EOM, payable month, QA gate, per-rep
   CHANNEL,           // Sales vs Online Store split (per month + YTD)
@@ -233,12 +233,13 @@ const calcCommission = (rep, netNew) => {
 // AE quota is quarterly ($125K, Q1 ramped to 50%). In a monthly view the basis is one
 // month, so it is compared to the MONTHLY SHARE (quota / 3) so AEs read like AMs.
 // AMs use a $50K monthly quota. Plan D (Small Market AM) is measured on ARR Collected —
-// Plan D rep tabs report ARR Collected in the row the sync writes into spark, so spark
-// already carries the right basis. (A hardcoded rep.arrCollected override used to shadow
-// spark here; it was never synced, went stale, and zeroed Kaitlyn's % to goal.)
+// Plan D attainment is measured on ARR Collected — that basis rides in basisSpark
+// (adapter). rep.spark is ALWAYS true net new so every chart/table can show it as
+// "Net New ARR" without plan-dependent surprises (Kaitlyn/Carson used to display
+// their collected gross as net new).
 const repAttainmentBasis = (rep, period) => {
   const mi = MONTH_INDEX[period];
-  const series = rep.spark;
+  const series = rep.basisSpark || rep.spark;
   if (mi !== undefined) return series[mi] || 0;
   if (period === 'Q1 2026') return (series[0] || 0) + (series[1] || 0) + (series[2] || 0);
   if (period === 'YTD 2026') return series.reduce((a, b) => a + (b || 0), 0);
@@ -2294,9 +2295,9 @@ function ReportsView({ period, setPeriod }) {
 
   // Calculate available metrics from existing data
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
-  // Team totals come from the Excel Dashboard sheet (MONTHLY/YTD), which includes
-  // all reps/deals — NOT just the reps with individual tabs. The per-rep leaderboard
-  // below only covers tabbed reps, so its sum is slightly lower (see repNetNew).
+  // Team totals come from the engine via MONTHLY/YTD. Net New here is SALES-TEAM
+  // ONLY (Limio excluded, 2026-08-03); deals/commission remain all-channel, so the
+  // per-rep table below can sum slightly below the deal/commission totals.
   const totalNetNew = monthIdx !== undefined ? currentMonthData.netNew : YTD.netNew;
   const totalDeals = monthIdx !== undefined ? currentMonthData.deals : YTD.deals;
   const totalCommission = monthIdx !== undefined ? currentMonthData.commission : YTD.commission;
@@ -3043,7 +3044,7 @@ const METRIC_INFO = {
     formula: 'Net New ARR  =  New ARR  +  Expansion ARR  −  Contraction ARR',
     notes: [
       'Sourced from the REVAMP workbook engine (Export tab) — the company source of truth.',
-      'ALL-IN across channels: sales team + the Limio online store (see the Net New split line for the breakdown).',
+      'SALES TEAM ONLY — the Limio online store is excluded from team Net New ARR (its dollars still show on the Net New split line).',
       'Differs from Gross Revenue, which does not subtract downgrades or churn.',
     ],
   },
@@ -3518,7 +3519,7 @@ function App() {
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
-                <div className="card-sub">All channels (sales team + online store) · {period}</div>
+                <div className="card-sub">Net New ARR: sales team only · subs & revenue all channels · {period}</div>
               </div>
             </div>
             <div className="card-body">
@@ -3552,7 +3553,7 @@ function App() {
                   </div>
                 </div>
               </div>
-              {/* Sales vs Online Store split — reconciles the all-in headline */}
+              {/* Sales vs Online Store split — online shown alongside, excluded from the headline */}
               <div style={{ display: 'flex', gap: 18, alignItems: 'center', margin: '12px 2px 0', fontSize: 12, color: 'var(--text-3)' }}>
                 <span>Net New split:</span>
                 <span><span style={{ color: 'var(--text)', fontWeight: 600 }} className="tab">{fmtMoney(channelSplit.sales)}</span> Sales team</span>
