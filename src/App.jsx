@@ -14,7 +14,7 @@ const {
   MONTH_INDEX,       // { 'Jan 2026': 0, … } (actual months only)
   CURRENT_MONTH,     // pacing config, derived from the data month
   REPS,              // per-rep blocks incl. spark/monthlyDeals/commissionByMonth
-  MONTHLY,           // team by month — netNew/goal are SALES-TEAM ONLY; deals/gross/commission all-in
+  MONTHLY,           // team by month — SALES-TEAM ONLY (Limio excluded from netNew/deals/gross)
   YTD,               // team year-to-date — ALL-IN
   PAYOUT,            // payout liability: total due EOM, payable month, QA gate, per-rep
   CHANNEL,           // Sales vs Online Store split (per month + YTD)
@@ -2295,9 +2295,9 @@ function ReportsView({ period, setPeriod }) {
 
   // Calculate available metrics from existing data
   const activeReps = REPS.filter(r => r.plan !== 'Inactive');
-  // Team totals come from the engine via MONTHLY/YTD. Net New here is SALES-TEAM
-  // ONLY (Limio excluded, 2026-08-03); deals/commission remain all-channel, so the
-  // per-rep table below can sum slightly below the deal/commission totals.
+  // Team totals come from the engine via MONTHLY/YTD — SALES-TEAM ONLY (Limio
+  // excluded from netNew/deals/gross, 2026-08-03). Commission includes leadership
+  // overrides; Limio earns none, so no exclusion is needed there.
   const totalNetNew = monthIdx !== undefined ? currentMonthData.netNew : YTD.netNew;
   const totalDeals = monthIdx !== undefined ? currentMonthData.deals : YTD.deals;
   const totalCommission = monthIdx !== undefined ? currentMonthData.commission : YTD.commission;
@@ -3053,7 +3053,7 @@ const METRIC_INFO = {
     definition: 'The number of individual subscriptions booked in the period, pulled from Zuora. One customer can contribute several subscriptions when they buy multiple products.',
     formula: 'Subscriptions  =  count of individual subscriptions booked in the period',
     notes: [
-      'Sourced from the REVAMP workbook engine (Export tab); includes online-store subscriptions.',
+      'Sourced from the REVAMP workbook engine (Export tab). SALES TEAM ONLY — online-store (Limio) subscriptions are excluded.',
       'Includes new, expansion, and renewal subscriptions.',
     ],
   },
@@ -3062,7 +3062,7 @@ const METRIC_INFO = {
     definition: 'Total contract value (gross ARR) booked in the period before netting out downgrades and cancellations. It is always greater than or equal to Net New ARR.',
     formula: 'Gross Revenue  =  sum of gross ARR across all closed deals',
     notes: [
-      'Sourced from the REVAMP workbook engine (Export tab).',
+      'Sourced from the REVAMP workbook engine (Export tab). SALES TEAM ONLY — online-store (Limio) revenue is excluded.',
       'Use Net New ARR — not Gross — when measuring quota attainment.',
     ],
   },
@@ -3519,7 +3519,7 @@ function App() {
             <div className="card-head">
               <div>
                 <div className="card-title">Team Performance</div>
-                <div className="card-sub">Net New ARR: sales team only · subs & revenue all channels · {period}</div>
+                <div className="card-sub">Sales team only — online store (Limio) excluded · {period}</div>
               </div>
             </div>
             <div className="card-body">

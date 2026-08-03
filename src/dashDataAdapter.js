@@ -132,15 +132,20 @@ export function buildConstants(dashData) {
       ? (info.base ?? 0) : 0);
   }, 0);
 
-  // Team Net New ARR is SALES-TEAM ONLY (user decision 2026-08-03: Limio online
-  // store must not factor into team-performance net new). Deals/gross/commission
-  // stay all-in; the Limio dollars remain visible via CHANNEL (the split strip).
+  // Team performance is SALES-TEAM ONLY (user decisions 2026-08-03): the Limio
+  // online store is excluded from netNew, deals, AND gross. Its numbers remain
+  // visible via CHANNEL (the split strip). Commission needs no exclusion — the
+  // house channel earns none (engine emits 0). salesDeals comes straight from the
+  // engine; sales gross = team gross − online gross (same identity the engine
+  // uses for salesDeals: 433 − 115 = 318 ✓).
+  const online = dashData.onlineStore || {};
+  const onlineMonthly = online.monthly || [];
   const MONTHLY = months.map((b, m) => {
     const commission = Math.round(b.commission || 0);
     return {
       m: b.name,
-      deals: b.deals,
-      gross: Math.round(b.gross || 0),
+      deals: b.salesDeals ?? b.deals,
+      gross: Math.round((b.gross || 0) - (onlineMonthly[m]?.gross || 0)),
       netNew: Math.round(b.salesNetNew || 0),
       goal: Math.round((b.salesAttainment || 0) * 1000) / 10,
       commission,
@@ -152,16 +157,14 @@ export function buildConstants(dashData) {
   const ytdCommission = Math.round(teamYtd.commission || 0);
   const ytdBase = MONTHLY.reduce((a, _b, m) => a + baseForMonth(m), 0);
   const YTD = {
-    deals: teamYtd.deals ?? 0,
-    gross: MONTHLY.reduce((a, b) => a + b.gross, 0),
-    netNew: Math.round(teamYtd.salesNetNew || 0), // sales team only — no Limio
+    deals: teamYtd.salesDeals ?? teamYtd.deals ?? 0, // sales team only — no Limio
+    gross: MONTHLY.reduce((a, b) => a + b.gross, 0), // sums the online-excluded months
+    netNew: Math.round(teamYtd.salesNetNew || 0),    // sales team only — no Limio
     commission: ytdCommission,
     earnings: ytdCommission + ytdBase,
   };
 
   // ── CFO-layer exports (all guarded — an older dashData.json must not crash) ──
-  const online = dashData.onlineStore || {};
-  const onlineMonthly = online.monthly || [];
   const CHANNEL = {
     ytd: {
       sales: Math.round(teamYtd.salesNetNew || 0),
