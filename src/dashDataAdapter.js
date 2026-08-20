@@ -34,6 +34,12 @@ const FALLBACK_COLORS = ['#9F7AEA', '#4FD1C5', '#F6AD55', '#FC8181', '#63B3ED'];
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
   'August', 'September', 'October', 'November', 'December'];
 
+// Reps flagged inactive on the dashboard (departed / exited sellers). Forcing
+// plan to 'Inactive' flows through every consumer: they show an "Inactive"
+// status pill and are excluded from active-seller counts and the commissions
+// payout run, while their historical Net New ARR stays visible in charts.
+const INACTIVE_REPS = new Set(['Elijah Diaz', "Connor O'Brien", 'Timm Horton']);
+
 const planLetter = (plan) => {
   const m = /^Plan\s+([A-Z])$/i.exec((plan || '').trim());
   return m ? m[1].toUpperCase() : 'Inactive';
@@ -98,7 +104,7 @@ export function buildConstants(dashData) {
       basisSpark,
       color: REP_COLORS[r.name] ||
         FALLBACK_COLORS[(fallbackIdx++) % FALLBACK_COLORS.length],
-      plan: planLetter(r.plan),
+      plan: INACTIVE_REPS.has(r.name) ? 'Inactive' : planLetter(r.plan),
       monthlyDeals: mo.map((b) => b.deals),
       commissionByMonth: mo.map((b) => Math.round(b.commission || 0)),
       dealsList: [], // subscription detail reads live from qaData
@@ -219,8 +225,40 @@ export function buildConstants(dashData) {
   const COVERAGE = dashData.coverageThrough || null;
   const PRIOR_YEAR = dashData.priorYearBookArr || null;
 
+  // ── ARR Summary (mirrors the workbook's "ARR Summary" tab) ──────────────────
+  // ALL-CHANNEL view (sales team + online store), matching that tab. Net New Total
+  // is the engine figure the rest of the dashboard uses; New/Expansion/PRS are the
+  // workbook's movement categorization and are directional — they do NOT foot to
+  // Net New Total (the engine floors renewal deltas at $0). Expansion % is measured
+  // against Net New Total, matching the workbook's "Expansion % of Total" column.
+  const ARR_SUMMARY = {
+    monthly: months.map((b) => ({
+      m: b.name,
+      deals: b.deals || 0,
+      netNew: Math.round(b.netNew || 0),
+      newArr: Math.round(b.netNewNew || 0),
+      expansion: Math.round(b.netNewExpansion || 0),
+      prs: Math.round(b.netNewPRS || 0),
+      gross: Math.round(b.gross || 0),
+      quota: Math.round(b.quota || 0),
+      attainment: b.attainment ?? null,
+      expansionPct: (b.netNew ? (b.netNewExpansion || 0) / b.netNew : 0),
+    })),
+    ytd: {
+      deals: teamYtd.deals || 0,
+      netNew: Math.round(teamYtd.netNew || 0),
+      newArr: Math.round(teamYtd.netNewNew || 0),
+      expansion: Math.round(teamYtd.netNewExpansion || 0),
+      prs: Math.round(teamYtd.netNewPRS || 0),
+      gross: Math.round(teamYtd.grossAllIn || months.reduce((a, b) => a + (b.gross || 0), 0)),
+      quota: Math.round(teamYtd.quota || 0),
+      attainment: teamYtd.attainment ?? null,
+      expansionPct: (teamYtd.netNew ? (teamYtd.netNewExpansion || 0) / teamYtd.netNew : 0),
+    },
+  };
+
   return {
     LAST_UPDATED, PERIOD_OPTIONS, MONTH_INDEX, CURRENT_MONTH, REPS, MONTHLY, YTD,
-    PAYOUT, CHANNEL, LEADERSHIP, TEAM_QUOTA, COVERAGE, PRIOR_YEAR,
+    PAYOUT, CHANNEL, LEADERSHIP, TEAM_QUOTA, COVERAGE, PRIOR_YEAR, ARR_SUMMARY,
   };
 }

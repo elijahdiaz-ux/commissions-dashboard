@@ -22,6 +22,7 @@ const {
   TEAM_QUOTA,        // real team quota + engine YTD attainment
   COVERAGE,          // payments ingested through this date
   PRIOR_YEAR,        // FY2025 book ARR baseline
+  ARR_SUMMARY,       // workbook "ARR Summary" tab — monthly ARR incl. movement split
 } = buildConstants(dashData);
 
 // Calculate expected pacing percentage
@@ -2435,6 +2436,7 @@ function ReportsView({ period, setPeriod }) {
   // Report definitions
   const reports = [
     { id: 'executive', name: 'Executive Summary', IconComponent: Icon.ChartBar, available: true },
+    { id: 'arr-summary', name: 'ARR Summary', IconComponent: Icon.Coin, available: true },
     { id: 'sdr', name: 'SDR Team', IconComponent: Icon.Reps, available: true },
     { id: 'arr-bridge', name: 'ARR Movement', IconComponent: Icon.Bridge, available: true },
     { id: 'retention', name: 'Revenue Retention', IconComponent: Icon.Refresh, available: false, needs: ['Cohort data by signup month', 'Monthly recurring revenue by customer', 'Churn dates'] },
@@ -2802,6 +2804,108 @@ function ReportsView({ period, setPeriod }) {
     );
   };
 
+  // Render ARR Summary — mirrors the REVAMP workbook's "ARR Summary" tab.
+  // All-channel (sales + online store). Net New ARR is the engine total; the
+  // New/Expansion/PRS split is the workbook's directional movement categorization
+  // and does NOT foot to Net New (the engine floors renewal deltas at $0).
+  const renderARRSummary = () => {
+    const rows = ARR_SUMMARY.monthly;
+    const totals = ARR_SUMMARY.ytd;
+    const selMonth = MONTH_INDEX[period] !== undefined ? rows[MONTH_INDEX[period]] : null;
+    const sel = selMonth || totals;
+    const selLabel = selMonth ? `${selMonth.m} 2026` : 'YTD 2026';
+    const pct = (v) => `${((v || 0) * 100).toFixed(1)}%`;
+    const mono = { fontFamily: 'JetBrains Mono, monospace' };
+    return (
+      <div id="report-content">
+        <div className="report-header">
+          <div>
+            <div className="report-logo">Amazing Life Foundation</div>
+            <div className="report-title">ARR Summary — {period}</div>
+          </div>
+          <div className="report-meta">
+            <div>RevOps Dashboard · All channels</div>
+            <div>Generated {new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+
+        <div className="metric-grid">
+          <div className="metric-card">
+            <div className="metric-label">Net New ARR ({selLabel})</div>
+            <div className="metric-value">{fmtMoney(sel.netNew, { full: true })}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">New</div>
+            <div className="metric-value">{fmtMoney(sel.newArr, { full: true })}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Expansion</div>
+            <div className="metric-value">{fmtMoney(sel.expansion, { full: true })}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Expansion % of Net New</div>
+            <div className="metric-value">{pct(sel.expansionPct)}</div>
+          </div>
+        </div>
+
+        <div className="section-title">Monthly ARR Summary — 2026</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Subs</th>
+              <th>New ARR</th>
+              <th>Expansion</th>
+              <th>PRS</th>
+              <th>Net New ARR</th>
+              <th>Gross Collected</th>
+              <th>Quota</th>
+              <th>% to Quota</th>
+              <th>Exp %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.m}>
+                <td style={{ fontWeight: 500 }}>{r.m} 2026</td>
+                <td style={mono}>{r.deals}</td>
+                <td style={mono}>{fmtMoney(r.newArr, { full: true })}</td>
+                <td style={mono}>{fmtMoney(r.expansion, { full: true })}</td>
+                <td style={mono}>{fmtMoney(r.prs, { full: true })}</td>
+                <td style={{ ...mono, fontWeight: 600 }}>{fmtMoney(r.netNew, { full: true })}</td>
+                <td style={mono}>{fmtMoney(r.gross, { full: true })}</td>
+                <td style={mono}>{fmtMoney(r.quota, { full: true })}</td>
+                <td style={mono}>{r.attainment != null ? pct(r.attainment) : '—'}</td>
+                <td style={mono}>{pct(r.expansionPct)}</td>
+              </tr>
+            ))}
+            <tr style={{ background: '#e0e7ff', fontWeight: 700 }}>
+              <td>YTD Total</td>
+              <td style={mono}>{totals.deals}</td>
+              <td style={mono}>{fmtMoney(totals.newArr, { full: true })}</td>
+              <td style={mono}>{fmtMoney(totals.expansion, { full: true })}</td>
+              <td style={mono}>{fmtMoney(totals.prs, { full: true })}</td>
+              <td style={mono}>{fmtMoney(totals.netNew, { full: true })}</td>
+              <td style={mono}>{fmtMoney(totals.gross, { full: true })}</td>
+              <td style={mono}>{fmtMoney(totals.quota, { full: true })}</td>
+              <td style={mono}>{totals.attainment != null ? pct(totals.attainment) : '—'}</td>
+              <td style={mono}>{pct(totals.expansionPct)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="data-needed" style={{ background: '#eef2ff', borderColor: '#c7d2fe' }}>
+          <div className="data-needed-title" style={{ color: '#3730a3' }}>About this report</div>
+          <ul className="data-needed-list" style={{ color: '#3730a3' }}>
+            <li>All-channel view (sales team + online store), mirroring the REVAMP workbook's ARR Summary tab.</li>
+            <li><strong>New / Expansion / PRS</strong> are the workbook's movement categorization and are directional — they do not necessarily sum to Net New ARR, because the engine floors renewal deltas at $0.</li>
+            <li><strong>Net New ARR</strong> is the authoritative engine figure used across the dashboard; <strong>Expansion %</strong> is measured against it.</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   // Render placeholder for unavailable reports
   const renderDataNeeded = (report) => (
     <div id="report-content">
@@ -2958,6 +3062,7 @@ function ReportsView({ period, setPeriod }) {
 
     switch (activeReport) {
       case 'executive': return renderExecutiveSummary();
+      case 'arr-summary': return renderARRSummary();
       case 'sdr': return renderSDRReport();
       case 'arr-bridge': return renderARRBridge();
       case 'product': return renderProductPerformance();
@@ -3853,7 +3958,7 @@ function App() {
           gross: fmtMoney(activeData.gross, { full: true }),
           netNew: fmtMoney(activeData.netNew, { full: true }),
           commission: fmtMoney(activeData.commission, { full: true }),
-          attainment: avgAttain.toFixed(1) + '%',
+          attainment: teamAttain.toFixed(1) + '%',
         };
         return (
           <>
