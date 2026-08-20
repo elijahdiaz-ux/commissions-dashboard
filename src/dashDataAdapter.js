@@ -53,7 +53,10 @@ export function buildConstants(dashData) {
   // ── Period selector ──
   const labels = months.map((b) => `${b.name} ${year}`);
   const PERIOD_OPTIONS = [...labels].reverse();
-  if (dm >= 3) PERIOD_OPTIONS.push(`Q1 ${year}`);
+  // Every quarter that has started — the ones that have passed plus the current
+  // one (data month 8 → Q1, Q2, Q3). The current quarter aggregates its
+  // months-to-date; App.jsx quarter helpers stay in sync via the same math.
+  for (let q = 1; q <= Math.ceil(dm / 3); q++) PERIOD_OPTIONS.push(`Q${q} ${year}`);
   PERIOD_OPTIONS.push(`YTD ${year}`);
   const MONTH_INDEX = Object.fromEntries(labels.map((l, i) => [l, i]));
 

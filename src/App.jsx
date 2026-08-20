@@ -10,7 +10,7 @@ import { buildConstants } from './dashDataAdapter';
 // The adapter returns the exact shapes the components below have always consumed.
 const {
   LAST_UPDATED,      // stamp of the last pipeline run (Central time)
-  PERIOD_OPTIONS,    // ['Jul 2026', …, 'Jan 2026', 'Q1 2026', 'YTD 2026']
+  PERIOD_OPTIONS,    // ['Aug 2026', …, 'Jan 2026', 'Q1 2026', 'Q2 2026', 'Q3 2026', 'YTD 2026']
   MONTH_INDEX,       // { 'Jan 2026': 0, … } (actual months only)
   CURRENT_MONTH,     // pacing config, derived from the data month
   REPS,              // per-rep blocks incl. spark/monthlyDeals/commissionByMonth
@@ -230,6 +230,29 @@ const calcCommission = (rep, netNew) => {
   return Math.round(netNew * 0.08);
 };
 
+// ───────── QUARTER HELPERS — single source of truth for "Q1/Q2/Q3…" aggregation ─────────
+// A period label like "Q2 2026" aggregates that quarter's months. The indices are
+// clamped to months that actually have data (MONTHLY only holds actual months), so
+// the CURRENT quarter shows its months-to-date rather than reaching into the future.
+const quarterNum = (period) => {
+  const m = /^Q([1-4])\b/.exec(period || '');
+  return m ? +m[1] : null;
+};
+const quarterMonthIdx = (period) => {
+  const q = quarterNum(period);
+  if (!q) return null;
+  const start = (q - 1) * 3;
+  const out = [];
+  for (let i = start; i < start + 3 && i < MONTHLY.length; i++) out.push(i);
+  return out;
+};
+// Sum a per-month numeric series (spark / monthlyDeals / commissionByMonth / MONTHLY[k])
+// across a quarter's in-data months. `get` maps an index to its value.
+const sumQuarter = (period, get) => {
+  const idx = quarterMonthIdx(period);
+  return idx ? idx.reduce((a, i) => a + (get(i) || 0), 0) : 0;
+};
+
 // ───────── ATTAINMENT — single source of truth for "% to goal" across ALL views ─────────
 // AE quota is quarterly ($125K, Q1 ramped to 50%). In a monthly view the basis is one
 // month, so it is compared to the MONTHLY SHARE (quota / 3) so AEs read like AMs.
@@ -242,7 +265,7 @@ const repAttainmentBasis = (rep, period) => {
   const mi = MONTH_INDEX[period];
   const series = rep.basisSpark || rep.spark;
   if (mi !== undefined) return series[mi] || 0;
-  if (period === 'Q1 2026') return (series[0] || 0) + (series[1] || 0) + (series[2] || 0);
+  if (quarterNum(period)) return sumQuarter(period, (i) => series[i]);
   if (period === 'YTD 2026') return series.reduce((a, b) => a + (b || 0), 0);
   return rep.plan === 'D' ? (rep.gross || 0) : (rep.netNew || 0);
 };
@@ -253,8 +276,11 @@ const repAttainment = (rep, period) => {
   const mi = MONTH_INDEX[period];
   const monthsWithData = rep.spark ? rep.spark.filter(v => v !== undefined && v !== null).length : 0;
   const qQuota = (q) => q === 1 ? 125000 * 0.5 : 125000; // quarterly quota, Q1 ramped
+  const qi = quarterMonthIdx(period); // in-data month indices for a quarter period, else null
   if (rep.role === 'AE') {
-    if (period === 'Q1 2026') return (basis / qQuota(1)) * 100;
+    // Quarter: prorate the quarterly quota to the quarter's months-to-date so the
+    // current (partial) quarter reads as a pace, not an artificially low number.
+    if (qi) return (basis / (qQuota(quarterNum(period)) * (qi.length / 3))) * 100;
     if (period === 'YTD 2026') {
       const cq = Math.ceil(monthsWithData / 3);
       let q = 0;
@@ -268,7 +294,7 @@ const repAttainment = (rep, period) => {
     return (basis / 125000) * 100;
   }
   const mQuota = (PLANS[rep.plan] && PLANS[rep.plan].quota) || 50000; // AM monthly quota from the rep's plan (Plan E = $62.5K)
-  if (period === 'Q1 2026') return (basis / (mQuota * 3)) * 100;
+  if (qi) return (basis / (mQuota * qi.length)) * 100; // months-to-date in the quarter
   if (period === 'YTD 2026') return (basis / (mQuota * Math.max(1, monthsWithData))) * 100;
   return (basis / mQuota) * 100;
 };
@@ -637,9 +663,13 @@ function repSubs(repName, period) {
   const iRep = QA_COL['Sales Rep'], iMon = QA_COL['Payment Month'], iAcct = QA_COL['AccountName'],
         iProd = QA_COL['ProductPurchased'], iArr = QA_COL['ChargeAmount'], iNet = QA_COL['Subscription Delta'];
   if (iRep === undefined || iAcct === undefined) return [];
-  const mi = MONTH_INDEX[period]; // 0-based month, or undefined for Q1/YTD
+  const mi = MONTH_INDEX[period]; // 0-based month, or undefined for a quarter / YTD
+  const qset = quarterMonthIdx(period); // 0-based month indices for a quarter, else null
   return qaData.rows
-    .filter(r => r[iRep] === repName && (mi === undefined || r[iMon] === mi + 1))
+    .filter(r => r[iRep] === repName && (
+      mi !== undefined ? r[iMon] === mi + 1
+        : qset ? qset.includes(r[iMon] - 1)
+          : true))
     .map(r => ({ customer: r[iAcct], product: r[iProd], arr: r[iArr] || 0, netNew: r[iNet] || 0 }));
 }
 
@@ -649,10 +679,14 @@ function RepDrawer({ rep, onClose, period }) {
   const mi = MONTH_INDEX[period];
   const periodLabel = period ? period.split(' ')[0] : 'Period'; // 'May', 'Q1', 'YTD'
   const sumArr = (arr) => (arr ? arr.reduce((a, b) => a + (b || 0), 0) : 0);
-  // Period-aware values: selected month, or the aggregate for Q1 / YTD
-  const periodDeals  = mi !== undefined ? (rep.monthlyDeals?.[mi] ?? 0) : (rep.monthlyDeals ? sumArr(rep.monthlyDeals) : rep.deals);
-  const periodNetNew = mi !== undefined ? (rep.spark?.[mi] ?? 0)        : (rep.spark ? sumArr(rep.spark) : rep.netNew);
-  const commissionEarned = mi !== undefined ? (rep.commissionByMonth?.[mi] ?? 0) : sumArr(rep.commissionByMonth);
+  const qm = quarterMonthIdx(period); // 0-based month indices for a quarter, else null
+  // Period-aware values: selected month, the quarter's months-to-date, or YTD (all)
+  const agg = (arr, fallback) => mi !== undefined ? (arr?.[mi] ?? 0)
+    : qm ? (arr ? qm.reduce((a, i) => a + (arr[i] || 0), 0) : fallback)
+      : (arr ? sumArr(arr) : fallback);
+  const periodDeals  = agg(rep.monthlyDeals, rep.deals);
+  const periodNetNew = agg(rep.spark, rep.netNew);
+  const commissionEarned = agg(rep.commissionByMonth, 0);
   const subs = repSubs(rep.name, period); // live subscription detail from the Data tab
   // Commission per month (actual)
   const MONTHS = MONTHLY.map((mm) => mm.m);
@@ -774,7 +808,7 @@ function RepDrawer({ rep, onClose, period }) {
                   if (r[ri] !== rep.name) return s;
                   const pm = Number(r[pi]);
                   const inP = miD !== undefined ? pm === miD + 1
-                    : period.startsWith('Q1') ? pm >= 1 && pm <= 3 : true;
+                    : quarterNum(period) ? (pm > (quarterNum(period) - 1) * 3 && pm <= quarterNum(period) * 3) : true;
                   return inP ? s + (Number(r[si]) || 0) : s;
                 }, 0);
               }
@@ -1903,7 +1937,7 @@ function CommissionsView({ period, setPeriod }) {
     const cm = rep.commissionByMonth;
     if (cm) {
       if (monthIdx !== undefined) return cm[monthIdx] || 0;
-      if (period === 'Q1 2026') return (cm[0] || 0) + (cm[1] || 0) + (cm[2] || 0);
+      if (quarterNum(period)) return sumQuarter(period, (i) => cm[i]);
       return cm.reduce((a, b) => a + (b || 0), 0); // YTD / default
     }
     if (monthIdx !== undefined && rep.spark) return calcCommission(rep, rep.spark[monthIdx] || 0);
@@ -2611,7 +2645,7 @@ function ReportsView({ period, setPeriod }) {
       for (const r of qaData.rows) {
         const pm = Number(r[pmIdx]);
         const inPeriod = monthIdx !== undefined ? pm === monthIdx + 1
-          : period.startsWith('Q1') ? pm >= 1 && pm <= 3 : true; // YTD/default = all
+          : quarterNum(period) ? (pm > (quarterNum(period) - 1) * 3 && pm <= quarterNum(period) * 3) : true; // YTD/default = all
         if (!inPeriod) continue;
         const mv = r[mvIdx];
         if (mv in movement) movement[mv] += Number(r[dlIdx]) || 0;
@@ -3452,12 +3486,12 @@ function App() {
   const periodMonth = MONTH_INDEX[period] !== undefined ? period.split(' ')[0] : undefined;
   const periodData = MONTHLY.find(m => m.m === periodMonth) || MAY_DATA;
   const isYTD = period === 'YTD 2026';
-  const isQ1 = period === 'Q1 2026';
-  const activeData = isYTD ? YTD : isQ1 ? {
-    deals: MONTHLY.slice(0,3).reduce((s,m)=>s+m.deals,0),
-    gross: MONTHLY.slice(0,3).reduce((s,m)=>s+m.gross,0),
-    netNew: MONTHLY.slice(0,3).reduce((s,m)=>s+m.netNew,0),
-    commission: MONTHLY.slice(0,3).reduce((s,m)=>s+m.commission,0),
+  const qMonths = quarterMonthIdx(period); // in-data month indices for a quarter, else null
+  const activeData = isYTD ? YTD : qMonths ? {
+    deals: qMonths.reduce((s,i)=>s+MONTHLY[i].deals,0),
+    gross: qMonths.reduce((s,i)=>s+MONTHLY[i].gross,0),
+    netNew: qMonths.reduce((s,i)=>s+MONTHLY[i].netNew,0),
+    commission: qMonths.reduce((s,i)=>s+MONTHLY[i].commission,0),
   } : periodData;
 
   // KPI bar percents — bar height relative to YTD peak across months
@@ -3466,13 +3500,13 @@ function App() {
   const monthIndex = MONTH_INDEX[period];
   const getRepNetNew = (rep) => {
     if (monthIndex !== undefined) return rep.spark[monthIndex] || 0;
-    if (period === 'Q1 2026') return (rep.spark[0] || 0) + (rep.spark[1] || 0) + (rep.spark[2] || 0);
+    if (quarterNum(period)) return sumQuarter(period, (i) => rep.spark[i]);
     if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + (b || 0), 0);
     return rep.netNew;
   };
   const getRepDeals = (rep) => {
     if (monthIndex !== undefined && rep.monthlyDeals) return rep.monthlyDeals[monthIndex] || 0;
-    if (period === 'Q1 2026' && rep.monthlyDeals) return (rep.monthlyDeals[0] || 0) + (rep.monthlyDeals[1] || 0) + (rep.monthlyDeals[2] || 0);
+    if (quarterNum(period) && rep.monthlyDeals) return sumQuarter(period, (i) => rep.monthlyDeals[i]);
     if (period === 'YTD 2026' && rep.monthlyDeals) return rep.monthlyDeals.reduce((a, b) => a + (b || 0), 0);
     return rep.deals;
   };
@@ -3480,7 +3514,7 @@ function App() {
     const cm = rep.commissionByMonth;
     if (cm) {
       if (monthIndex !== undefined) return cm[monthIndex] || 0;
-      if (period === 'Q1 2026') return (cm[0] || 0) + (cm[1] || 0) + (cm[2] || 0);
+      if (quarterNum(period)) return sumQuarter(period, (i) => cm[i]);
       return cm.reduce((a, b) => a + (b || 0), 0); // YTD / default
     }
     return calcCommission(rep, getRepNetNew(rep));
@@ -3522,9 +3556,9 @@ function App() {
   // Team attainment vs the REAL team quota (engine numbers, not a rep average)
   const teamAttain = (() => {
     if (miCfo !== undefined) return MONTHLY[miCfo]?.goal ?? 0;
-    if (period.startsWith('Q1')) {
-      const nn = MONTHLY.slice(0, 3).reduce((a, b) => a + b.netNew, 0);
-      const q = TEAM_QUOTA.monthly.slice(0, 3).reduce((a, b) => a + b, 0);
+    if (qMonths) {
+      const nn = qMonths.reduce((a, i) => a + MONTHLY[i].netNew, 0);
+      const q = qMonths.reduce((a, i) => a + (TEAM_QUOTA.monthly[i] || 0), 0);
       return q ? (nn / q) * 100 : 0;
     }
     return (TEAM_QUOTA.ytdAttainment ?? 0) * 100; // YTD / default
@@ -3537,8 +3571,8 @@ function App() {
   // Sales vs Online Store split for the selected period
   const channelSplit = (() => {
     if (miCfo !== undefined) return CHANNEL.monthly[miCfo] || { sales: 0, online: 0 };
-    if (period.startsWith('Q1')) return CHANNEL.monthly.slice(0, 3).reduce(
-      (a, b) => ({ sales: a.sales + b.sales, online: a.online + b.online }), { sales: 0, online: 0 });
+    if (qMonths) return qMonths.reduce(
+      (a, i) => ({ sales: a.sales + (CHANNEL.monthly[i]?.sales || 0), online: a.online + (CHANNEL.monthly[i]?.online || 0) }), { sales: 0, online: 0 });
     return { sales: CHANNEL.ytd.sales, online: CHANNEL.ytd.online };
   })();
   const fmtYm = (ym) => { // "2026-08" → "Aug 2026"
@@ -3689,7 +3723,7 @@ function App() {
                 const monthIndex = MONTH_INDEX[period];
                 const getRepNetNew = (rep) => {
                   if (monthIndex !== undefined) return rep.spark[monthIndex];
-                  if (period === 'Q1 2026') return rep.spark[0] + rep.spark[1] + rep.spark[2];
+                  if (quarterNum(period)) return sumQuarter(period, (i) => rep.spark[i]);
                   if (period === 'YTD 2026') return rep.spark.reduce((a, b) => a + b, 0);
                   return rep.netNew;
                 };
