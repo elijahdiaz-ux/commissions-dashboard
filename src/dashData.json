@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-27T14:11:28",
-  "coverageThrough": "2026-08-27",
+  "generatedAt": "2026-08-28T09:04:47",
+  "coverageThrough": "2026-08-28",
   "source": {
     "file": "Commisions Automation texst revamp .xlsx",
     "sheet": "Export",
-    "workbookModified": "2026-08-27T14:09:58"
+    "workbookModified": "2026-08-28T09:04:34"
   },
   "fiscalYear": 2026,
   "dataMonth": 8,
@@ -155,20 +155,20 @@
         "month": 8,
         "name": "Aug",
         "isActual": true,
-        "deals": 403,
-        "netNew": 488838.77,
-        "gross": 864684.85,
+        "deals": 425,
+        "netNew": 499760.03,
+        "gross": 912914.89,
         "quota": 529166.67,
-        "attainment": 0.9238,
-        "netNewNew": 371230.49,
-        "netNewExpansion": 91163.04,
+        "attainment": 0.9444,
+        "netNewNew": 375032.49,
+        "netNewExpansion": 98282.3,
         "netNewPRS": 0.0,
-        "commission": 27928.07,
-        "totalPayout": 64596.07,
-        "eomPayout": 46262.07,
-        "salesNetNew": 315500.99,
-        "salesDeals": 263,
-        "salesAttainment": 0.5962
+        "commission": 28146.52,
+        "totalPayout": 64814.52,
+        "eomPayout": 46480.52,
+        "salesNetNew": 317952.19,
+        "salesDeals": 268,
+        "salesAttainment": 0.6009
       },
       {
         "month": 9,
@@ -248,18 +248,18 @@
       }
     ],
     "ytd": {
-      "netNew": 2915957.6,
+      "netNew": 2926878.86,
       "quota": 4233333.33,
-      "attainment": 0.6888,
-      "deals": 2541,
-      "netNewNew": 1804360.07,
-      "netNewExpansion": 1036299.29,
+      "attainment": 0.6914,
+      "deals": 2563,
+      "netNewNew": 1808162.07,
+      "netNewExpansion": 1043418.55,
       "netNewPRS": 39534.57,
-      "grossAllIn": 4846529.8,
-      "salesNetNew": 2193233.05,
-      "salesDeals": 1853,
-      "salesAttainment": 0.5181,
-      "commission": 176685.35
+      "grossAllIn": 4894759.84,
+      "salesNetNew": 2195684.25,
+      "salesDeals": 1858,
+      "salesAttainment": 0.5187,
+      "commission": 176903.8
     }
   },
   "reps": [
@@ -1212,17 +1212,17 @@
           "month": 8,
           "name": "Aug",
           "isActual": true,
-          "deals": 52,
-          "netNew": 22163.16,
-          "gross": 76198.8,
+          "deals": 55,
+          "netNew": 24150.16,
+          "gross": 82744.38,
           "quota": 50000.0,
-          "attainment": 0.4433,
+          "attainment": 0.483,
           "netNewNew": 6783.56,
-          "netNewExpansion": 15379.6,
+          "netNewExpansion": 17366.6,
           "netNewPRS": 0.0,
-          "commission": 1295.38,
-          "totalPayout": 5462.38,
-          "eomPayout": 3378.88
+          "commission": 1406.65,
+          "totalPayout": 5573.65,
+          "eomPayout": 3490.15
         },
         {
           "month": 9,
@@ -1290,12 +1290,12 @@
         }
       ],
       "ytd": {
-        "deals": 245,
-        "netNew": 183482.15,
-        "gross": 421166.53,
+        "deals": 248,
+        "netNew": 185469.15,
+        "gross": 427712.11,
         "quota": 400000.0,
-        "attainment": 0.4587,
-        "commission": 7159.83
+        "attainment": 0.4637,
+        "commission": 7271.11
       }
     },
     {
@@ -1833,17 +1833,17 @@
           "month": 8,
           "name": "Aug",
           "isActual": true,
-          "deals": 38,
-          "netNew": 15185.81,
-          "gross": 57702.12,
+          "deals": 39,
+          "netNew": 15650.01,
+          "gross": 59921.32,
           "quota": 50000.0,
-          "attainment": 0.3037,
+          "attainment": 0.313,
           "netNewNew": 809.28,
-          "netNewExpansion": 14376.53,
+          "netNewExpansion": 14840.73,
           "netNewPRS": 0.0,
-          "commission": 980.94,
-          "totalPayout": 5147.94,
-          "eomPayout": 3064.44
+          "commission": 1018.66,
+          "totalPayout": 5185.66,
+          "eomPayout": 3102.16
         },
         {
           "month": 9,
@@ -1911,12 +1911,12 @@
         }
       ],
       "ytd": {
-        "deals": 120,
-        "netNew": 88649.05,
-        "gross": 211690.3,
+        "deals": 121,
+        "netNew": 89113.25,
+        "gross": 213909.5,
         "quota": 400000.0,
-        "attainment": 0.2216,
-        "commission": 3598.74
+        "attainment": 0.2228,
+        "commission": 3636.46
       }
     },
     {
@@ -2040,9 +2040,9 @@
           "month": 8,
           "name": "Aug",
           "isActual": true,
-          "deals": 31,
+          "deals": 32,
           "netNew": 21032.73,
-          "gross": 70575.67,
+          "gross": 74879.67,
           "quota": 50000.0,
           "attainment": 0.4207,
           "netNewNew": 10441.96,
@@ -2118,9 +2118,9 @@
         }
       ],
       "ytd": {
-        "deals": 95,
+        "deals": 96,
         "netNew": 60622.79,
-        "gross": 212936.08,
+        "gross": 217240.08,
         "quota": 400000.0,
         "attainment": 0.1516,
         "commission": 1030.59
@@ -2543,8 +2543,8 @@
   ],
   "onlineStore": {
     "name": "Limio Store Front",
-    "ytdNetNew": 722724.55,
-    "ytdDeals": 688,
+    "ytdNetNew": 731194.61,
+    "ytdDeals": 705,
     "monthly": [
       {
         "month": 1,
@@ -2662,13 +2662,13 @@
         "month": 8,
         "name": "Aug",
         "isActual": true,
-        "deals": 140,
-        "netNew": 173337.78,
-        "gross": 259460.18,
+        "deals": 157,
+        "netNew": 181807.84,
+        "gross": 294621.44,
         "quota": 0.0,
         "attainment": null,
-        "netNewNew": 148487.2,
-        "netNewExpansion": 24850.58,
+        "netNewNew": 152289.2,
+        "netNewExpansion": 29518.64,
         "netNewPRS": 0.0,
         "commission": 0.0,
         "totalPayout": 0.0,
@@ -2743,11 +2743,11 @@
   "leadership": [
     {
       "name": "Chase Bryant",
-      "ytdComp": 25099.95
+      "ytdComp": 25128.54
     },
     {
       "name": "Lenny Fellez",
-      "ytdComp": 32013.06
+      "ytdComp": 32053.91
     }
   ],
   "priorYearBookArr": 13408071.67
