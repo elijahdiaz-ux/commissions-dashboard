@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import qaData from './qaData.json';
 import sdrData from './sdrData.json';
 import dashData from './dashData.json';
+import execData from './execData.json';
 import { buildConstants } from './dashDataAdapter';
 
 // ───────── LIVE DATA ─────────
@@ -1351,6 +1352,7 @@ function SDRRepDetail({ rep, period }) {
 function Sidebar({ activeTab, setActiveTab }) {
   const items = [
     ['Dashboard', Icon.Dashboard],
+    ['Executive', Icon.ChartBar],
     ['Reps', Icon.Reps],
     ['Commissions', Icon.Commission],
     ['Reports', Icon.Reports],
@@ -3526,6 +3528,371 @@ function DataQAView() {
   );
 }
 
+
+// ───────── EXECUTIVE DASHBOARD ─────────
+// Audience: CFO / CEO / COO. Readable in under a minute.
+//
+// SINGLE SOURCE: the REVAMP workbook's **Export** tab, carried verbatim into
+// execData.json by gen_exec_json.py. Nothing here reads dashData.json, qaData or
+// any derived shape, so an executive figure can always be traced to a specific
+// sheet row. The History tab is deliberately unused (dropped 2026-09-01) and the
+// ARR Summary tab is deliberately unused because it was verified to be a
+// byte-identical copy of Export's tables -- reading both would double count.
+//
+// Nothing is estimated. Where the workbook cannot support a metric (churn /
+// contraction has no column anywhere in Export) the card renders "No data".
+const EXEC_IX = Object.fromEntries(execData.columns.map((c, i) => [c, i]));
+const EXEC_FY = Number(execData.kpi.fiscal_year);
+const EXEC_DM = Number(execData.kpi.data_month);          // last month carrying activity
+const EXEC_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const EXEC_FIRST_ROW = Number(execData.source.firstDataRow) || 18;
+
+// Rows tagged with their real sheet row number so the UI can cite them.
+const EXEC_ROWS = execData.rows.map((r, i) => ({ cells: r, sheetRow: EXEC_FIRST_ROW + i }));
+
+// Base-pay placeholders sitting in months beyond the data month. These are real
+// cells in the workbook but they are forward placeholders, not earned pay, so
+// every period below excludes them and the page says so out loud.
+const EXEC_PLACEHOLDER_EARNINGS = EXEC_ROWS
+  .filter(r => Number(r.cells[EXEC_IX.year]) === EXEC_FY && Number(r.cells[EXEC_IX.month]) > EXEC_DM)
+  .reduce((s, r) => s + (Number(r.cells[EXEC_IX.total_comp]) || 0), 0);
+
+// Aggregate a set of months. Returns null (not 0) for a metric with no source
+// value at all, so the UI can distinguish "zero" from "not in the workbook".
+function execAgg(months) {
+  const want = new Set(months);
+  const rows = EXEC_ROWS.filter(r =>
+    Number(r.cells[EXEC_IX.year]) === EXEC_FY && want.has(Number(r.cells[EXEC_IX.month])));
+  const sum = (col) => {
+    let any = false, total = 0;
+    for (const r of rows) {
+      const v = r.cells[EXEC_IX[col]];
+      if (v !== null && v !== undefined && v !== '') { any = true; total += Number(v) || 0; }
+    }
+    return any ? total : null;
+  };
+  const netNew = sum('net_new_arr_total');
+  const quota = sum('monthly_quota');
+  return {
+    rows, rowCount: rows.length,
+    deals: sum('deals'),
+    netNew,
+    newArr: sum('net_new_arr_new'),
+    expansion: sum('net_new_arr_expansion'),
+    prs: sum('net_new_arr_prs'),
+    gross: sum('gross_collected'),
+    quota,
+    attainment: (netNew !== null && quota) ? netNew / quota : null,
+    earnings: sum('total_comp'),
+    eomPayout: sum('eom_payout'),
+    churn: null, // no churn/contraction column exists in Export -- see data notes
+  };
+}
+
+// Period model. Month and Quarter compare to the immediately prior period.
+// YTD and Full Year have no prior-year counterpart in Export, so their
+// comparison is "No data" rather than a fabricated baseline.
+function execResolvePeriod(kind, idx) {
+  const actual = (arr) => arr.filter(m => m <= EXEC_DM);
+  if (kind === 'Month') {
+    const m = idx + 1;
+    return { label: `${EXEC_MONTHS[m - 1]} ${EXEC_FY}`, months: [m],
+             prior: m > 1 ? { label: `${EXEC_MONTHS[m - 2]} ${EXEC_FY}`, months: [m - 1] } : null };
+  }
+  if (kind === 'Quarter') {
+    const q = idx + 1, ms = actual([q * 3 - 2, q * 3 - 1, q * 3]);
+    const pq = q - 1, pms = pq >= 1 ? actual([pq * 3 - 2, pq * 3 - 1, pq * 3]) : [];
+    return { label: `Q${q} ${EXEC_FY}`, months: ms,
+             prior: pms.length ? { label: `Q${pq} ${EXEC_FY}`, months: pms } : null };
+  }
+  if (kind === 'YTD') {
+    return { label: `YTD ${EXEC_FY}`, months: actual([...Array(12)].map((_, i) => i + 1)),
+             prior: null, priorReason: `No FY${EXEC_FY - 1} rows exist in the Export tab` };
+  }
+  return { label: `Full Year ${EXEC_FY}`, months: actual([...Array(12)].map((_, i) => i + 1)),
+           prior: null, priorReason: `No FY${EXEC_FY - 1} rows exist in the Export tab`,
+           capped: true };
+}
+
+function ExecKpi({ label, value, prior, format = 'money', sub, noData, noDataWhy }) {
+  const fmt = (v) => v === null || v === undefined ? '—'
+    : format === 'money' ? fmtMoney(v, { full: true })
+      : format === 'pct' ? `${(v * 100).toFixed(1)}%`
+        : v.toLocaleString();
+  let delta = null;
+  if (!noData && prior !== null && prior !== undefined && value !== null && Math.abs(prior) > 0.005) {
+    delta = ((value - prior) / Math.abs(prior)) * 100;
+  }
+  return (
+    <div className="metric-card">
+      <div className="metric-label">{label}</div>
+      <div className="metric-value" style={noData ? { color: 'var(--text-3)', fontWeight: 500 } : undefined}>
+        {noData ? 'No data' : fmt(value)}
+      </div>
+      {noData && noDataWhy && (
+        <div className="metric-sub" style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 4 }}>{noDataWhy}</div>
+      )}
+      {!noData && delta !== null && (
+        <div className={`metric-change ${delta >= 0 ? 'positive' : 'negative'}`}>
+          {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}% vs prior period
+        </div>
+      )}
+      {!noData && delta === null && prior === null && (
+        <div className="metric-sub" style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 4 }}>
+          no prior period
+        </div>
+      )}
+      {sub && <div className="metric-sub" style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// Monthly trend. Bars are the workbook's monthly Net New ARR; months inside the
+// selected period are highlighted so the KPI cards and the trend agree visually.
+function ExecTrend({ selected }) {
+  const series = [...Array(EXEC_DM)].map((_, i) => {
+    const a = execAgg([i + 1]);
+    return { m: i + 1, name: EXEC_MONTHS[i], netNew: a.netNew || 0, gross: a.gross || 0 };
+  });
+  const max = Math.max(...series.map(s => s.netNew), 1);
+  const inSel = new Set(selected);
+  const H = 150, BW = 100 / series.length;
+  return (
+    <div>
+      <svg viewBox={`0 0 100 ${H + 22}`} preserveAspectRatio="none" style={{ width: '100%', height: 190 }}>
+        {series.map((s, i) => {
+          const h = (s.netNew / max) * H;
+          const on = inSel.has(s.m);
+          return (
+            <g key={s.m}>
+              <rect x={i * BW + BW * 0.18} y={H - h} width={BW * 0.64} height={Math.max(h, 0.6)}
+                fill={on ? '#4f46e5' : '#c7d2fe'} rx="0.6" />
+              <text x={i * BW + BW * 0.5} y={H + 14} textAnchor="middle"
+                style={{ fontSize: 4.2, fill: on ? '#3730a3' : '#94a3b8', fontWeight: on ? 700 : 400 }}>
+                {s.name}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-3)', marginTop: -6 }}>
+        <span>Net New ARR by month · peak {fmtMoney(max, { full: true })}</span>
+        <span>Export ▸ tblExportRepMonth</span>
+      </div>
+    </div>
+  );
+}
+
+function ExecutiveView() {
+  const [kind, setKind] = useState('Month');
+  const [idx, setIdx] = useState(EXEC_DM - 1);            // default: latest month with data
+  const [showRows, setShowRows] = useState(false);
+
+  const kinds = ['Month', 'Quarter', 'YTD', 'Full Year'];
+  const options = kind === 'Month'
+    ? [...Array(EXEC_DM)].map((_, i) => `${EXEC_MONTHS[i]} ${EXEC_FY}`)
+    : kind === 'Quarter'
+      ? [...Array(Math.ceil(EXEC_DM / 3))].map((_, i) => `Q${i + 1} ${EXEC_FY}`)
+      : null;
+
+  const safeIdx = options ? Math.min(idx, options.length - 1) : 0;
+  const P = execResolvePeriod(kind, safeIdx);
+  const cur = execAgg(P.months);
+  const pri = P.prior ? execAgg(P.prior.months) : null;
+  const mono = { fontFamily: 'JetBrains Mono, monospace' };
+
+  const switchKind = (k) => {
+    setKind(k);
+    setIdx(k === 'Month' ? EXEC_DM - 1 : k === 'Quarter' ? Math.ceil(EXEC_DM / 3) - 1 : 0);
+  };
+
+  return (
+    <main className="main">
+      <div className="report-header" style={{ marginBottom: 14 }}>
+        <div>
+          <div className="report-logo">Amazing Life Foundation</div>
+          <div className="report-title">Executive Dashboard — {P.label}</div>
+        </div>
+        <div className="report-meta">
+          <div>Source: REVAMP workbook ▸ Export tab</div>
+          <div>Data through {EXEC_MONTHS[EXEC_DM - 1]} {EXEC_FY} · generated {execData.generatedAt.slice(0, 10)}</div>
+        </div>
+      </div>
+
+      {/* Period selector */}
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {kinds.map(k => (
+            <button key={k} onClick={() => switchKind(k)}
+              style={{ padding: '5px 14px', borderRadius: 6, fontSize: '0.82rem', cursor: 'pointer',
+                border: `1px solid ${k === kind ? '#4f46e5' : 'var(--border, #d4d4d8)'}`,
+                background: k === kind ? '#4f46e5' : 'transparent',
+                color: k === kind ? '#fff' : 'var(--text-2, inherit)',
+                fontWeight: k === kind ? 600 : 400 }}>{k}</button>
+          ))}
+        </div>
+        {options && (
+          <select value={safeIdx} onChange={e => setIdx(Number(e.target.value))}
+            style={{ padding: '5px 10px', borderRadius: 6, fontSize: '0.82rem',
+              border: '1px solid var(--border, #d4d4d8)', background: 'transparent', color: 'inherit' }}>
+            {options.map((o, i) => <option key={o} value={i}>{o}</option>)}
+          </select>
+        )}
+        <span style={{ fontSize: '0.74rem', color: 'var(--text-3)' }}>
+          {P.prior ? `compared with ${P.prior.label}` : `no prior period — ${P.priorReason || 'none available'}`}
+        </span>
+      </div>
+
+      {P.capped && (
+        <div className="data-needed" style={{ background: '#fffbeb', borderColor: '#fde68a', marginBottom: 14 }}>
+          <div className="data-needed-title" style={{ color: '#92400e' }}>Full Year shows actuals only</div>
+          <ul className="data-needed-list" style={{ color: '#92400e' }}>
+            <li>The workbook carries no activity after {EXEC_MONTHS[EXEC_DM - 1]}, so Full Year currently equals YTD.</li>
+            <li>Months {EXEC_DM + 1}–12 hold <strong>{fmtMoney(EXEC_PLACEHOLDER_EARNINGS, { full: true })}</strong> of forward base-pay placeholder in <code>total_comp</code>. It is <strong>excluded</strong> from Earnings above rather than presented as earned.</li>
+          </ul>
+        </div>
+      )}
+
+      <div className="metric-grid">
+        <ExecKpi label="Net New ARR" value={cur.netNew} prior={pri && pri.netNew} />
+        <ExecKpi label="New ARR" value={cur.newArr} prior={pri && pri.newArr} />
+        <ExecKpi label="Expansion ARR" value={cur.expansion} prior={pri && pri.expansion} />
+        <ExecKpi label="Churned / Contraction" noData
+          noDataWhy="No churn or contraction column exists in the Export tab" />
+      </div>
+      <div className="metric-grid" style={{ marginTop: 12 }}>
+        <ExecKpi label="Gross Collected" value={cur.gross} prior={pri && pri.gross} />
+        <ExecKpi label="Subscriptions" value={cur.deals} prior={pri && pri.deals} format="int" />
+        <ExecKpi label="% to Quota" value={cur.attainment} prior={pri && pri.attainment} format="pct"
+          sub={cur.quota !== null ? `quota ${fmtMoney(cur.quota, { full: true })}` : null} />
+        <ExecKpi label="Earnings (incl. base)" value={cur.earnings} prior={pri && pri.earnings}
+          sub="total_comp — includes base pay, not commission alone" />
+      </div>
+
+      <div className="section-title" style={{ marginTop: 22 }}>Net New ARR trend — FY{EXEC_FY}</div>
+      <ExecTrend selected={P.months} />
+
+      <div className="section-title" style={{ marginTop: 18 }}>Monthly detail</div>
+      <div style={{ overflowX: 'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th><th style={{ textAlign: 'right' }}>Subs</th>
+              <th style={{ textAlign: 'right' }}>New</th><th style={{ textAlign: 'right' }}>Expansion</th>
+              <th style={{ textAlign: 'right' }}>PRS</th><th style={{ textAlign: 'right' }}>Net New ARR</th>
+              <th style={{ textAlign: 'right' }}>Gross Collected</th><th style={{ textAlign: 'right' }}>% to Quota</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...Array(EXEC_DM)].map((_, i) => {
+              const a = execAgg([i + 1]);
+              const on = P.months.includes(i + 1);
+              return (
+                <tr key={i} style={on ? { background: '#eef2ff', fontWeight: 600 } : undefined}>
+                  <td>{EXEC_MONTHS[i]} {EXEC_FY}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.deals === null ? 'No data' : a.deals}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.newArr === null ? 'No data' : fmtMoney(a.newArr, { full: true })}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.expansion === null ? 'No data' : fmtMoney(a.expansion, { full: true })}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.prs ? fmtMoney(a.prs, { full: true }) : '—'}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.netNew === null ? 'No data' : fmtMoney(a.netNew, { full: true })}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.gross === null ? 'No data' : fmtMoney(a.gross, { full: true })}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{a.attainment === null ? 'No data' : `${(a.attainment * 100).toFixed(1)}%`}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Traceability */}
+      <div className="section-title" style={{ marginTop: 22 }}>
+        Data notes — every figure traces to the Export tab
+      </div>
+      <table>
+        <thead>
+          <tr><th>KPI</th><th>Source tab</th><th>Table</th><th>Column</th></tr>
+        </thead>
+        <tbody>
+          {[
+            ['Net New ARR', 'Export', 'tblExportRepMonth', 'net_new_arr_total'],
+            ['New ARR', 'Export', 'tblExportRepMonth', 'net_new_arr_new'],
+            ['Expansion ARR', 'Export', 'tblExportRepMonth', 'net_new_arr_expansion'],
+            ['PRS ARR', 'Export', 'tblExportRepMonth', 'net_new_arr_prs'],
+            ['Churned / Contraction', '—', '—', 'no such column exists'],
+            ['Gross Collected', 'Export', 'tblExportRepMonth', 'gross_collected'],
+            ['Subscriptions', 'Export', 'tblExportRepMonth', 'deals'],
+            ['% to Quota', 'Export', 'tblExportRepMonth', 'net_new_arr_total ÷ monthly_quota'],
+            ['Earnings (incl. base)', 'Export', 'tblExportRepMonth', 'total_comp'],
+            ['Payout due EOM', 'Export', 'tblExportKPI', 'payout_total_due_eom'],
+            ['Prior-year book ARR', 'Export', 'tblExportKPI', 'prior_year_book_arr'],
+          ].map(r => (
+            <tr key={r[0]}>
+              <td style={{ fontWeight: 500 }}>{r[0]}</td>
+              <td>{r[1]}</td>
+              <td style={{ fontSize: 12 }}><code>{r[2]}</code></td>
+              <td style={{ fontSize: 12 }}><code>{r[3]}</code></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div style={{ marginTop: 12 }}>
+        <button onClick={() => setShowRows(v => !v)}
+          style={{ padding: '5px 12px', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer',
+            border: '1px solid var(--border, #d4d4d8)', background: 'transparent', color: 'inherit' }}>
+          {showRows ? 'Hide' : 'Show'} the {cur.rowCount} Export rows behind {P.label}
+        </button>
+      </div>
+      {showRows && (
+        <div style={{ overflowX: 'auto', marginTop: 10 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Sheet row</th><th>Rep</th><th>Team</th><th>Mo</th>
+                <th style={{ textAlign: 'right' }}>Subs</th>
+                <th style={{ textAlign: 'right' }}>Net New ARR</th>
+                <th style={{ textAlign: 'right' }}>Gross</th>
+                <th style={{ textAlign: 'right' }}>total_comp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cur.rows.map(r => (
+                <tr key={r.sheetRow}>
+                  <td style={{ ...mono, fontSize: 12 }}>Export!A{r.sheetRow}</td>
+                  <td>{r.cells[EXEC_IX.rep]}</td>
+                  <td>{r.cells[EXEC_IX.team]}</td>
+                  <td style={mono}>{r.cells[EXEC_IX.month]}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{r.cells[EXEC_IX.deals]}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.net_new_arr_total]) || 0, { full: true })}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.gross_collected]) || 0, { full: true })}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.total_comp]) || 0, { full: true })}</td>
+                </tr>
+              ))}
+              <tr style={{ background: '#e0e7ff', fontWeight: 700 }}>
+                <td colSpan={4}>Total — {P.label}</td>
+                <td style={{ ...mono, textAlign: 'right' }}>{cur.deals}</td>
+                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(cur.netNew || 0, { full: true })}</td>
+                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(cur.gross || 0, { full: true })}</td>
+                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(cur.earnings || 0, { full: true })}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="data-needed" style={{ background: '#eef2ff', borderColor: '#c7d2fe', marginTop: 18 }}>
+        <div className="data-needed-title" style={{ color: '#3730a3' }}>Scope and conventions</div>
+        <ul className="data-needed-list" style={{ color: '#3730a3' }}>
+          <li><strong>All channels.</strong> These figures include the Limio online store, matching the workbook's own <code>team_net_new_arr_ytd</code>. SalesDash's Team Performance tiles are <em>sales-team only</em> and will read lower by the online-store amount; its ARR Summary report is all-channel and ties exactly.</li>
+          <li><strong>New + Expansion + PRS does not sum to Net New ARR.</strong> The engine floors renewal deltas at $0, so the split is directional. Net New ARR is the authoritative figure.</li>
+          <li><strong>Earnings includes base pay.</strong> <code>total_comp</code> equals <code>mid_month_payout + eom_payout</code> in every month; it is not commission alone.</li>
+          <li><strong>Year over year is unavailable.</strong> The Export tab holds FY{EXEC_FY} rows only.</li>
+        </ul>
+      </div>
+    </main>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [team, setTeam] = useState('Sales Team'); // Phase 1: Dashboard team selector; default keeps today's experience
@@ -3671,7 +4038,9 @@ function App() {
     <div className="app">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {activeTab === 'Reps' ? (
+      {activeTab === 'Executive' ? (
+        <ExecutiveView />
+      ) : activeTab === 'Reps' ? (
         <RepsView onSelectRep={setActiveRep} period={period} setPeriod={setPeriod} />
       ) : activeTab === 'Commissions' ? (
         <CommissionsView period={period} setPeriod={setPeriod} />
