@@ -673,6 +673,135 @@ function repSubs(repName, period) {
     .map(r => ({ customer: r[iAcct], product: r[iProd], arr: r[iArr] || 0, netNew: r[iNet] || 0 }));
 }
 
+// ───────── ARR SUMMARY BY REP (detail basis) ─────────
+// Built from qaData (the Cleaned Zuora Data detail rows) because that is the ONLY
+// source carrying a PaymentDate, and therefore the only thing that can answer
+// Daily or Weekly. It measures a DIFFERENT quantity from the engine's Net New ARR:
+// the detail rows sum to each rep's CLASSIFIED movement, while the engine's Net New
+// carries an additional unclassified remainder that has no detail row behind it
+// (Brian Carl, Connor Krauseneck and Caleb Gilbert account for most of it). The
+// detail set also contains people the engine's seller list does not — Chase Bryant
+// and "Ops Team" — so it runs higher in the other direction.
+//
+// Neither number is wrong; they answer different questions. Every view therefore
+// carries a reconciliation to the engine rather than implying the two agree.
+const ARR_GRANULARITIES = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'YTD'];
+// How many trailing buckets to display per granularity (YTD is a single column).
+const ARR_BUCKET_LIMIT = { Daily: 14, Weekly: 12, Monthly: 12, Quarterly: 4, YTD: 1 };
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// Sellers the engine recognises. Anyone in the detail rows but not here is
+// off-roster: real ARR that lands in no rep block on any other tab.
+const ENGINE_REPS = new Set((dashData.reps || []).map(r => r.name));
+
+// Bucket a 'YYYY-MM-DD' payment date. Returns null for an unparseable date so a
+// bad row is dropped loudly in the count rather than silently landing in a bucket.
+function arrBucketOf(dateStr, gran) {
+  if (!dateStr || typeof dateStr !== 'string' || dateStr.length < 10) return null;
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  switch (gran) {
+    case 'Daily':
+      return { key: dateStr.slice(0, 10), label: `${MONTH_ABBR[m - 1]} ${d}` };
+    case 'Weekly': {
+      // ISO week, Monday start. UTC throughout so no timezone drift.
+      const t = new Date(Date.UTC(y, m - 1, d));
+      t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
+      const k = t.toISOString().slice(0, 10);
+      return { key: k, label: `wk ${MONTH_ABBR[t.getUTCMonth()]} ${t.getUTCDate()}` };
+    }
+    case 'Monthly':
+      return { key: `${y}-${String(m).padStart(2, '0')}`, label: MONTH_ABBR[m - 1] };
+    case 'Quarterly': {
+      const q = Math.ceil(m / 3);
+      return { key: `${y}-Q${q}`, label: `Q${q}` };
+    }
+    default:
+      return { key: `${y}-YTD`, label: 'YTD' };
+  }
+}
+
+function arrByRepReport(gran) {
+  const iRep = QA_COL['Sales Rep'], iDate = QA_COL['PaymentDate'],
+        iDelta = QA_COL['Subscription Delta'], iMove = QA_COL['Movement Type'],
+        iRole = QA_COL['Role'];
+  const MOVES = ['New', 'Expansion', 'Flat Renewal'];
+
+  // Pass 1: every bucket present in the data, so "trailing N" is meaningful.
+  const labels = new Map();
+  let undated = 0;
+  for (const r of qaData.rows) {
+    const b = arrBucketOf(r[iDate], gran);
+    if (!b) { undated += 1; continue; }
+    labels.set(b.key, b.label);
+  }
+  const keys = [...labels.keys()].sort().slice(-ARR_BUCKET_LIMIT[gran]);
+  const shown = new Set(keys);
+  const buckets = keys.map(k => ({ key: k, label: labels.get(k) }));
+
+  // Pass 2: aggregate, restricted to the displayed buckets.
+  const byRep = new Map();
+  for (const r of qaData.rows) {
+    const name = String(r[iRep] ?? '').trim();
+    if (!name) continue;
+    const b = arrBucketOf(r[iDate], gran);
+    if (!b || !shown.has(b.key)) continue;
+    let e = byRep.get(name);
+    if (!e) {
+      e = { name, role: r[iRole] || '', offRoster: !ENGINE_REPS.has(name),
+            cells: {}, total: 0, subs: 0,
+            movement: Object.fromEntries(MOVES.map(k => [k, 0])),
+            movementSubs: Object.fromEntries(MOVES.map(k => [k, 0])) };
+      byRep.set(name, e);
+    }
+    const v = Number(r[iDelta]) || 0;
+    e.cells[b.key] = (e.cells[b.key] || 0) + v;
+    e.total += v;
+    e.subs += 1;
+    const mv = r[iMove];
+    if (MOVES.includes(mv)) { e.movement[mv] += v; e.movementSubs[mv] += 1; }
+  }
+  const rows = [...byRep.values()].sort((a, b) => b.total - a.total);
+
+  // Column totals + the movement split across everything displayed.
+  const totals = {
+    cells: Object.fromEntries(keys.map(k => [k, rows.reduce((s, r) => s + (r.cells[k] || 0), 0)])),
+    total: rows.reduce((s, r) => s + r.total, 0),
+    subs: rows.reduce((s, r) => s + r.subs, 0),
+    movement: Object.fromEntries(MOVES.map(k => [k, rows.reduce((s, r) => s + r.movement[k], 0)])),
+    movementSubs: Object.fromEntries(MOVES.map(k => [k, rows.reduce((s, r) => s + r.movementSubs[k], 0)])),
+  };
+
+  // Reconciliation is always stated YTD, whatever the granularity, because the
+  // engine only exists at rep-month resolution — a daily or weekly slice has no
+  // engine counterpart to compare against. Comparing YTD to YTD is the only
+  // honest fixed point, and it is labelled as such in the report.
+  const engineByRep = new Map((dashData.reps || []).map(r => [
+    r.name, r.monthly.slice(0, dashData.dataMonth)
+      .reduce((s, b) => s + (Number(b.netNew) || 0), 0),
+  ]));
+  const detailYtdByRep = new Map();
+  for (const r of qaData.rows) {
+    const name = String(r[iRep] ?? '').trim();
+    if (!name) continue;
+    detailYtdByRep.set(name, (detailYtdByRep.get(name) || 0) + (Number(r[iDelta]) || 0));
+  }
+  const names = new Set([...engineByRep.keys(), ...detailYtdByRep.keys()]);
+  const perRepGap = [...names].map(n => ({
+    name: n,
+    engine: engineByRep.get(n) || 0,
+    detail: detailYtdByRep.get(n) || 0,
+    gap: (engineByRep.get(n) || 0) - (detailYtdByRep.get(n) || 0),
+    offRoster: !ENGINE_REPS.has(n),
+  })).filter(x => Math.abs(x.gap) >= 1).sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap));
+
+  const engineYtd = [...engineByRep.values()].reduce((a, b) => a + b, 0);
+  const detailYtd = [...detailYtdByRep.values()].reduce((a, b) => a + b, 0);
+
+  return {
+    gran, buckets, rows, totals, undated,
+    reconciliation: { engineYtd, detailYtd, gap: engineYtd - detailYtd, perRepGap },
+  };
+}
 
 function RepDrawer({ rep, onClose, period }) {
   if (!rep) return null;
@@ -2320,6 +2449,7 @@ function ReportsView({ period, setPeriod }) {
   const [periodOpen, setPeriodOpen] = useState(false);
   const [activeReport, setActiveReport] = useState('executive');
   const [sdrScope, setSdrScope] = useState(sdrData.latestMonth || 'YTD'); // SDR report: 'YTD' or a YYYY-MM
+  const [arrGran, setArrGran] = useState('Monthly'); // ARR Summary by Rep: Daily|Weekly|Monthly|Quarterly|YTD
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState(null);
 
@@ -2472,6 +2602,7 @@ function ReportsView({ period, setPeriod }) {
   const reports = [
     { id: 'executive', name: 'Executive Summary', IconComponent: Icon.ChartBar, available: true },
     { id: 'arr-summary', name: 'ARR Summary', IconComponent: Icon.Coin, available: true },
+    { id: 'arr-by-rep', name: 'ARR Summary by Rep', IconComponent: Icon.Reps, available: true },
     { id: 'sdr', name: 'SDR Team', IconComponent: Icon.Reps, available: true },
     { id: 'arr-bridge', name: 'ARR Movement', IconComponent: Icon.Bridge, available: true },
     { id: 'retention', name: 'Revenue Retention', IconComponent: Icon.Refresh, available: false, needs: ['Cohort data by signup month', 'Monthly recurring revenue by customer', 'Churn dates'] },
@@ -3019,6 +3150,194 @@ function ReportsView({ period, setPeriod }) {
   };
 
   // Render placeholder for unavailable reports
+  // Render ARR Summary by Rep — detail basis, adjustable granularity.
+  // See arrByRepReport() for why this does not equal the engine's Net New ARR.
+  const renderARRByRep = () => {
+    const rep = arrByRepReport(arrGran);
+    const mono = { fontFamily: 'JetBrains Mono, monospace' };
+    const { engineYtd, detailYtd, gap, perRepGap } = rep.reconciliation;
+    const spanLabel = rep.buckets.length
+      ? (rep.buckets.length === 1
+        ? rep.buckets[0].label
+        : `${rep.buckets[0].label} to ${rep.buckets[rep.buckets.length - 1].label}`)
+      : 'no data';
+    return (
+      <div id="report-content">
+        <div className="report-header">
+          <div>
+            <div className="report-logo">Amazing Life Foundation</div>
+            <div className="report-title">ARR Summary by Rep — {arrGran}</div>
+          </div>
+          <div className="report-meta">
+            <div>Detail basis · Cleaned Zuora Data</div>
+            <div>Generated {new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+
+        {/* Granularity selector */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', margin: '0 0 14px' }}>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-3)', marginRight: 4 }}>Granularity</span>
+          {ARR_GRANULARITIES.map(g => (
+            <button
+              key={g}
+              onClick={() => setArrGran(g)}
+              className="period-btn"
+              style={{
+                padding: '4px 12px', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer',
+                border: `1px solid ${g === arrGran ? '#4f46e5' : 'var(--border, #d4d4d8)'}`,
+                background: g === arrGran ? '#4f46e5' : 'transparent',
+                color: g === arrGran ? '#fff' : 'var(--text-2, inherit)',
+                fontWeight: g === arrGran ? 600 : 400,
+              }}
+            >{g}</button>
+          ))}
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginLeft: 8 }}>
+            showing {spanLabel}
+          </span>
+        </div>
+
+        <div className="metric-grid">
+          <div className="metric-card">
+            <div className="metric-label">Subscription Delta ({spanLabel})</div>
+            <div className="metric-value">{fmtMoney(rep.totals.total, { full: true })}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">New</div>
+            <div className="metric-value">{fmtMoney(rep.totals.movement.New, { full: true })}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Expansion</div>
+            <div className="metric-value">{fmtMoney(rep.totals.movement.Expansion, { full: true })}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Flat Renewals (subs)</div>
+            <div className="metric-value">{rep.totals.movementSubs['Flat Renewal'].toLocaleString()}</div>
+            <div className="metric-sub" style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: 4 }}>
+              no ARR change by definition
+            </div>
+          </div>
+        </div>
+
+        <div className="section-title">Subscription Delta by Rep — {arrGran}</div>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Rep</th>
+                <th>Role</th>
+                <th>Subs</th>
+                {rep.buckets.map(b => <th key={b.key} style={{ textAlign: 'right' }}>{b.label}</th>)}
+                <th style={{ textAlign: 'right' }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rep.rows.map(r => (
+                <tr key={r.name} style={r.offRoster ? { background: '#fffbeb' } : undefined}>
+                  <td style={{ fontWeight: 500 }}>
+                    {r.name}
+                    {r.offRoster && (
+                      <span title="In the detail rows but not on the engine's seller list"
+                        style={{ marginLeft: 6, fontSize: '0.68rem', color: '#b45309', fontWeight: 600 }}>
+                        off-roster
+                      </span>
+                    )}
+                  </td>
+                  <td>{r.role}</td>
+                  <td style={mono}>{r.subs}</td>
+                  {rep.buckets.map(b => (
+                    <td key={b.key} style={{ ...mono, textAlign: 'right',
+                      color: (r.cells[b.key] || 0) === 0 ? 'var(--text-3)' : undefined }}>
+                      {r.cells[b.key] ? fmtMoney(r.cells[b.key], { full: true }) : '—'}
+                    </td>
+                  ))}
+                  <td style={{ ...mono, textAlign: 'right', fontWeight: 600 }}>
+                    {fmtMoney(r.total, { full: true })}
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ background: '#e0e7ff', fontWeight: 700 }}>
+                <td>Total</td>
+                <td />
+                <td style={mono}>{rep.totals.subs}</td>
+                {rep.buckets.map(b => (
+                  <td key={b.key} style={{ ...mono, textAlign: 'right' }}>
+                    {fmtMoney(rep.totals.cells[b.key] || 0, { full: true })}
+                  </td>
+                ))}
+                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(rep.totals.total, { full: true })}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Permanent reconciliation to the engine */}
+        <div className="section-title">Reconciliation to the engine — year to date</div>
+        <table>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 500 }}>Detail rows, Subscription Delta (this report)</td>
+              <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(detailYtd, { full: true })}</td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 500 }}>Engine Net New ARR, sales reps (ARR Summary / Exec Summary)</td>
+              <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(engineYtd, { full: true })}</td>
+            </tr>
+            <tr style={{ background: '#fffbeb', fontWeight: 700 }}>
+              <td>Unreconciled</td>
+              <td style={{ ...mono, textAlign: 'right', color: '#b45309' }}>{fmtMoney(gap, { full: true })}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {perRepGap.length > 0 && (
+          <>
+            <div className="section-title">Where the difference sits</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Rep</th>
+                  <th style={{ textAlign: 'right' }}>Engine Net New (YTD)</th>
+                  <th style={{ textAlign: 'right' }}>Detail rows (YTD)</th>
+                  <th style={{ textAlign: 'right' }}>Difference</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {perRepGap.map(g => (
+                  <tr key={g.name} style={g.offRoster ? { background: '#fffbeb' } : undefined}>
+                    <td style={{ fontWeight: 500 }}>{g.name}</td>
+                    <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(g.engine, { full: true })}</td>
+                    <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(g.detail, { full: true })}</td>
+                    <td style={{ ...mono, textAlign: 'right', color: '#b45309' }}>{fmtMoney(g.gap, { full: true })}</td>
+                    <td style={{ fontSize: 12 }}>
+                      {g.offRoster
+                        ? 'Off-roster: carries ARR in the detail rows but is not on the engine seller list'
+                        : g.gap > 0
+                          ? 'Engine Net New carries an unclassified remainder with no detail row behind it'
+                          : 'Detail rows exceed the engine figure for this rep'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        <div className="data-needed" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+          <div className="data-needed-title" style={{ color: '#92400e' }}>Read this before quoting the numbers</div>
+          <ul className="data-needed-list" style={{ color: '#92400e' }}>
+            <li><strong>This is the detail basis, not the engine.</strong> The measure is <strong>Subscription Delta</strong> summed from the Cleaned Zuora Data rows. It is the only source with a payment date, which is what makes Daily and Weekly possible, and it is <strong>not</strong> the same number as Net New ARR on the ARR Summary or Executive Summary.</li>
+            <li><strong>Reconciliation is always stated year to date</strong>, at every granularity. The engine only exists at rep-month resolution, so a daily or weekly slice has no engine counterpart to compare against; YTD to YTD is the only honest fixed point.</li>
+            <li><strong>Sales reps only.</strong> The Limio online store is excluded from these rows ({qaData.excludedNoRep} house-channel rows are not shown), so this report will not match the all-channel ARR Summary even after reconciliation.</li>
+            <li><strong>Off-roster rows are highlighted.</strong> They carry real ARR in the detail data but appear on no rep block anywhere else in the dashboard.</li>
+            {rep.undated > 0 && (
+              <li><strong>{rep.undated} row{rep.undated === 1 ? '' : 's'} had no usable payment date</strong> and are excluded from every bucket above.</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    );
+  };
 
   const renderDataNeeded = (report) => (
     <div id="report-content">
@@ -3176,6 +3495,7 @@ function ReportsView({ period, setPeriod }) {
     switch (activeReport) {
       case 'executive': return renderExecutiveSummary();
       case 'arr-summary': return renderARRSummary();
+      case 'arr-by-rep': return renderARRByRep();
       case 'sdr': return renderSDRReport();
       case 'arr-bridge': return renderARRBridge();
       case 'product': return renderProductPerformance();
