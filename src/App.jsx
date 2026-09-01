@@ -3614,7 +3614,7 @@ function execResolvePeriod(kind, idx) {
            capped: true };
 }
 
-function ExecKpi({ label, value, prior, format = 'money', sub, noData, noDataWhy }) {
+function ExecTile({ icon, label, value, prior, format = 'money', note, noData, highlight }) {
   const fmt = (v) => v === null || v === undefined ? '—'
     : format === 'money' ? fmtMoney(v, { full: true })
       : format === 'pct' ? `${(v * 100).toFixed(1)}%`
@@ -3624,60 +3624,24 @@ function ExecKpi({ label, value, prior, format = 'money', sub, noData, noDataWhy
     delta = ((value - prior) / Math.abs(prior)) * 100;
   }
   return (
-    <div className="metric-card">
-      <div className="metric-label">{label}</div>
-      <div className="metric-value" style={noData ? { color: 'var(--text-3)', fontWeight: 500 } : undefined}>
-        {noData ? 'No data' : fmt(value)}
-      </div>
-      {noData && noDataWhy && (
-        <div className="metric-sub" style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 4 }}>{noDataWhy}</div>
-      )}
-      {!noData && delta !== null && (
-        <div className={`metric-change ${delta >= 0 ? 'positive' : 'negative'}`}>
-          {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}% vs prior period
+    <div className={'metric-tile' + (highlight ? ' highlight' : '')}>
+      <div className="metric-icon">{icon}</div>
+      <div className="metric-content">
+        <div className="metric-value tab" style={noData ? { color: 'var(--text-3)' } : undefined}>
+          {noData ? 'No data' : fmt(value)}
         </div>
-      )}
-      {!noData && delta === null && prior === null && (
-        <div className="metric-sub" style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 4 }}>
-          no prior period
-        </div>
-      )}
-      {sub && <div className="metric-sub" style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 4 }}>{sub}</div>}
-    </div>
-  );
-}
-
-// Monthly trend. Bars are the workbook's monthly Net New ARR; months inside the
-// selected period are highlighted so the KPI cards and the trend agree visually.
-function ExecTrend({ selected }) {
-  const series = [...Array(EXEC_DM)].map((_, i) => {
-    const a = execAgg([i + 1]);
-    return { m: i + 1, name: EXEC_MONTHS[i], netNew: a.netNew || 0, gross: a.gross || 0 };
-  });
-  const max = Math.max(...series.map(s => s.netNew), 1);
-  const inSel = new Set(selected);
-  const H = 150, BW = 100 / series.length;
-  return (
-    <div>
-      <svg viewBox={`0 0 100 ${H + 22}`} preserveAspectRatio="none" style={{ width: '100%', height: 190 }}>
-        {series.map((s, i) => {
-          const h = (s.netNew / max) * H;
-          const on = inSel.has(s.m);
-          return (
-            <g key={s.m}>
-              <rect x={i * BW + BW * 0.18} y={H - h} width={BW * 0.64} height={Math.max(h, 0.6)}
-                fill={on ? '#4f46e5' : '#c7d2fe'} rx="0.6" />
-              <text x={i * BW + BW * 0.5} y={H + 14} textAnchor="middle"
-                style={{ fontSize: 4.2, fill: on ? '#3730a3' : '#94a3b8', fontWeight: on ? 700 : 400 }}>
-                {s.name}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-3)', marginTop: -6 }}>
-        <span>Net New ARR by month · peak {fmtMoney(max, { full: true })}</span>
-        <span>Export ▸ tblExportRepMonth</span>
+        <div className="metric-label">{label}</div>
+        {!noData && delta !== null && (
+          <div style={{ fontSize: 11, marginTop: 4, fontWeight: 600,
+            color: delta >= 0 ? 'var(--green)' : 'var(--rose)' }}>
+            {delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}% vs prior
+          </div>
+        )}
+        {(note || (!noData && delta === null)) && (
+          <div style={{ fontSize: 10.5, marginTop: 4, color: 'var(--text-4)' }}>
+            {note || 'no prior period'}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3685,7 +3649,7 @@ function ExecTrend({ selected }) {
 
 function ExecutiveView() {
   const [kind, setKind] = useState('Month');
-  const [idx, setIdx] = useState(EXEC_DM - 1);            // default: latest month with data
+  const [idx, setIdx] = useState(EXEC_DM - 1);
   const [showRows, setShowRows] = useState(false);
 
   const kinds = ['Month', 'Quarter', 'YTD', 'Full Year'];
@@ -3699,116 +3663,176 @@ function ExecutiveView() {
   const P = execResolvePeriod(kind, safeIdx);
   const cur = execAgg(P.months);
   const pri = P.prior ? execAgg(P.prior.months) : null;
-  const mono = { fontFamily: 'JetBrains Mono, monospace' };
 
   const switchKind = (k) => {
     setKind(k);
     setIdx(k === 'Month' ? EXEC_DM - 1 : k === 'Quarter' ? Math.ceil(EXEC_DM / 3) - 1 : 0);
   };
 
+  const monthly = [...Array(EXEC_DM)].map((_, i) => ({ i, a: execAgg([i + 1]) }));
+  const trend = monthly.map(({ i, a }) => ({ label: EXEC_MONTHS[i], v: a.netNew || 0 }));
+
   return (
     <main className="main">
-      <div className="report-header" style={{ marginBottom: 14 }}>
+      <div className="topbar">
         <div>
-          <div className="report-logo">Amazing Life Foundation</div>
-          <div className="report-title">Executive Dashboard — {P.label}</div>
+          <h1 className="page-title">Executive Dashboard</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6 }}>
+            {P.label} · Export tab · data through {EXEC_MONTHS[EXEC_DM - 1]} {EXEC_FY} ·{' '}
+            <span style={{ color: String(execData.kpi.payout_qa_status).toUpperCase().includes('OK') ? 'var(--green)' : 'var(--rose)', fontWeight: 600 }}>
+              QA {execData.kpi.payout_qa_status || '—'}
+            </span>
+          </div>
         </div>
-        <div className="report-meta">
-          <div>Source: REVAMP workbook ▸ Export tab</div>
-          <div>Data through {EXEC_MONTHS[EXEC_DM - 1]} {EXEC_FY} · generated {execData.generatedAt.slice(0, 10)}</div>
+        <div className="topbar-actions">
+          {kinds.map(k => (
+            <div key={k} className="chip-select"
+              onClick={() => switchKind(k)}
+              style={k === kind
+                ? { background: 'var(--accent-soft)', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 }
+                : undefined}>
+              {k}
+            </div>
+          ))}
+          {options && (
+            <div className="chip-select" style={{ padding: 0 }}>
+              <select value={safeIdx} onChange={e => setIdx(Number(e.target.value))}
+                style={{ background: 'transparent', border: 'none', color: 'inherit', font: 'inherit',
+                  padding: '0 10px', height: '100%', cursor: 'pointer', outline: 'none' }}>
+                {options.map((o, i) => <option key={o} value={i}>{o}</option>)}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Period selector */}
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {kinds.map(k => (
-            <button key={k} onClick={() => switchKind(k)}
-              style={{ padding: '5px 14px', borderRadius: 6, fontSize: '0.82rem', cursor: 'pointer',
-                border: `1px solid ${k === kind ? '#4f46e5' : 'var(--border, #d4d4d8)'}`,
-                background: k === kind ? '#4f46e5' : 'transparent',
-                color: k === kind ? '#fff' : 'var(--text-2, inherit)',
-                fontWeight: k === kind ? 600 : 400 }}>{k}</button>
-          ))}
+      <section className="card">
+        <div className="card-head">
+          <div>
+            <div className="card-title">Revenue</div>
+            <div className="card-sub">
+              {P.label} · all channels ·{' '}
+              {P.prior ? `compared with ${P.prior.label}` : (P.priorReason || 'no prior period')}
+            </div>
+          </div>
+          <div className="section-meta">{cur.rowCount} Export rows</div>
         </div>
-        {options && (
-          <select value={safeIdx} onChange={e => setIdx(Number(e.target.value))}
-            style={{ padding: '5px 10px', borderRadius: 6, fontSize: '0.82rem',
-              border: '1px solid var(--border, #d4d4d8)', background: 'transparent', color: 'inherit' }}>
-            {options.map((o, i) => <option key={o} value={i}>{o}</option>)}
-          </select>
-        )}
-        <span style={{ fontSize: '0.74rem', color: 'var(--text-3)' }}>
-          {P.prior ? `compared with ${P.prior.label}` : `no prior period — ${P.priorReason || 'none available'}`}
-        </span>
-      </div>
+        <div className="card-body">
+          <div className="metrics-grid">
+            <ExecTile highlight icon={<Icon.Coin/>} label="Net New ARR" value={cur.netNew} prior={pri && pri.netNew}/>
+            <ExecTile icon={<Icon.Spark/>} label="New ARR" value={cur.newArr} prior={pri && pri.newArr}/>
+            <ExecTile icon={<Icon.Bridge/>} label="Expansion ARR" value={cur.expansion} prior={pri && pri.expansion}/>
+            <ExecTile icon={<Icon.Refresh/>} label="Churned / Contraction" noData
+              note="no such column in Export"/>
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="card-head">
+          <div>
+            <div className="card-title">Performance</div>
+            <div className="card-sub">{P.label}</div>
+          </div>
+        </div>
+        <div className="card-body">
+          <div className="metrics-grid">
+            <ExecTile highlight icon={<Icon.Wallet/>} label="Gross Collected" value={cur.gross} prior={pri && pri.gross}/>
+            <ExecTile icon={<Icon.Package/>} label="Subscriptions" value={cur.deals} prior={pri && pri.deals} format="int"/>
+            <ExecTile icon={<Icon.Bullseye/>} label="% to Quota" value={cur.attainment} prior={pri && pri.attainment}
+              format="pct" note={cur.quota !== null ? `quota ${fmtMoney(cur.quota, { full: true })}` : null}/>
+            <ExecTile icon={<Icon.Commission/>} label="Earnings" value={cur.earnings} prior={pri && pri.earnings}
+              note="total_comp, includes base pay"/>
+          </div>
+        </div>
+      </section>
 
       {P.capped && (
-        <div className="data-needed" style={{ background: '#fffbeb', borderColor: '#fde68a', marginBottom: 14 }}>
-          <div className="data-needed-title" style={{ color: '#92400e' }}>Full Year shows actuals only</div>
-          <ul className="data-needed-list" style={{ color: '#92400e' }}>
-            <li>The workbook carries no activity after {EXEC_MONTHS[EXEC_DM - 1]}, so Full Year currently equals YTD.</li>
-            <li>Months {EXEC_DM + 1}–12 hold <strong>{fmtMoney(EXEC_PLACEHOLDER_EARNINGS, { full: true })}</strong> of forward base-pay placeholder in <code>total_comp</code>. It is <strong>excluded</strong> from Earnings above rather than presented as earned.</li>
-          </ul>
-        </div>
+        <section className="card">
+          <div className="card-head">
+            <div>
+              <div className="card-title">Full Year shows actuals only</div>
+              <div className="card-sub">
+                No activity after {EXEC_MONTHS[EXEC_DM - 1]}, so Full Year currently equals YTD.
+                Months {EXEC_DM + 1} to 12 hold {fmtMoney(EXEC_PLACEHOLDER_EARNINGS, { full: true })} of
+                forward base pay placeholder in total_comp, excluded here rather than shown as earned.
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
-      <div className="metric-grid">
-        <ExecKpi label="Net New ARR" value={cur.netNew} prior={pri && pri.netNew} />
-        <ExecKpi label="New ARR" value={cur.newArr} prior={pri && pri.newArr} />
-        <ExecKpi label="Expansion ARR" value={cur.expansion} prior={pri && pri.expansion} />
-        <ExecKpi label="Churned / Contraction" noData
-          noDataWhy="No churn or contraction column exists in the Export tab" />
-      </div>
-      <div className="metric-grid" style={{ marginTop: 12 }}>
-        <ExecKpi label="Gross Collected" value={cur.gross} prior={pri && pri.gross} />
-        <ExecKpi label="Subscriptions" value={cur.deals} prior={pri && pri.deals} format="int" />
-        <ExecKpi label="% to Quota" value={cur.attainment} prior={pri && pri.attainment} format="pct"
-          sub={cur.quota !== null ? `quota ${fmtMoney(cur.quota, { full: true })}` : null} />
-        <ExecKpi label="Earnings (incl. base)" value={cur.earnings} prior={pri && pri.earnings}
-          sub="total_comp — includes base pay, not commission alone" />
-      </div>
+      <section className="card">
+        <div className="card-head">
+          <div>
+            <div className="card-title">Net New ARR trend</div>
+            <div className="card-sub">FY{EXEC_FY} by month · Export ▸ tblExportRepMonth</div>
+          </div>
+        </div>
+        <div className="card-body">
+          <div className="trend-block"><MiniBars data={trend}/></div>
+          <div className="trend-summary">
+            <div className="trend-stat">
+              <div className="trend-stat-label">Selected</div>
+              <div className="trend-stat-value tab">{fmtMoney(cur.netNew || 0, { full: true })}</div>
+            </div>
+            <div className="trend-stat">
+              <div className="trend-stat-label">Best month</div>
+              <div className="trend-stat-value tab">
+                {fmtMoney(Math.max(...trend.map(d => d.v)), { full: true })}
+              </div>
+            </div>
+            <div className="trend-stat">
+              <div className="trend-stat-label">YTD</div>
+              <div className="trend-stat-value tab">
+                {fmtMoney(execAgg(execResolvePeriod('YTD', 0).months).netNew || 0, { full: true })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div className="section-title" style={{ marginTop: 22 }}>Net New ARR trend — FY{EXEC_FY}</div>
-      <ExecTrend selected={P.months} />
-
-      <div className="section-title" style={{ marginTop: 18 }}>Monthly detail</div>
-      <div style={{ overflowX: 'auto' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Month</th><th style={{ textAlign: 'right' }}>Subs</th>
-              <th style={{ textAlign: 'right' }}>New</th><th style={{ textAlign: 'right' }}>Expansion</th>
-              <th style={{ textAlign: 'right' }}>PRS</th><th style={{ textAlign: 'right' }}>Net New ARR</th>
-              <th style={{ textAlign: 'right' }}>Gross Collected</th><th style={{ textAlign: 'right' }}>% to Quota</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...Array(EXEC_DM)].map((_, i) => {
-              const a = execAgg([i + 1]);
-              const on = P.months.includes(i + 1);
-              return (
-                <tr key={i} style={on ? { background: '#eef2ff', fontWeight: 600 } : undefined}>
-                  <td>{EXEC_MONTHS[i]} {EXEC_FY}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.deals === null ? 'No data' : a.deals}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.newArr === null ? 'No data' : fmtMoney(a.newArr, { full: true })}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.expansion === null ? 'No data' : fmtMoney(a.expansion, { full: true })}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.prs ? fmtMoney(a.prs, { full: true }) : '—'}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.netNew === null ? 'No data' : fmtMoney(a.netNew, { full: true })}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.gross === null ? 'No data' : fmtMoney(a.gross, { full: true })}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{a.attainment === null ? 'No data' : `${(a.attainment * 100).toFixed(1)}%`}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="section-header">
+        <h2>Monthly detail</h2>
+        <div className="section-meta">selected period highlighted</div>
       </div>
+      <table className="payout-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th style={{ textAlign: 'right' }}>Subs</th>
+            <th style={{ textAlign: 'right' }}>New</th>
+            <th style={{ textAlign: 'right' }}>Expansion</th>
+            <th style={{ textAlign: 'right' }}>PRS</th>
+            <th style={{ textAlign: 'right' }}>Net New ARR</th>
+            <th style={{ textAlign: 'right' }}>Gross Collected</th>
+            <th style={{ textAlign: 'right' }}>% to Quota</th>
+          </tr>
+        </thead>
+        <tbody>
+          {monthly.map(({ i, a }) => {
+            const on = P.months.includes(i + 1);
+            return (
+              <tr key={i} style={on ? { background: 'var(--accent-soft)' } : undefined}>
+                <td style={{ fontWeight: on ? 700 : 500 }}>{EXEC_MONTHS[i]} {EXEC_FY}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{a.deals === null ? 'No data' : a.deals}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{a.newArr === null ? 'No data' : fmtMoney(a.newArr, { full: true })}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{a.expansion === null ? 'No data' : fmtMoney(a.expansion, { full: true })}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{a.prs ? fmtMoney(a.prs, { full: true }) : '—'}</td>
+                <td className="mono row-money" style={{ textAlign: 'right', fontWeight: 700 }}>{a.netNew === null ? 'No data' : fmtMoney(a.netNew, { full: true })}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{a.gross === null ? 'No data' : fmtMoney(a.gross, { full: true })}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{a.attainment === null ? 'No data' : `${(a.attainment * 100).toFixed(1)}%`}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
 
-      {/* Traceability */}
-      <div className="section-title" style={{ marginTop: 22 }}>
-        Data notes — every figure traces to the Export tab
+      <div className="section-header" style={{ marginTop: 26 }}>
+        <h2>Data notes</h2>
+        <div className="section-meta">every figure traces to the Export tab</div>
       </div>
-      <table>
+      <table className="payout-table">
         <thead>
           <tr><th>KPI</th><th>Source tab</th><th>Table</th><th>Column</th></tr>
         </thead>
@@ -3822,73 +3846,80 @@ function ExecutiveView() {
             ['Gross Collected', 'Export', 'tblExportRepMonth', 'gross_collected'],
             ['Subscriptions', 'Export', 'tblExportRepMonth', 'deals'],
             ['% to Quota', 'Export', 'tblExportRepMonth', 'net_new_arr_total ÷ monthly_quota'],
-            ['Earnings (incl. base)', 'Export', 'tblExportRepMonth', 'total_comp'],
+            ['Earnings', 'Export', 'tblExportRepMonth', 'total_comp'],
             ['Payout due EOM', 'Export', 'tblExportKPI', 'payout_total_due_eom'],
             ['Prior-year book ARR', 'Export', 'tblExportKPI', 'prior_year_book_arr'],
           ].map(r => (
             <tr key={r[0]}>
               <td style={{ fontWeight: 500 }}>{r[0]}</td>
               <td>{r[1]}</td>
-              <td style={{ fontSize: 12 }}><code>{r[2]}</code></td>
-              <td style={{ fontSize: 12 }}><code>{r[3]}</code></td>
+              <td className="mono" style={{ fontSize: 12 }}>{r[2]}</td>
+              <td className="mono" style={{ fontSize: 12 }}>{r[3]}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div style={{ marginTop: 12 }}>
-        <button onClick={() => setShowRows(v => !v)}
-          style={{ padding: '5px 12px', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer',
-            border: '1px solid var(--border, #d4d4d8)', background: 'transparent', color: 'inherit' }}>
-          {showRows ? 'Hide' : 'Show'} the {cur.rowCount} Export rows behind {P.label}
-        </button>
+      <div className="section-header" style={{ marginTop: 26 }}>
+        <h2>Traceability</h2>
+        <div className="section-meta">
+          <a className="see-all" onClick={() => setShowRows(v => !v)}>
+            {showRows ? 'Hide' : 'Show'} the {cur.rowCount} Export rows behind {P.label} →
+          </a>
+        </div>
       </div>
       {showRows && (
-        <div style={{ overflowX: 'auto', marginTop: 10 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Sheet row</th><th>Rep</th><th>Team</th><th>Mo</th>
-                <th style={{ textAlign: 'right' }}>Subs</th>
-                <th style={{ textAlign: 'right' }}>Net New ARR</th>
-                <th style={{ textAlign: 'right' }}>Gross</th>
-                <th style={{ textAlign: 'right' }}>total_comp</th>
+        <table className="payout-table">
+          <thead>
+            <tr>
+              <th>Sheet row</th><th>Rep</th><th>Team</th>
+              <th style={{ textAlign: 'right' }}>Mo</th>
+              <th style={{ textAlign: 'right' }}>Subs</th>
+              <th style={{ textAlign: 'right' }}>Net New ARR</th>
+              <th style={{ textAlign: 'right' }}>Gross</th>
+              <th style={{ textAlign: 'right' }}>total_comp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cur.rows.map(r => (
+              <tr key={r.sheetRow}>
+                <td className="mono" style={{ fontSize: 12, color: 'var(--text-3)' }}>Export!A{r.sheetRow}</td>
+                <td style={{ fontWeight: 500 }}>{r.cells[EXEC_IX.rep]}</td>
+                <td>{r.cells[EXEC_IX.team]}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{r.cells[EXEC_IX.month]}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{r.cells[EXEC_IX.deals]}</td>
+                <td className="mono row-money" style={{ textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.net_new_arr_total]) || 0, { full: true })}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.gross_collected]) || 0, { full: true })}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.total_comp]) || 0, { full: true })}</td>
               </tr>
-            </thead>
-            <tbody>
-              {cur.rows.map(r => (
-                <tr key={r.sheetRow}>
-                  <td style={{ ...mono, fontSize: 12 }}>Export!A{r.sheetRow}</td>
-                  <td>{r.cells[EXEC_IX.rep]}</td>
-                  <td>{r.cells[EXEC_IX.team]}</td>
-                  <td style={mono}>{r.cells[EXEC_IX.month]}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{r.cells[EXEC_IX.deals]}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.net_new_arr_total]) || 0, { full: true })}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.gross_collected]) || 0, { full: true })}</td>
-                  <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(Number(r.cells[EXEC_IX.total_comp]) || 0, { full: true })}</td>
-                </tr>
-              ))}
-              <tr style={{ background: '#e0e7ff', fontWeight: 700 }}>
-                <td colSpan={4}>Total — {P.label}</td>
-                <td style={{ ...mono, textAlign: 'right' }}>{cur.deals}</td>
-                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(cur.netNew || 0, { full: true })}</td>
-                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(cur.gross || 0, { full: true })}</td>
-                <td style={{ ...mono, textAlign: 'right' }}>{fmtMoney(cur.earnings || 0, { full: true })}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            ))}
+            <tr style={{ background: 'var(--accent-soft)', fontWeight: 700 }}>
+              <td colSpan={4}>Total — {P.label}</td>
+              <td className="mono" style={{ textAlign: 'right' }}>{cur.deals}</td>
+              <td className="mono row-money" style={{ textAlign: 'right' }}>{fmtMoney(cur.netNew || 0, { full: true })}</td>
+              <td className="mono" style={{ textAlign: 'right' }}>{fmtMoney(cur.gross || 0, { full: true })}</td>
+              <td className="mono" style={{ textAlign: 'right' }}>{fmtMoney(cur.earnings || 0, { full: true })}</td>
+            </tr>
+          </tbody>
+        </table>
       )}
 
-      <div className="data-needed" style={{ background: '#eef2ff', borderColor: '#c7d2fe', marginTop: 18 }}>
-        <div className="data-needed-title" style={{ color: '#3730a3' }}>Scope and conventions</div>
-        <ul className="data-needed-list" style={{ color: '#3730a3' }}>
-          <li><strong>All channels.</strong> These figures include the Limio online store, matching the workbook's own <code>team_net_new_arr_ytd</code>. SalesDash's Team Performance tiles are <em>sales-team only</em> and will read lower by the online-store amount; its ARR Summary report is all-channel and ties exactly.</li>
-          <li><strong>New + Expansion + PRS does not sum to Net New ARR.</strong> The engine floors renewal deltas at $0, so the split is directional. Net New ARR is the authoritative figure.</li>
-          <li><strong>Earnings includes base pay.</strong> <code>total_comp</code> equals <code>mid_month_payout + eom_payout</code> in every month; it is not commission alone.</li>
-          <li><strong>Year over year is unavailable.</strong> The Export tab holds FY{EXEC_FY} rows only.</li>
-        </ul>
-      </div>
+      <section className="card" style={{ marginTop: 26 }}>
+        <div className="card-head">
+          <div>
+            <div className="card-title">Scope and conventions</div>
+            <div className="card-sub">read before quoting these numbers elsewhere</div>
+          </div>
+        </div>
+        <div className="card-body">
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.75, color: 'var(--text-2)' }}>
+            <li><strong>All channels.</strong> Includes the Limio online store, matching the workbook's own team_net_new_arr_ytd. SalesDash Team Performance is sales team only and reads lower by the online store amount. The ARR Summary report is all channel and ties exactly.</li>
+            <li><strong>New plus Expansion plus PRS does not sum to Net New ARR.</strong> The engine floors renewal deltas at $0, so the split is directional. Net New ARR is authoritative.</li>
+            <li><strong>Earnings includes base pay.</strong> total_comp equals mid_month_payout plus eom_payout every month. It is not commission alone.</li>
+            <li><strong>Year over year is unavailable.</strong> The Export tab holds FY{EXEC_FY} rows only.</li>
+          </ul>
+        </div>
+      </section>
     </main>
   );
 }
