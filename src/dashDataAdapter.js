@@ -38,7 +38,10 @@ const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'Jul
 // plan to 'Inactive' flows through every consumer: they show an "Inactive"
 // status pill and are excluded from active-seller counts and the commissions
 // payout run, while their historical Net New ARR stays visible in charts.
-const INACTIVE_REPS = new Set(['Elijah Diaz', "Connor O'Brien", 'Timm Horton']);
+// Jordy Hornbuckle added 2026-09-01: roster end month is 4, so he was departing
+// long before August, but he was never flagged and kept rendering as an all-zero
+// row on the August Executive Summary. His only 2026 activity is a single May deal.
+const INACTIVE_REPS = new Set(['Elijah Diaz', "Connor O'Brien", 'Timm Horton', 'Jordy Hornbuckle']);
 
 const planLetter = (plan) => {
   const m = /^Plan\s+([A-Z])$/i.exec((plan || '').trim());
@@ -259,6 +262,59 @@ export function buildConstants(dashData) {
       expansionPct: (teamYtd.netNew ? (teamYtd.netNewExpansion || 0) / teamYtd.netNew : 0),
     },
   };
+
+  // ── ARR Summary: rep performance across the displayed months ───────────────
+  // Rep rows by month, ENGINE basis, so it foots to the monthly table above by
+  // construction. Two rows exist purely to make that true and are not padding:
+  //   · the online store, which the all-channel total includes but no rep carries
+  //   · a residual for anyone the engine counts in sales but who has no rep block
+  //     (currently Chase Bryant, presented as leadership)
+  // Inactive/departed reps stay listed when they have history in the window,
+  // because dropping them would silently break the column totals.
+  const arrRepMonth = () => {
+    const num = (v) => Number(v) || 0;
+    const rows = (dashData.reps || []).map((r) => {
+      const cells = months.map((_b, m) => num(r.monthly[m]?.netNew));
+      return {
+        name: r.name,
+        role: ROSTER[r.name]?.role || r.team || '',
+        inactive: INACTIVE_REPS.has(r.name),
+        cells,
+        deals: months.reduce((s, _b, m) => s + num(r.monthly[m]?.deals), 0),
+        total: cells.reduce((a, b) => a + b, 0),
+      };
+    }).filter((x) => x.total || x.deals).sort((a, b) => b.total - a.total);
+
+    const os = dashData.onlineStore || {};
+    const onlineCells = months.map((_b, m) => num(os.monthly?.[m]?.netNew));
+    const online = {
+      name: os.name || 'Limio Store Front', role: 'Online store', inactive: false,
+      cells: onlineCells,
+      deals: months.reduce((s, _b, m) => s + num(os.monthly?.[m]?.deals), 0),
+      total: onlineCells.reduce((a, b) => a + b, 0),
+    };
+
+    const totalCells = months.map((b) => num(b.netNew));
+    const otherCells = totalCells.map((v, m) =>
+      v - rows.reduce((s, r) => s + r.cells[m], 0) - onlineCells[m]);
+    const other = {
+      name: 'Not on rep tabs', role: 'leadership', inactive: false,
+      cells: otherCells, deals: 0,
+      total: otherCells.reduce((a, b) => a + b, 0),
+    };
+    const total = {
+      name: 'Total, all channels', role: '', inactive: false,
+      cells: totalCells,
+      deals: months.reduce((s, b) => s + num(b.deals), 0),
+      total: totalCells.reduce((a, b) => a + b, 0),
+    };
+    // True by construction; surfaced so the report can assert it rather than hope.
+    const foots = totalCells.every((v, m) => Math.abs(
+      v - (rows.reduce((s, r) => s + r.cells[m], 0) + onlineCells[m] + otherCells[m])) < 1);
+
+    return { monthNames: months.map((b) => b.name), rows, online, other, total, foots };
+  };
+  ARR_SUMMARY.byRepMonth = arrRepMonth();
 
   return {
     LAST_UPDATED, PERIOD_OPTIONS, MONTH_INDEX, CURRENT_MONTH, REPS, MONTHLY, YTD,

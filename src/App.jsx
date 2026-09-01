@@ -673,6 +673,7 @@ function repSubs(repName, period) {
     .map(r => ({ customer: r[iAcct], product: r[iProd], arr: r[iArr] || 0, netNew: r[iNet] || 0 }));
 }
 
+
 function RepDrawer({ rep, onClose, period }) {
   if (!rep) return null;
   const goalPct = repAttainment(rep, period); // period-aware attainment (matches leaderboard)
@@ -2928,12 +2929,89 @@ function ReportsView({ period, setPeriod }) {
           </tbody>
         </table>
 
+        {/* Rep performance across the same months. Engine basis, so every column
+            foots to the Net New ARR column in the table above. */}
+        <div className="section-title">Rep Performance by Month — Net New ARR</div>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Rep</th>
+                <th>Role</th>
+                <th style={{ textAlign: 'right' }}>Subs</th>
+                {ARR_SUMMARY.byRepMonth.monthNames.map(m => (
+                  <th key={m} style={{ textAlign: 'right' }}>{m}</th>
+                ))}
+                <th style={{ textAlign: 'right' }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ARR_SUMMARY.byRepMonth.rows.map(r => (
+                <tr key={r.name}>
+                  <td style={{ fontWeight: 500 }}>
+                    {r.name}
+                    {r.inactive && (
+                      <span style={{ marginLeft: 6, fontSize: '0.68rem', color: 'var(--text-3)', fontWeight: 600 }}>
+                        inactive
+                      </span>
+                    )}
+                  </td>
+                  <td>{r.role}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>{r.deals}</td>
+                  {r.cells.map((v, i) => (
+                    <td key={i} style={{ ...mono, textAlign: 'right', color: v ? undefined : 'var(--text-3)' }}>
+                      {v ? fmtMoney(v, { full: true }) : '—'}
+                    </td>
+                  ))}
+                  <td style={{ ...mono, textAlign: 'right', fontWeight: 600 }}>{fmtMoney(r.total, { full: true })}</td>
+                </tr>
+              ))}
+              <tr style={{ background: '#f8fafc' }}>
+                <td style={{ fontWeight: 500 }}>{ARR_SUMMARY.byRepMonth.online.name}</td>
+                <td>{ARR_SUMMARY.byRepMonth.online.role}</td>
+                <td style={{ ...mono, textAlign: 'right' }}>{ARR_SUMMARY.byRepMonth.online.deals}</td>
+                {ARR_SUMMARY.byRepMonth.online.cells.map((v, i) => (
+                  <td key={i} style={{ ...mono, textAlign: 'right' }}>{v ? fmtMoney(v, { full: true }) : '—'}</td>
+                ))}
+                <td style={{ ...mono, textAlign: 'right', fontWeight: 600 }}>
+                  {fmtMoney(ARR_SUMMARY.byRepMonth.online.total, { full: true })}
+                </td>
+              </tr>
+              {Math.abs(ARR_SUMMARY.byRepMonth.other.total) >= 1 && (
+                <tr style={{ background: '#fffbeb' }}>
+                  <td style={{ fontWeight: 500 }}>{ARR_SUMMARY.byRepMonth.other.name}</td>
+                  <td>{ARR_SUMMARY.byRepMonth.other.role}</td>
+                  <td style={{ ...mono, textAlign: 'right' }}>—</td>
+                  {ARR_SUMMARY.byRepMonth.other.cells.map((v, i) => (
+                    <td key={i} style={{ ...mono, textAlign: 'right' }}>{v ? fmtMoney(v, { full: true }) : '—'}</td>
+                  ))}
+                  <td style={{ ...mono, textAlign: 'right', fontWeight: 600 }}>
+                    {fmtMoney(ARR_SUMMARY.byRepMonth.other.total, { full: true })}
+                  </td>
+                </tr>
+              )}
+              <tr style={{ background: '#e0e7ff', fontWeight: 700 }}>
+                <td>{ARR_SUMMARY.byRepMonth.total.name}</td>
+                <td />
+                <td style={{ ...mono, textAlign: 'right' }}>{ARR_SUMMARY.byRepMonth.total.deals}</td>
+                {ARR_SUMMARY.byRepMonth.total.cells.map((v, i) => (
+                  <td key={i} style={{ ...mono, textAlign: 'right' }}>{fmtMoney(v, { full: true })}</td>
+                ))}
+                <td style={{ ...mono, textAlign: 'right' }}>
+                  {fmtMoney(ARR_SUMMARY.byRepMonth.total.total, { full: true })}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div className="data-needed" style={{ background: '#eef2ff', borderColor: '#c7d2fe' }}>
           <div className="data-needed-title" style={{ color: '#3730a3' }}>About this report</div>
           <ul className="data-needed-list" style={{ color: '#3730a3' }}>
             <li>All-channel view (sales team + online store), mirroring the REVAMP workbook's ARR Summary tab.</li>
             <li><strong>New / Expansion / PRS</strong> are the workbook's movement categorization and are directional — they do not necessarily sum to Net New ARR, because the engine floors renewal deltas at $0.</li>
             <li><strong>Net New ARR</strong> is the authoritative engine figure used across the dashboard; <strong>Expansion %</strong> is measured against it.</li>
+            <li><strong>Rep Performance by Month</strong> is the same engine basis, so each month column foots to the Net New ARR column above. The <strong>online store</strong> and <strong>Not on rep tabs</strong> rows exist to make that true: the all-channel total includes ARR that no rep block carries (currently Chase Bryant, presented as leadership). Departed reps stay listed where they have history in the window, since removing them would break the column totals.</li>
           </ul>
         </div>
       </div>
@@ -2941,6 +3019,7 @@ function ReportsView({ period, setPeriod }) {
   };
 
   // Render placeholder for unavailable reports
+
   const renderDataNeeded = (report) => (
     <div id="report-content">
       <div className="report-header">
